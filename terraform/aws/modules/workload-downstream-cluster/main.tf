@@ -23,9 +23,9 @@ module "eks" {
   cluster_encryption_config      = {}
 
   access_entries = {
-    "argocd_<BUSINESS_MGMT_AWS_ACCOUNT_ID>" = {
+    "argocd_<PROJECT_AWS_ACCOUNT_ID>" = {
       cluster_name  = "${var.cluster_name}"
-      principal_arn = "arn:aws:iam::<BUSINESS_MGMT_AWS_ACCOUNT_ID>:role/argocd-<BUSINESS_MGMT_CLUSTER_NAME>"
+      principal_arn = "arn:aws:iam::<PROJECT_AWS_ACCOUNT_ID>:role/argocd-<PROJECT_CLUSTER_NAME>"
       policy_associations = {
         argocdAdminAccess = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
@@ -448,7 +448,7 @@ EOT
 }
 
 resource "aws_ssm_parameter" "clusters" {
-  provider    = aws.business_mgmt_region
+  provider    = aws.PROJECT_REGION
   name        = "/clusters/${var.cluster_name}"
   description = "Cluster configuration for ${var.cluster_name}"
   type        = "String"
@@ -457,7 +457,7 @@ resource "aws_ssm_parameter" "clusters" {
     host                   = module.eks.cluster_endpoint
     cluster_name           = var.cluster_name
     environment            = var.cluster_name
-    argocd_role_arn        = "arn:aws:iam::<BUSINESS_MGMT_AWS_ACCOUNT_ID>:role/argocd-<BUSINESS_MGMT_CLUSTER_NAME>"
+    argocd_role_arn        = "arn:aws:iam::<PROJECT_AWS_ACCOUNT_ID>:role/argocd-<PROJECT_CLUSTER_NAME>"
   })
 }
 

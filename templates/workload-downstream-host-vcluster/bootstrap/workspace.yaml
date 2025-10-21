@@ -27,7 +27,7 @@ spec:
       }      
 
       resource "aws_ssm_parameter" "clusters" {
-        provider    = aws.business_mgmt_region
+        provider    = aws.PROJECT_REGION
         name        = "/clusters/ceph-virtual1"
         description = "Cluster configuration for ceph-virtual1"
         type        = "String" 
