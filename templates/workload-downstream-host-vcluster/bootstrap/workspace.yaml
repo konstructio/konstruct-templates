@@ -28,8 +28,8 @@ spec:
 
       resource "aws_ssm_parameter" "clusters" {
         provider    = aws.PROJECT_REGION
-        name        = "/clusters/var.cluster_name "
-        description = "Cluster configuration for var.cluster_name "
+        name        = "/clusters/<WORKLOAD_CLUSTER_NAME>"
+        description = "Cluster configuration for <WORKLOAD_CLUSTER_NAME>"
         type        = "String" 
         tier = "Advanced"
 
