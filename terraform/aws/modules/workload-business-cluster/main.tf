@@ -527,7 +527,8 @@ resource "aws_iam_policy" "external_secrets_operator" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret",
           "secretsmanager:ListSecrets",
-          "secretsmanager:ListSecretVersionIds"
+          "secretsmanager:ListSecretVersionIds",
+          "ssm:*"
         ],
         "Resource" : ["*"]
       },

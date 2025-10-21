@@ -28,8 +28,8 @@ spec:
 
       resource "aws_ssm_parameter" "clusters" {
         provider    = aws.PROJECT_REGION
-        name        = "/clusters/ceph-virtual1"
-        description = "Cluster configuration for ceph-virtual1"
+        name        = "/clusters/var.cluster_name "
+        description = "Cluster configuration for var.cluster_name "
         type        = "String" 
         tier = "Advanced"
 
