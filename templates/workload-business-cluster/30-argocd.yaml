@@ -11,7 +11,7 @@ spec:
   project: <CLUSTER_NAME>
   source:
     repoURL: <GITOPS_REPO_URL>
-    path: registry/clusters/<WORKLOAD_CLUSTER_NAME>/argocd
+    path: registry/konstruct-clusters/<WORKLOAD_CLUSTER_NAME>/argocd
     targetRevision: HEAD
   destination:
     name: <CLUSTER_NAME>
