@@ -67,7 +67,7 @@ spec:
             project: default
             source:
               repoURL: https://github.com/${ORG_NAME}/${REPO_NAME}
-              path: registry/konstruct-clusters/${CLUSTER_NAME}
+              path: registry/clusters/${CLUSTER_NAME}
               targetRevision: HEAD
             destination:
               name: in-cluster
