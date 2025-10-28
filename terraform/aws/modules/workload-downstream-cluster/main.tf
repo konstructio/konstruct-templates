@@ -335,6 +335,18 @@ data "tls_certificate" "eks" {
   url = module.eks.cluster_oidc_issuer_url
 }
 
+resource "aws_iam_openid_connect_provider" "eks1" {
+  provider = aws.PROJECT_REGION
+  url             = module.eks.cluster_oidc_issuer_url
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+}
+
+data "tls_certificate" "eks1" {
+  url = module.eks.cluster_oidc_issuer_url
+}
+
+
 module "cert_manager" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.42.0"
@@ -587,3 +599,48 @@ resource "aws_iam_policy" "external_secrets_operator" {
 
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
+
+
+module "external_secrets_operator" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "5.40.0"
+  
+   providers = {
+    aws = aws.PROJECT_REGION
+  }
+
+  role_name = "eso-${var.cluster_name}"
+  role_policy_arns = {
+    external_secrets_operator = aws_iam_policy.external_secrets_operator.arn
+  }
+  assume_role_condition_test = "StringLike"
+  allow_self_assume_role     = true
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["*:external-secrets"]
+    }
+  }
+
+  tags = local.tags
+  
+}
+
+resource "aws_iam_policy" "external_secrets_operator" {
+  name = "external-secrets-operator-${var.cluster_name}-${random_integer.id.result}"
+  path = "/"
+  provider = aws.PROJECT_REGION
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ecr:GetAuthorizationToken"
+        ],
+        "Resource" : "*"
+        
+      },
+    ]
+  })
+}
