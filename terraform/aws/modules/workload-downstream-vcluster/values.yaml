@@ -4,10 +4,10 @@ controlPlane:
       enabled: true
       extraArgs:
         - "--tls-san=${vcluster_name}.${domain_name}"
-        - "oidc-issuer-url=https://dex.civonetes.com"
-        - "oidc-client-id=konstruct-mgmt-29-kubectl"
-        - "oidc-username-claim=email"
-        - "oidc-groups-claim=groups"
+        - "--kube-apiserver-arg=oidc-issuer-url=<DEX_DOMAIN_NAME>"
+        - "--kube-apiserver-arg=oidc-client-id=kubernetes"
+        - "--kube-apiserver-arg=oidc-username-claim=email"
+        - "--kube-apiserver-arg=oidc-groups-claim=groups"
 
   ingress:
     enabled: true

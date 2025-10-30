@@ -6,7 +6,7 @@ data:
   url: 'https://argocd-<CLUSTER_NAME>.<DOMAIN_NAME>'
   oidc.config: |
     name: Dex
-    issuer: https://dex.<DOMAIN_NAME>
+    issuer: <DEX_DOMAIN_NAME>
     clientID: argocd
     clientSecret: app-secret
     requestedScopes:
