@@ -339,8 +339,18 @@ data "tls_certificate" "eks" {
   url = module.eks.cluster_oidc_issuer_url
 }
 
+data "aws_iam_openid_connect_provider" "existing_project_region" {
+  provider = aws.PROJECT_REGION
+  url      = module.eks.cluster_oidc_issuer_url
+  
+  count = 1
+}
+
 resource "aws_iam_openid_connect_provider" "eks1" {
   provider = aws.PROJECT_REGION
+  
+  count = length(data.aws_iam_openid_connect_provider.existing_project_region) == 0 ? 1 : 0
+  
   url             = module.eks.cluster_oidc_issuer_url
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
@@ -605,7 +615,7 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 
-module "external_secrets_operator" {
+module "external_secrets_operator_one" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "5.40.0"
   
@@ -613,9 +623,9 @@ module "external_secrets_operator" {
     aws = aws.PROJECT_REGION
   }
 
-  role_name = "eso-${var.cluster_name}"
+  role_name = "eso-${var.cluster_name}-one"
   role_policy_arns = {
-    external_secrets_operator = aws_iam_policy.external_secrets_operator.arn
+    external_secrets_operator = aws_iam_policy.external_secrets_operator_one.arn
   }
   assume_role_condition_test = "StringLike"
   allow_self_assume_role     = true
@@ -630,8 +640,8 @@ module "external_secrets_operator" {
   
 }
 
-resource "aws_iam_policy" "external_secrets_operator" {
-  name = "external-secrets-operator-${var.cluster_name}-${random_integer.id.result}"
+resource "aws_iam_policy" "external_secrets_operator_one" {
+  name = "external-secrets-operator-${var.cluster_name}-${random_integer.id.result}-one"
   path = "/"
   provider = aws.PROJECT_REGION
   policy = jsonencode({
@@ -646,4 +656,18 @@ resource "aws_iam_policy" "external_secrets_operator" {
       },
     ]
   })
+}
+
+resource "aws_eks_identity_provider_config" "dex" {
+    cluster_name = module.eks.cluster_name
+
+    oidc {
+      client_id                     = "kubernetes"
+      identity_provider_config_name = "<DEX_PROIVDER_NAME>"
+      issuer_url                    = "<DEX_DOMAIN_NAME>"
+      username_claim                = "email"
+      username_prefix               = "oidc:"
+      groups_claim                  = "groups"
+      groups_prefix                 = "oidc:"
+    }
 }
