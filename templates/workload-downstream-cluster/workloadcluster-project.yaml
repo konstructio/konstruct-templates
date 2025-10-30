@@ -10,7 +10,7 @@ metadata:
 spec:
   description: <WORKLOAD_CLUSTER_NAME> description
   sourceRepos:
-  - '*'
+  - '<TEAM_GITOPS_REPO_URL>'
   destinations:
   - name: <WORKLOAD_CLUSTER_NAME>
     namespace: '*'
