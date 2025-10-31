@@ -8,4 +8,5 @@ metadata:
 data:
   # ssl terminated at ingress-nginx and forwarded
   # to allow for cloudflare origin issuer certificates
+  application.namespaces: '*'
   server.insecure: 'true'

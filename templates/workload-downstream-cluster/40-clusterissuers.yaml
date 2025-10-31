@@ -8,7 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '40'
 spec:
-  project: <WORKLOAD_CLUSTER_NAME>
+  project: <WORKLOAD_CLUSTER_NAME>-platform
   source:
     repoURL: <GITOPS_REPO_URL>
     path: registry/clusters/<WORKLOAD_CLUSTER_NAME>/cert-issuers

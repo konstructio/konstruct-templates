@@ -3,7 +3,7 @@ data "aws_availability_zones" "available" {}
 locals {
   cluster_version = "1.31"
   vpc_cidr        = "10.0.0.0/16"
-  azs             = slice(data.aws_availability_zones.available.names, 0, 3)
+  azs             = slice(data.aws_availability_zones.available.names, 0, min(length(data.aws_availability_zones.available.names), 3))
   tags = {
     kubefirst = "true"
   }
@@ -23,9 +23,9 @@ module "eks" {
   cluster_encryption_config      = {}
 
   access_entries = {
-    "argocd_<BUSINESS_MGMT_AWS_ACCOUNT_ID>" = {
+    "argocd_<PROJECT_AWS_ACCOUNT_ID>" = {
       cluster_name  = "${var.cluster_name}"
-      principal_arn = "arn:aws:iam::<BUSINESS_MGMT_AWS_ACCOUNT_ID>:role/argocd-<BUSINESS_MGMT_CLUSTER_NAME>"
+      principal_arn = "arn:aws:iam::<PROJECT_AWS_ACCOUNT_ID>:role/argocd-<PROJECT_CLUSTER_NAME>"
       policy_associations = {
         argocdAdminAccess = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
@@ -324,6 +324,10 @@ data "aws_caller_identity" "kubefirst_mgmt" {
   provider = aws.kubefirst_mgmt_region
 }
 
+data "aws_caller_identity" "project_region" {
+  provider = aws.PROJECT_REGION
+}
+
 resource "aws_iam_openid_connect_provider" "eks" {
   provider = aws.kubefirst_mgmt_region
   url             = module.eks.cluster_oidc_issuer_url
@@ -334,6 +338,28 @@ resource "aws_iam_openid_connect_provider" "eks" {
 data "tls_certificate" "eks" {
   url = module.eks.cluster_oidc_issuer_url
 }
+
+data "aws_iam_openid_connect_provider" "existing_project_region" {
+  provider = aws.PROJECT_REGION
+  url      = module.eks.cluster_oidc_issuer_url
+  
+  count = 1
+}
+
+resource "aws_iam_openid_connect_provider" "eks1" {
+  provider = aws.PROJECT_REGION
+  
+  count = length(data.aws_iam_openid_connect_provider.existing_project_region) == 0 ? 1 : 0
+  
+  url             = module.eks.cluster_oidc_issuer_url
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+}
+
+data "tls_certificate" "eks1" {
+  url = module.eks.cluster_oidc_issuer_url
+}
+
 
 module "cert_manager" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
@@ -448,7 +474,7 @@ EOT
 }
 
 resource "aws_ssm_parameter" "clusters" {
-  provider    = aws.business_mgmt_region
+  provider    = aws.PROJECT_REGION
   name        = "/clusters/${var.cluster_name}"
   description = "Cluster configuration for ${var.cluster_name}"
   type        = "String"
@@ -457,7 +483,7 @@ resource "aws_ssm_parameter" "clusters" {
     host                   = module.eks.cluster_endpoint
     cluster_name           = var.cluster_name
     environment            = var.cluster_name
-    argocd_role_arn        = "arn:aws:iam::<BUSINESS_MGMT_AWS_ACCOUNT_ID>:role/argocd-<BUSINESS_MGMT_CLUSTER_NAME>"
+    argocd_role_arn        = "arn:aws:iam::<PROJECT_AWS_ACCOUNT_ID>:role/argocd-<PROJECT_CLUSTER_NAME>"
   })
 }
 
@@ -566,7 +592,8 @@ resource "aws_iam_policy" "external_secrets_operator" {
       {
         "Effect" : "Allow",
         "Action" : [
-          "ssm:DescribeParameters"
+          "ssm:DescribeParameters",
+          "ecr:GetAuthorizationToken"
         ],
         "Resource" : "*"
       },
@@ -586,3 +613,61 @@ resource "aws_iam_policy" "external_secrets_operator" {
 
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
+
+
+module "external_secrets_operator_one" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "5.40.0"
+  
+   providers = {
+    aws = aws.PROJECT_REGION
+  }
+
+  role_name = "eso-${var.cluster_name}-one"
+  role_policy_arns = {
+    external_secrets_operator = aws_iam_policy.external_secrets_operator_one.arn
+  }
+  assume_role_condition_test = "StringLike"
+  allow_self_assume_role     = true
+  oidc_providers = {
+    main = {
+      provider_arn               = "arn:aws:iam::${data.aws_caller_identity.project_region.account_id}:oidc-provider/${module.eks.oidc_provider}"
+      namespace_service_accounts = ["*:external-secrets"]
+    }
+  }
+
+  tags = local.tags
+  
+}
+
+resource "aws_iam_policy" "external_secrets_operator_one" {
+  name = "external-secrets-operator-${var.cluster_name}-${random_integer.id.result}-one"
+  path = "/"
+  provider = aws.PROJECT_REGION
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ecr:*"
+        ],
+        "Resource" : "*"
+      },
+    ]
+  })
+}
+
+resource "aws_eks_identity_provider_config" "dex" {
+    cluster_name = module.eks.cluster_name
+
+    oidc {
+      client_id                     = "kubernetes"
+      identity_provider_config_name = "<DEX_PROIVDER_NAME>"
+      issuer_url                    = "<DEX_DOMAIN_NAME>"
+      username_claim                = "email"
+      username_prefix               = "oidc:"
+      groups_claim                  = "groups"
+      groups_prefix                 = "oidc:"
+    }
+}

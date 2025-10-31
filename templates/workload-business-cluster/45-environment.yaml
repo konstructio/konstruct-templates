@@ -8,7 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '45'
 spec:
-  project: default
+  project: <WORKLOAD_CLUSTER_NAME>
   source:
     repoURL: <GITOPS_REPO_URL>
     path: registry/environments/<WORKLOAD_ENVIRONMENT>

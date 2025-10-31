@@ -27,9 +27,9 @@ spec:
       }      
 
       resource "aws_ssm_parameter" "clusters" {
-        provider    = aws.business_mgmt_region
-        name        = "/clusters/ceph-virtual1"
-        description = "Cluster configuration for ceph-virtual1"
+        provider    = aws.PROJECT_REGION
+        name        = "/clusters/<WORKLOAD_CLUSTER_NAME>"
+        description = "Cluster configuration for <WORKLOAD_CLUSTER_NAME>"
         type        = "String" 
         tier = "Advanced"
 

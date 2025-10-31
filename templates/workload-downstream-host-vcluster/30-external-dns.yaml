@@ -8,7 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '30'
 spec:
-  project: <WORKLOAD_CLUSTER_NAME>
+  project: <WORKLOAD_CLUSTER_NAME>-platform
   source:
     repoURL: https://kubernetes-sigs.github.io/external-dns
     targetRevision: 1.14.4

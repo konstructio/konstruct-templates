@@ -9,7 +9,7 @@ spec:
       terraform {
         backend "s3" {
           bucket   = "<KUBEFIRST_STATE_STORE_BUCKET>"
-          key      = "registry/clusters/<WORKLOAD_CLUSTER_NAME>/infrastructure/provider-config/terraform.tfstate"
+          key      = "registry/konstruct-clusters/<WORKLOAD_CLUSTER_NAME>/infrastructure/provider-config/terraform.tfstate"
           region = "<CLOUD_REGION>"
           encrypt = true
         }

@@ -8,7 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '30'
 spec:
-  project: <WORKLOAD_CLUSTER_NAME>
+  project: <WORKLOAD_CLUSTER_NAME>-platform
   source:
     repoURL: 'https://stakater.github.io/stakater-charts'
     targetRevision: v1.0.10

@@ -44,7 +44,7 @@ spec:
                 name: shared-logs
           - name: log-streamer
             imagePullPolicy: Always
-            image: ghcr.io/konstructio/logs-streamer:v0.0.2
+            image: ghcr.io/konstructio/logs-streamer:v0.0.7
             ports:
               - containerPort: 9090
                 name: http

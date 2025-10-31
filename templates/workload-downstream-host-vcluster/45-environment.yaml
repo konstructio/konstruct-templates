@@ -8,14 +8,14 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '45'
 spec:
-  project: default
+  project: <WORKLOAD_CLUSTER_NAME>-environment
   source:
-    repoURL: <GITOPS_REPO_URL>
-    path: registry/environments/<WORKLOAD_ENVIRONMENT>
+    repoURL: <TEAM_GITOPS_REPO_URL>
+    path: registry/environments/<WORKLOAD_CLUSTER_NAME>
     targetRevision: HEAD
   destination:
     name: in-cluster
-    namespace: argocd
+    namespace: <WORKLOAD_CLUSTER_NAME>-environment
   syncPolicy:
     automated:
       prune: true
