@@ -17,6 +17,8 @@ patchesStrategicMerge:
   - argocd-application-controller-sa.yaml
   - argocd-applicationset-controller-sa.yaml
   - argocd-server-deployment.yaml
+  - argocd-application-controller-statefulset.yaml
+  - argocd-repo-server-deployment.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
