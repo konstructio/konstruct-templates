@@ -3,7 +3,14 @@ kind: Deployment
 metadata:
   name: argocd-server
 spec:
+  replicas: 3
   template:
     spec:
       securityContext:
         fsGroup: 999
+      containers:
+      - name: argocd-application-controller
+        resources:
+          requests:
+            memory: 5Gi
+            cpu: 2
