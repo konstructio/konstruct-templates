@@ -1,7 +1,7 @@
 apiVersion: tf.upbound.io/v1beta1
 kind: Workspace
 metadata:
-  name: <WORKLOAD_CLUSTER_NAME>-infrastructure-bootstrap
+  name: <WORKLOAD_CLUSTER_NAME>-bootstrap
 spec:
   providerConfigRef: 
     name: <WORKLOAD_CLUSTER_NAME>
