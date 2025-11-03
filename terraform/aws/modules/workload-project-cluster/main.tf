@@ -482,7 +482,7 @@ module "crossplane_kubefirst_mgmt" {
     aws = aws.kubefirst_mgmt_s3_bucket_region
   }
 
-  role_name = "crossplane-${var.cluster_name}"
+  role_name = "crossplane-${var.cluster_name}-kubefirst"
   
   role_policy_arns = {
     admin = "arn:aws:iam::aws:policy/AdministratorAccess"
@@ -623,7 +623,7 @@ module "crossplane_custom_trust" {
 
   create_role = true
 
-  role_name = "crossplane-${var.cluster_name}-one"
+  role_name = "crossplane-${var.cluster_name}"
 
   create_custom_role_trust_policy = true
   custom_role_trust_policy        = data.aws_iam_policy_document.crossplane_custom_trust_policy.json

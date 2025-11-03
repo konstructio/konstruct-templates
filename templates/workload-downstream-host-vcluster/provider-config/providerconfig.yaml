@@ -57,7 +57,7 @@ spec:
         allowed_account_ids = ["<KUBEFIRST_MGMT_ACCOUNT_ID>"]
         assume_role_with_web_identity {
           session_name = "kubefirst-pro"
-          role_arn = "arn:aws:iam::<KUBEFIRST_MGMT_ACCOUNT_ID>:role/crossplane-<PROJECT_CLUSTER_NAME>"
+          role_arn = "arn:aws:iam::<KUBEFIRST_MGMT_ACCOUNT_ID>:role/crossplane-<PROJECT_CLUSTER_NAME>-kubefirst"
           web_identity_token_file = "/var/run/secrets/eks.amazonaws.com/serviceaccount/token"
         }
       }
