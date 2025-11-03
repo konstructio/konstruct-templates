@@ -9,8 +9,14 @@ locals {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 data "aws_caller_identity" "kubefirst_mgmt" {
   provider = aws.kubefirst_mgmt_s3_bucket_region
+}
+
+locals {
+  is_same_account = data.aws_caller_identity.current.account_id == data.aws_caller_identity.kubefirst_mgmt.account_id
 }
 
 ################################################################################
@@ -343,6 +349,7 @@ EOT
 }
 
 resource "aws_iam_openid_connect_provider" "eks" {
+  count = local.is_same_account ? 0 : 1
   provider = aws.kubefirst_mgmt_s3_bucket_region
   url             = module.eks.cluster_oidc_issuer_url
   client_id_list  = ["sts.amazonaws.com"]

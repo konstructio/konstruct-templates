@@ -320,6 +320,8 @@ resource "aws_iam_policy" "aws_ebs_csi_driver" {
 EOT
 }
 
+data "aws_region" "current" {}
+
 data "aws_caller_identity" "kubefirst_mgmt" {
   provider = aws.kubefirst_mgmt_region
 }
@@ -328,7 +330,15 @@ data "aws_caller_identity" "project_region" {
   provider = aws.PROJECT_REGION
 }
 
+data "aws_caller_identity" "current" {}
+
+locals {
+  is_kubefirst_mgmt_same_account = data.aws_caller_identity.current.account_id == data.aws_caller_identity.kubefirst_mgmt.account_id
+  is_project_mgmt_same_account = data.aws_caller_identity.current.account_id == data.aws_caller_identity.project_region.account_id
+}
+
 resource "aws_iam_openid_connect_provider" "eks" {
+  count = local.is_kubefirst_mgmt_same_account ? 0 : 1
   provider = aws.kubefirst_mgmt_region
   url             = module.eks.cluster_oidc_issuer_url
   client_id_list  = ["sts.amazonaws.com"]
@@ -339,18 +349,9 @@ data "tls_certificate" "eks" {
   url = module.eks.cluster_oidc_issuer_url
 }
 
-data "aws_iam_openid_connect_provider" "existing_project_region" {
-  provider = aws.PROJECT_REGION
-  url      = module.eks.cluster_oidc_issuer_url
-  
-  count = 1
-}
-
 resource "aws_iam_openid_connect_provider" "eks1" {
+  count = local.is_project_mgmt_same_account ? 0 : 1
   provider = aws.PROJECT_REGION
-  
-  count = length(data.aws_iam_openid_connect_provider.existing_project_region) == 0 ? 1 : 0
-  
   url             = module.eks.cluster_oidc_issuer_url
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
@@ -610,10 +611,6 @@ resource "aws_iam_policy" "external_secrets_operator" {
     ]
   })
 }
-
-data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}
-
 
 module "external_secrets_operator_one" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
