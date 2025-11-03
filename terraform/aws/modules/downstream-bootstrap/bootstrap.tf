@@ -11,7 +11,6 @@ data "aws_eks_cluster_auth" "cluster" {
   name = var.cluster_name
 }
 
-
 locals {
   cluster_config = jsondecode(data.aws_ssm_parameter.cluster.value)
 }
