@@ -7,7 +7,7 @@ spec:
     name: <WORKLOAD_CLUSTER_NAME>
   forProvider:
     source: Remote
-    module: <WORKLOAD_CLUSTER_TERRAFORM_MODULE_URL>
+    module: "git::https://github.com/johndietz/terraform-eks-modules.git//terraform/aws/modules/project-bootstrap?ref=v0.1.0"
     vars:
     - key: cluster_name
       value: "<WORKLOAD_CLUSTER_NAME>"
@@ -19,5 +19,3 @@ spec:
       value: "<WORKLOAD_NODE_TYPE>"
     - key: ami_type
       value: "<WORKLOAD_AMI_TYPE>"
-
-
