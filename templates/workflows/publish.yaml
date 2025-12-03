@@ -1,0 +1,108 @@
+name: Publish image and helm chart to ECR
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: <AWS_REGION>
+  ASSUME_ROLE_ARN: <ROLE_ARN>
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract and print just the repository name
+        id: extract-repo-name
+        run: echo "repo_name=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
+
+      - name: Get short SHA
+        id: get-sha
+        run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+
+      - name: get-helm
+        run: |
+          wget https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz
+          tar xvf helm-v3.16.2-linux-amd64.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          helm version
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
+        with:
+          role-to-assume: ${{ env.ASSUME_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ steps.extract-repo-name.outputs.repo_name }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          SHORT_SHA: ${{ steps.get-sha.outputs.SHORT_SHA }}
+        run: |
+          docker build -t $ECR_REGISTRY/$REPO_OWNER/$ECR_REPOSITORY:$SHORT_SHA .
+          docker push $ECR_REGISTRY/$REPO_OWNER/$ECR_REPOSITORY:$SHORT_SHA
+          echo "Pushed image: $ECR_REGISTRY/$REPO_OWNER/$ECR_REPOSITORY:$SHORT_SHA"
+
+      - name: Update Chart.yaml
+        env:
+          ECR_REPOSITORY: ${{ `{{` }} steps.extract-repo-name.outputs.repo_name {{ `}}` }}
+          REPO_OWNER: ${{ `{{` }} github.repository_owner {{ `}}` }}
+          SHORT_SHA: ${{ `{{` }} steps.get-sha.outputs.SHORT_SHA {{ `}}` }}
+        run: |
+          cd charts/$REPO_OWNER/$ECR_REPOSITORY
+          
+          CURRENT_VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
+          BASE_VERSION=${CURRENT_VERSION%-rc.*}
+          NEW_VERSION="${BASE_VERSION}-rc.${SHORT_SHA}"
+          
+          sed -i "s/^version: .*$/version: ${NEW_VERSION}/" Chart.yaml
+          sed -i "s/^appVersion: .*$/appVersion: \"${SHORT_SHA}\"/" Chart.yaml
+          
+          echo "📝 Updated Chart.yaml:"
+          grep -E '^(version|appVersion):' Chart.yaml
+
+      - name: push-chart-to-ecr
+        id: publish-chart
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ steps.extract-repo-name.outputs.repo_name }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          SHORT_SHA: ${{ steps.get-sha.outputs.SHORT_SHA }}
+        run: |
+          cd charts/$REPO_OWNER/$ECR_REPOSITORY
+          
+          helm package .
+          
+          CHART_NAME=$(grep "^name:" Chart.yaml | awk '{print $2}')
+          CHART_VERSION=$(grep "^version:" Chart.yaml | awk '{print $2}')
+          CHART_ARCHIVE_FILE="${CHART_NAME}-${CHART_VERSION}.tgz"
+          
+          helm push "$CHART_ARCHIVE_FILE" "oci://$ECR_REGISTRY/$REPO_OWNER/charts"
+          
+          echo "✅ Pushed chart: $CHART_ARCHIVE_FILE"
+          echo "chart_version=$CHART_VERSION" >> $GITHUB_OUTPUT
+          echo "chart_name=$CHART_NAME" >> $GITHUB_OUTPUT
+
+      - name: Summary
+        run: |
+          echo "### 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image**: \`${{ steps.login-ecr.outputs.registry }}/${{ github.repository_owner }}/${{ steps.extract-repo-name.outputs.repo_name }}:${{ steps.get-sha.outputs.SHORT_SHA }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Chart**: \`${{ steps.publish-chart.outputs.chart_name }}:${{ steps.publish-chart.outputs.chart_version }}\`" >> $GITHUB_STEP_SUMMARY

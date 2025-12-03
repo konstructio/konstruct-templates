@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: <WORKLOAD_CLUSTER_NAME>-environment
+  name: <WORKLOAD_CLUSTER_NAME>-<ENV_NAME>
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -11,7 +11,7 @@ spec:
   project: <WORKLOAD_CLUSTER_NAME>-environment
   source:
     repoURL: <TEAM_GITOPS_REPO_URL>
-    path: registry/environments/<WORKLOAD_CLUSTER_NAME>
+    path: registry/environments/<ENV_NAME>/<WORKLOAD_CLUSTER_NAME>
     targetRevision: HEAD
   destination:
     name: in-cluster
