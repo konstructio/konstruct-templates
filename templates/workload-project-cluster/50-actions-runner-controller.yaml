@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: actions-runner-controller-components-<WORKLOAD_CLUSTER_NAME>
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '50'
+spec:
+  project: <WORKLOAD_CLUSTER_NAME>
+  source:
+    repoURL: https://github.com/qcom-it-613/gitops.git
+    path: registry/konstruct-clusters/<WORKLOAD_CLUSTER_NAME>/actions-runner-controller
+    targetRevision: HEAD
+  destination:
+    name: <WORKLOAD_CLUSTER_NAME>
+    namespace: github-runner
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+      - Replace=true
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        maxDuration: 5m0s
+        factor: 2

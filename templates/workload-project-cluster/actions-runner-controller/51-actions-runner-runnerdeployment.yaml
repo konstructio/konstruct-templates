@@ -1,0 +1,16 @@
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: actions-runner-<WORKLOAD_CLUSTER_NAME>
+  namespace: github-runner
+  annotations:
+    argocd.argoproj.io/sync-wave: '52'
+spec:
+  replicas: 2
+  template:
+    spec:
+      organization: qcom-it-247
+      image: mirror.gcr.io/summerwind/actions-runner-dind
+      serviceAccountName: github-runner-<WORKLOAD_CLUSTER_NAME>
+      dockerdWithinRunnerContainer: true
+      automountServiceAccountToken: true
