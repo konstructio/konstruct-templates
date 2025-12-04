@@ -8,7 +8,7 @@ metadata:
 spec:
   project: <WORKLOAD_CLUSTER_NAME>
   source:
-    repoURL: https://github.com/qcom-it-613/gitops.git
+    repoURL: <GITOPS_REPO_URL>
     path: registry/konstruct-clusters/<WORKLOAD_CLUSTER_NAME>/actions-runner-controller
     targetRevision: HEAD
   destination:
