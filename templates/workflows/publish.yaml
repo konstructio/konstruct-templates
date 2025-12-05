@@ -61,9 +61,9 @@ jobs:
 
       - name: Update Chart.yaml
         env:
-          ECR_REPOSITORY: ${{ `{{` }} steps.extract-repo-name.outputs.repo_name {{ `}}` }}
-          REPO_OWNER: ${{ `{{` }} github.repository_owner {{ `}}` }}
-          SHORT_SHA: ${{ `{{` }} steps.get-sha.outputs.SHORT_SHA {{ `}}` }}
+          ECR_REPOSITORY: ${{ steps.extract-repo-name.outputs.repo_name }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          SHORT_SHA: ${{ steps.get-sha.outputs.SHORT_SHA }}
         run: |
           cd charts/$REPO_OWNER/$ECR_REPOSITORY
           
