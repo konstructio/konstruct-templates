@@ -38,6 +38,23 @@ resource "kubernetes_secret_v1" "argocd" {
   type = "Opaque"
 }
 
+resource "kubernetes_namespace_v1" "github-runner" {
+  metadata {
+    name = "github-runner"
+  }
+}
+
+resource "kubernetes_secret_v1" "github-runner" {
+  metadata {
+    name      = "${var.cluster_name}-cluster-vault-bootstrap"
+    namespace = "github-runner"
+  }
+  data = {
+    vault-token = data.vault_generic_secret.external_secrets_operator.data["VAULT_TOKEN"]
+  }
+  type = "Opaque"
+}
+
 resource "kubernetes_namespace_v1" "crossplane" {
   metadata {
     name = "crossplane-system"
