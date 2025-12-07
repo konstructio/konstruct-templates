@@ -28,7 +28,7 @@ jobs:
       - name: Trigger workflow
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITOPS_PAT }}
+          github-token: ${{ secrets.WORKFLOW_TRIGGER_TOKEN }}
           script: |
             await github.rest.actions.createWorkflowDispatch({
               owner: '<ORG_NAME>',
