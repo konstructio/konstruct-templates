@@ -7,7 +7,7 @@
 clusterType: "physical"
 # inputs:
 #   - name: "example"
-#     token: "<WORKLOAD_EXAMPLE_TOKEN>>" 
+#     token: "<WORKLOAD_EXAMPLE_TOKEN>" 
 #     prompt: "Example input for your workload cluster template"
 #     tip: "Prompt users with input guidance here"
 
