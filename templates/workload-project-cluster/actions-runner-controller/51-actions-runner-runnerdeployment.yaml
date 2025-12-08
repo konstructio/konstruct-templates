@@ -9,7 +9,7 @@ spec:
   replicas: 2
   template:
     spec:
-      organization: qcom-it-247
+      organization: <PROJECT_ORG>
       image: mirror.gcr.io/summerwind/actions-runner-dind
       serviceAccountName: github-runner-<WORKLOAD_CLUSTER_NAME>
       dockerdWithinRunnerContainer: true
