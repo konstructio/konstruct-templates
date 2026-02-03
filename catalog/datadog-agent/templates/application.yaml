@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-datadog
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: datadog-agent
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: datadog
+    repoURL: https://helm.datadoghq.com
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: datadog
+      values: |
+        datadog:
+          apiKeyExistingSecret: datadog-secret
+          clusterName: "{{ .Values.clusterName }}"
+          env:
+          - name: DD_ENV
+            value: "{{ .Values.environment }}"
+          logs:
+            enabled: {{ .Values.logsEnabled }}
+            containerCollectAll: {{ .Values.containerCollectAll }}
+{{- if .Values.apmEnabled }}
+          apm:
+            enabled: true
+{{- end }}
+{{- if .Values.networkMonitoringEnabled }}
+          networkMonitoring:
+            enabled: true
+{{- end }}
+{{- if .Values.processAgentEnabled }}
+          processAgent:
+            enabled: true
+            processCollection: true
+{{- end }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{{- if .Values.apmServiceEnabled }}
+{{- end }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: datadog-agent
+description: A Helm chart for deploying Datadog Agent with ArgoCD Applications for Kubernetes monitoring and observability
+type: application
+version: 0.1.0
+appVersion: "3.57.3"

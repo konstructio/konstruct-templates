@@ -1,0 +1,120 @@
+# Datadog Agent Configuration
+# This values file contains all configurable parameters for deploying Datadog Agent via ArgoCD
+
+# @input.type: string
+# @input.description: Cluster name identifier
+# @input.required: true
+# @input.default: my-cluster
+clusterName: my-cluster
+
+# @input.type: string
+# @input.description: GitOps repository URL for ArgoCD sync
+# @input.required: true
+# @input.default: https://github.com/example/gitops-repo
+gitopsRepoUrl: https://github.com/example/gitops-repo
+
+# @input.type: string
+# @input.description: Registry path in GitOps repository
+# @input.required: true
+# @input.default: registry/clusters/my-cluster
+registryPath: registry/clusters/my-cluster
+
+# @input.type: string
+# @input.description: Target cluster destination for ArgoCD
+# @input.required: true
+# @input.default: in-cluster
+clusterDestination: in-cluster
+
+# @input.type: string
+# @input.description: ArgoCD project name
+# @input.required: true
+# @input.default: default
+project: default
+
+# @input.type: string
+# @input.description: Namespace for Datadog Agent deployment
+# @input.required: true
+# @input.default: datadog
+namespace: datadog
+
+# @input.type: string
+# @input.description: Datadog Helm chart version
+# @input.required: true
+# @input.default: 3.57.3
+chartVersion: 3.57.3
+
+# @input.type: string
+# @input.description: Environment name for Datadog (DD_ENV)
+# @input.required: true
+# @input.default: production
+environment: production
+
+# @input.type: enum
+# @input.description: Enable log collection from containers
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+logsEnabled: true
+
+# @input.type: enum
+# @input.description: Collect logs from all containers automatically
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+containerCollectAll: true
+
+# @input.type: enum
+# @input.description: Enable Datadog APM (Application Performance Monitoring)
+# @input.options: true,false
+# @input.required: false
+# @input.default: false
+apmEnabled: false
+
+# @input.type: enum
+# @input.description: Enable network monitoring
+# @input.options: true,false
+# @input.required: false
+# @input.default: false
+networkMonitoringEnabled: false
+
+# @input.type: enum
+# @input.description: Enable process agent for process collection
+# @input.options: true,false
+# @input.required: false
+# @input.default: false
+processAgentEnabled: false
+
+# @input.type: enum
+# @input.description: Deploy APM service for cluster
+# @input.options: true,false
+# @input.required: false
+# @input.default: false
+apmServiceEnabled: false
+
+# @input.type: string
+# @input.description: Vault path for Datadog API key secret
+# @input.required: true
+# @input.default: /datadog-agent
+secretVaultPath: /datadog-agent
+
+# =============================================================================
+# SECRET FIELDS - These will be stored in secret backend
+# =============================================================================
+
+# @input.type: secret
+# @input.description: Datadog API key for authentication
+# @input.required: true
+# @input.secretKey: api-key
+# @input.secretEnv: DATADOG_API_KEY
+# @input.secretBackend: vault
+# @input.secretPath: /datadog-agent
+datadogApiKey: ""
+
+# @input.type: secret
+# @input.description: Datadog application key for API access
+# @input.required: true
+# @input.secretKey: app-key
+# @input.secretEnv: DATADOG_APP_KEY
+# @input.secretBackend: vault
+# @input.secretPath: /datadog-agent
+datadogAppKey: ""
