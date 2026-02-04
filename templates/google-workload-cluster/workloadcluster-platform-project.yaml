@@ -10,10 +10,10 @@ metadata:
 spec:
   description: <WORKLOAD_CLUSTER_NAME> description
   sourceRepos:
-  - '*' 
+  - '*'
   destinations:
   - namespace: '*' 
-    server: '*' 
+    server: '*'
   clusterResourceWhitelist:
   - group: '*'
     kind: '*'
