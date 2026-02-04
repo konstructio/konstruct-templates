@@ -145,36 +145,3 @@ resource "kubernetes_secret_v1" "external_secrets_operator" {
   }
   type = "Opaque"
 }
-
-resource "kubernetes_service_account_v1" "external_secrets" {
-  metadata {
-    name      = "external-secrets"
-    namespace = kubernetes_namespace_v1.external_secrets_operator.metadata.0.name
-  }
-  secret {
-    name = "external-secrets-token"
-  }
-}
-
-resource "kubernetes_secret_v1" "external_secrets" {
-  metadata {
-    name      = "external-secrets-token"
-    namespace = kubernetes_namespace_v1.external_secrets_operator.metadata.0.name
-    annotations = {
-      "kubernetes.io/service-account.name" = "external-secrets"
-    }
-  }
-  type       = "kubernetes.io/service-account-token"
-  depends_on = [kubernetes_service_account_v1.external_secrets]
-}
-
-resource "kubernetes_config_map" "kubefirst_cm" {
-  metadata {
-    name      = "kubefirst-cm"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mgmt_cluster_id = "8ikfaj"
-  }
-}

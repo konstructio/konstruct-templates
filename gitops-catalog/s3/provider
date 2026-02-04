@@ -1,8 +1,8 @@
 terraform {
   backend "s3" {
-    bucket   = "k1-bu-mgmt-mgmt-barclays-corp"
+    bucket   = "<PROJECT_STATE_STORE_BUCKET>"
     key      = "registry/clusters/<S3_NAME>/infrastructure/provider-config/terraform.tfstate"
-    region = "us-west-2"
+    region = "<PROJECT_REGION>"
     encrypt = true
   }
   required_providers {
@@ -25,11 +25,12 @@ terraform {
   }
 }
 provider "aws" {
-  region = "us-west-2"
-  allowed_account_ids = ["555935582951"]
+  alias  = "PROJECT_REGION"
+  region = "<PROJECT_REGION>"
+  allowed_account_ids = ["<PROJECT_AWS_ACCOUNT_ID>"]
   assume_role_with_web_identity {
     session_name = "kubefirst-pro"
-    role_arn = "arn:aws:iam::555935582951:role/crossplane-mgmt-barclays-corp"
+    role_arn = "<PROJECT_ASSUME_ROLE>"
     web_identity_token_file = "/var/run/secrets/eks.amazonaws.com/serviceaccount/token"
   }
 }

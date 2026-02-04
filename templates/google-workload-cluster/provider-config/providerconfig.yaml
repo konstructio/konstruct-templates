@@ -1,0 +1,65 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: <WORKLOAD_CLUSTER_NAME>
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  configuration: |
+    terraform {
+      backend "s3" {
+        bucket   = "<PROJECT_STATE_STORE_BUCKET>"
+        key      = "registry/clusters/<WORKLOAD_CLUSTER_NAME>/infrastructure/provider-config/terraform.tfstate"
+        region = "<PROJECT_REGION>"
+        encrypt = true
+      }
+      required_providers {
+        google = {
+          source  = "hashicorp/google"
+          version = "~> 5.30"
+        }
+        google-beta = {
+          source  = "hashicorp/google-beta"
+          version = "~> 5.30"
+        }
+        kubernetes = {
+          source  = "hashicorp/kubernetes"
+          version = "2.23.0"
+        }
+        vault = {
+          source  = "hashicorp/vault"
+          version = "3.19.0"
+        }
+      }
+    }
+    provider "google-beta" {
+      credentials = "gcp-credentials.json" 
+      project     = "<GOOGLE_PROJECT>"
+    }
+    provider "google" {
+      credentials = "gcp-credentials.json"
+      project     = "<GOOGLE_PROJECT>"
+    }
+    provider "aws" {
+      alias  = "PROJECT_REGION"
+      region = "<PROJECT_REGION>"
+      allowed_account_ids = ["<PROJECT_AWS_ACCOUNT_ID>"]
+      assume_role_with_web_identity {
+        session_name = "kubefirst-pro"
+        role_arn = "<PROJECT_ASSUME_ROLE>"
+        web_identity_token_file = "/var/run/secrets/eks.amazonaws.com/serviceaccount/token"
+      }
+    }
+  credentials:
+    - filename: .git-credentials
+      source: Secret
+      secretRef:
+        namespace: crossplane-system
+        name: git-credentials
+        key: creds
+    - filename: gcp-credentials.json
+      source: Secret
+      secretRef:
+        key: credentials
+        name: <CLOUD_ACCOUNT_NAME>-gcp-creds
+        namespace: crossplane-system
