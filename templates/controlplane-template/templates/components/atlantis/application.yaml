@@ -1,0 +1,79 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: atlantis
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  project: {{ .Values.project }}
+  source:
+    repoURL: https://runatlantis.github.io/helm-charts
+    chart: atlantis
+    targetRevision: {{ .Values.versions.atlantis }}
+    helm:
+      values: |-
+        statefulSet:
+          annotations:
+            secret.reloader.stakater.com/reload: "atlantis-secrets"
+        atlantisUrl: https://atlantis.{{ .Values.domainName }}
+        orgAllowlist: {{ .Values.atlantis.allowList }}
+        hidePrevPlanComments: true
+        serviceAccount:
+          create: false
+          mount: true
+        resources:
+          limits:
+            cpu: 400m
+            memory: 1Gi
+          requests:
+            cpu: 400m
+            memory: 512Mi
+        ingress:
+          enabled: true
+          annotations:
+            {{- if .Values.certManager.issuerAnnotation1 }}
+            {{ .Values.certManager.issuerAnnotation1 }}
+            {{- end }}
+            {{- if .Values.certManager.issuerAnnotation2 }}
+            {{ .Values.certManager.issuerAnnotation2 }}
+            {{- end }}
+            {{- if .Values.certManager.issuerAnnotation3 }}
+            {{ .Values.certManager.issuerAnnotation3 }}
+            {{- end }}
+            {{- if .Values.certManager.issuerAnnotation4 }}
+            {{ .Values.certManager.issuerAnnotation4 }}
+            {{- end }}
+          path: /
+          host: atlantis.{{ .Values.domainName }}
+          ingressClassName: "nginx"
+          tls:
+            - secretName: atlantis-tls
+              hosts:
+                - atlantis.{{ .Values.domainName }}
+        loadEnvFromSecrets:
+          - atlantis-secrets
+        repoConfig: |
+          ---
+          repos:
+          - id: {{ .Values.atlantis.allowList }}
+            workflow: default
+            allowed_overrides: [apply_requirements]
+            apply_requirements: [mergeable]
+  destination:
+    name: {{ .Values.clusterDestination }}
+    namespace: atlantis
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        maxDuration: 5m0s
+        factor: 2

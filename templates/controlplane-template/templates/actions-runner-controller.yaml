@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: actions-runner-controller-components
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '50'
+spec:
+  project: {{ .Values.project }}
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl }}
+    path: registry/clusters/{{ .Values.clusterName }}/components/actions-runner-controller
+    targetRevision: HEAD
+  destination:
+    name: {{ .Values.clusterDestination }}
+    namespace: github-runner
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+      - Replace=true
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        maxDuration: 5m0s
+        factor: 2

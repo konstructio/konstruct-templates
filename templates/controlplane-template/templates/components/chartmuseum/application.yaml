@@ -1,0 +1,63 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: chartmuseum
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  project: {{ .Values.project }}
+  source:
+    repoURL: https://chartmuseum.github.io/charts
+    targetRevision: {{ .Values.versions.chartmuseum }}
+    helm:
+      values: |-
+        env:
+          open:
+            AUTH_ANONYMOUS_GET: true
+            STORAGE: amazon
+            STORAGE_AMAZON_BUCKET: {{ .Values.kubefirstStateStoreBucket }}
+            STORAGE_AMAZON_PREFIX: kubefirst-charts
+            STORAGE_AMAZON_REGION: {{ .Values.cloudRegion }}
+            STORAGE_AMAZON_ENDPOINT: https://objectstore.{{ .Values.cloudRegion }}.civo.com
+            DISABLE_API: false
+          existingSecret: chartmuseum-secrets
+          existingSecretMappings:
+            BASIC_AUTH_USER: BASIC_AUTH_USER
+            BASIC_AUTH_PASS: BASIC_AUTH_PASS
+            AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+        ingress:
+          enabled: true
+          pathType: "Prefix"
+          annotations:
+            {{- if .Values.certManager.issuerAnnotation1 }}
+            {{ .Values.certManager.issuerAnnotation1 }}
+            {{- end }}
+            {{- if .Values.certManager.issuerAnnotation2 }}
+            {{ .Values.certManager.issuerAnnotation2 }}
+            {{- end }}
+            {{- if .Values.certManager.issuerAnnotation3 }}
+            {{ .Values.certManager.issuerAnnotation3 }}
+            {{- end }}
+            {{- if .Values.certManager.issuerAnnotation4 }}
+            {{ .Values.certManager.issuerAnnotation4 }}
+            {{- end }}
+          hosts:
+            - name: chartmuseum.{{ .Values.domainName }}
+              path: /
+              tls: true
+              tlsSecret: chartmuseum-tls
+          ingressClassName: nginx
+    chart: chartmuseum
+  destination:
+    name: {{ .Values.clusterDestination }}
+    namespace: chartmuseum
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

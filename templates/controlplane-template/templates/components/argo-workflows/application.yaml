@@ -1,0 +1,101 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  project: {{ .Values.project }}
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    targetRevision: {{ .Values.versions.argoWorkflows }}
+    helm:
+      values: |-
+        nameOverride: argo
+        executor:
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1024Mi
+        server:
+          secure: false
+          extraArgs:
+          - --auth-mode=client
+          - --auth-mode=sso
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            annotations:
+              {{- if .Values.certManager.issuerAnnotation1 }}
+              {{ .Values.certManager.issuerAnnotation1 }}
+              {{- end }}
+              {{- if .Values.certManager.issuerAnnotation2 }}
+              {{ .Values.certManager.issuerAnnotation2 }}
+              {{- end }}
+              {{- if .Values.certManager.issuerAnnotation3 }}
+              {{ .Values.certManager.issuerAnnotation3 }}
+              {{- end }}
+              {{- if .Values.certManager.issuerAnnotation4 }}
+              {{ .Values.certManager.issuerAnnotation4 }}
+              {{- end }}
+            hosts:
+              - argo.{{ .Values.domainName }}
+            paths:
+              - /
+            pathType: Prefix
+            tls:
+              - secretName: argo-tls
+                hosts:
+                  - argo.{{ .Values.domainName }}
+          sso:
+            issuer: https://vault.{{ .Values.domainName }}/v1/identity/oidc/provider/kubefirst
+            clientId:
+              name: argo-secrets
+              key: client-id
+            clientSecret:
+              name: argo-secrets
+              key: client-secret
+            redirectUrl: https://argo.{{ .Values.domainName }}/oauth2/callback
+            scopes:
+              - email
+              - openid
+              - groups
+              - user
+              - profile
+            # RBAC Config. >= v2.12
+            rbac:
+              enabled: true
+        useDefaultArtifactRepo: true
+        useStaticCredentials: true
+        artifactRepository:
+          archiveLogs: false
+          s3:
+            accessKeySecret:
+              name: ci-secrets
+              key: accesskey
+            secretKeySecret:
+              name: ci-secrets
+              key: secretkey
+            insecure: false
+            bucket: {{ .Values.kubefirstStateStoreBucket }}
+            endpoint: objectstore.{{ .Values.cloudRegion }}.civo.com
+            region: {{ .Values.cloudRegion }}
+            useSDKCreds: false
+            encryptionOptions:
+              enableEncryption: false
+    chart: argo-workflows
+  destination:
+    name: {{ .Values.clusterDestination }}
+    namespace: argo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
