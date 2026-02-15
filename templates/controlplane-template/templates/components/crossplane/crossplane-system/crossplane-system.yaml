@@ -8,9 +8,9 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: {{ .Values.project }}
   destination:
-    name: in-cluster 
+    name: {{ .Values.clusterDestination }}
     namespace: crossplane-system
   source:
     repoURL: https://charts.crossplane.io/stable
