@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.workloadClusterName }}-external-dns
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '30'
+spec:
+  project: {{ .Values.workloadClusterName }}
+  source:
+    repoURL: https://kubernetes-sigs.github.io/external-dns
+    targetRevision: 1.14.4
+    helm:
+      releaseName: external-dns
+      values: |
+        image:
+          repository: registry.k8s.io/external-dns/external-dns
+          tag: "v0.13.2"
+        serviceAccount:
+          create: true
+          name: external-dns
+        provider: {{ .Values.externalDnsProviderName }}
+        sources:
+        - ingress
+        domainFilters:
+        - {{ .Values.workloadExternalDnsDomainName }}
+        env:
+        - name: {{ .Values.externalDnsProviderTokenEnvName }}
+          valueFrom:
+            secretKeyRef:
+              name: external-dns-secrets
+              key: token
+    chart: external-dns
+  destination:
+    name: {{ .Values.workloadClusterName }}
+    namespace: external-dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

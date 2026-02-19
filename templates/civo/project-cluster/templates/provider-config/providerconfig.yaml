@@ -1,0 +1,57 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: {{ .Values.workloadClusterName }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  configuration: |
+      terraform {
+        backend "s3" {
+          bucket   = "{{ .Values.kubefirstStateStoreBucket }}"
+          key      = "registry/konstruct-clusters/{{ .Values.workloadClusterName }}/infrastructure/provider-config/terraform.tfstate"
+          region = "{{ .Values.cloudRegion }}"
+          endpoint = "https://objectstore.{{ .Values.cloudRegion }}.civo.com"
+
+          skip_credentials_validation = true
+          skip_metadata_api_check     = true
+          skip_region_validation      = true
+          force_path_style            = true
+        }
+        required_providers {
+          civo = {
+            source  = "civo/civo"
+            version = "= 1.1.0"
+          }
+        }
+      }
+      provider "civo" {
+        credentials_file = "projectcluster-civo.json"
+        region = "{{ .Values.cloudRegion }}"
+      }
+      provider "civo" {
+        alias = "kubefirst_mgmt_s3_bucket_region"
+        credentials_file = "civo.json"
+        region = "{{ .Values.cloudRegion }}"
+      }
+  pluginCache: false
+  credentials:
+  - filename: projectcluster-civo.json
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: {{ .Values.workloadClusterName }}-civo-creds
+      key: config.json
+  - filename: civo.json
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: civo-creds
+      key: config.json
+  - filename: .git-credentials
+    source: Secret
+    secretRef:
+    
+      namespace: crossplane-system
+      name: git-credentials
+      key: creds
