@@ -10,8 +10,8 @@ spec:
         backend "s3" {
           bucket   = "{{ .Values.kubefirstStateStoreBucket }}"
           key      = "registry/konstruct-clusters/{{ .Values.workloadClusterName }}/infrastructure/provider-config/terraform.tfstate"
-          region = "{{ .Values.cloudRegion }}"
-          endpoint = "https://objectstore.{{ .Values.cloudRegion }}.civo.com"
+          region = "{{ .Values.mainMgmtcloudRegion }}"
+          endpoint = "https://objectstore.{{ .Values.mainMgmtcloudRegion }}.civo.com"
 
           skip_credentials_validation = true
           skip_metadata_api_check     = true
@@ -27,12 +27,12 @@ spec:
       }
       provider "civo" {
         credentials_file = "projectcluster-civo.json"
-        region = "{{ .Values.cloudRegion }}"
+        region = "{{ .Values.workloadClusterRegion }}"
       }
       provider "civo" {
         alias = "kubefirst_mgmt_s3_bucket_region"
         credentials_file = "civo.json"
-        region = "{{ .Values.cloudRegion }}"
+        region = "{{ .Values.mainMgmtcloudRegion }}"
       }
   pluginCache: false
   credentials:
