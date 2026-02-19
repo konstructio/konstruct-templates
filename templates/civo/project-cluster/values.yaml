@@ -4,6 +4,11 @@
 # @input.required: true
 workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/gitops-template.git//terraform/civo/modules/workload-cluster?ref=main"
 
+# @input.type: string
+# @input.description: the Domain Name
+# @input.required: false
+domainName: kubefunk.net
+
 # External DNS Configuration
 # @input.type: string
 # @input.description: the DNS provider name for external-dns (e.g., cloudflare, aws, digitalocean)
