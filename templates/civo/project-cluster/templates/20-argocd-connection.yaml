@@ -15,17 +15,17 @@ spec:
           argocd.argoproj.io/secret-type: cluster
       engineVersion: v2
       data:
-        name: "{{ .cluster_name }}"
-        server: "{{ .host }}"
+        name: {{`"{{ .cluster_name }}"`}}
+        server: {{`"{{ .host }}"`}}
         clusterResources: "true"
         config: |
           {
-            "bearerToken": "{{ .argocd_manager_sa_token }}",
+            "bearerToken": {{`"{{ .argocd_manager_sa_token }}"`}},
             "tlsClientConfig": {
-                "caData": "{{ .cluster_ca_certificate | b64enc }}",
-                "certData": "{{ .client_certificate | b64enc }}",
+                "caData": {{`"{{ .cluster_ca_certificate | b64enc }}"`}},
+                "certData": {{`"{{ .client_certificate | b64enc }}"`}},
                 "insecure": false,
-                "keyData": "{{ .client_key | b64enc }}"
+                "keyData": {{`"{{ .client_key | b64enc }}"`}}
               }
           }
   secretStoreRef:

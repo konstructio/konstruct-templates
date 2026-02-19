@@ -51,7 +51,6 @@ spec:
   - filename: .git-credentials
     source: Secret
     secretRef:
-    
       namespace: crossplane-system
       name: git-credentials
       key: creds
