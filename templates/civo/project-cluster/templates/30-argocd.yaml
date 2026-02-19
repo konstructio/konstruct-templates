@@ -1,20 +1,20 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: {{ .Values.clusterName }}-argocd
+  name: {{ .Values.workloadClusterName }}-argocd
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd.argoproj.io/sync-wave: '30'
 spec:
-  project: {{ .Values.clusterName }}
+  project: {{ .Values.workloadClusterName }}
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
     path: registry/konstruct-clusters/{{ .Values.workloadClusterName }}/argocd
     targetRevision: HEAD
   destination:
-    name: {{ .Values.clusterName }}
+    name: {{ .Values.workloadClusterName }}
     namespace: argocd
   syncPolicy:
     automated:
