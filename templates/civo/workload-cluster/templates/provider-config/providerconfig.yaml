@@ -8,42 +8,45 @@ spec:
   configuration: |
       terraform {
         backend "s3" {
+          key      = "registry/konstruct-clusters/{{ .Values.workloadClusterName }}/infrastructure/provider-config/terraform.tfstate"
           bucket   = "{{ .Values.projectStateStoreBucket }}"
-          key      = "registry/clusters/{{ .Values.workloadClusterName }}/infrastructure/provider-config/terraform.tfstate"
-          region = "{{ .Values.projectRegion }}"
-          encrypt = true
+          region   = "{{ .Values.projectRegion }}"
+          endpoint = "https://objectstore.{{ .Values.projectRegion }}.civo.com"
+
+          skip_credentials_validation = true
+          skip_metadata_api_check     = true
+          skip_region_validation      = true
+          force_path_style            = true
         }
         required_providers {
           civo = {
             source  = "civo/civo"
             version = "= 1.1.0"
           }
-          aws = {
-            source = "hashicorp/aws"
-            version = ">= 5.30.0, < 6.0.0"
-          }
-        }
-      }
-      provider "aws" {
-        alias  = "PROJECT_REGION"
-        region = "{{ .Values.projectRegion }}"
-        allowed_account_ids = ["{{ .Values.projectAwsAccountId }}"]
-        assume_role_with_web_identity {
-          session_name = "kubefirst-pro"
-          role_arn = "{{ .Values.projectAssumeRole }}"
-          web_identity_token_file = "/var/run/secrets/eks.amazonaws.com/serviceaccount/token"
         }
       }
       provider "civo" {
         credentials_file = "civo.json"
         region = "{{ .Values.workloadClusterRegion }}"
       }
+      provider "civo" {
+        alias  = "PROJECT_REGION"
+        region = "{{ .Values.projectRegion }}"
+        credentials_file = "projectclustercivo.json"
+      }
+  pluginCache: false
   credentials:
+  - filename: projectclustercivo.json
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: {{ .Values.workloadClusterName }}-civo-creds
+      key: config.json
   - filename: civo.json
     source: Secret
     secretRef:
       namespace: crossplane-system
-      name: {{ .Values.cloudAccountName }}-civo-creds
+      name: civo-creds
       key: config.json
   - filename: .git-credentials
     source: Secret
