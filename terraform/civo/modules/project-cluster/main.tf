@@ -114,5 +114,35 @@ resource "kubernetes_service_account_v1" "argocd_manager" {
   }
 }
 
+resource "kubernetes_secret_v1" "argocd_manager" {
+  metadata {
+    name      = "argocd-manager-token"
+    namespace = "kube-system"
+    annotations = {
+      "kubernetes.io/service-account.name" = "argocd-manager"
+    }
+  }
+  type       = "kubernetes.io/service-account-token"
+  depends_on = [kubernetes_service_account_v1.argocd_manager]
+}
 
+data "vault_generic_secret" "external_dns" {
+  path = "secret/external-dns"
+}
 
+resource "kubernetes_namespace_v1" "external_dns" {
+  metadata {
+    name = "external-dns"
+  }
+}
+
+resource "kubernetes_secret_v1" "external_dns" {
+  metadata {
+    name      = "external-dns-secrets"
+    namespace = "external-dns"
+  }
+  data = {
+    token = data.vault_generic_secret.external_dns.data["token"]
+  }
+  type = "Opaque"
+}
