@@ -11,7 +11,7 @@ spec:
   project: {{ .Values.workloadClusterName }}
   source:
     repoURL: 'https://stakater.github.io/stakater-charts'
-    targetRevision: v1.0.10
+    targetRevision: 2.2.8
     chart: reloader
     helm:
       values: |-

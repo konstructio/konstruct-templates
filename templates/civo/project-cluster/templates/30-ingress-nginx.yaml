@@ -11,7 +11,7 @@ spec:
   project: {{ .Values.workloadClusterName }}
   source:
     repoURL: https://kubernetes.github.io/ingress-nginx
-    targetRevision: 4.12.1
+    targetRevision: 4.14.3
     helm:
       values: |-
         controller:
