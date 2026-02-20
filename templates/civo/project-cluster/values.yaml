@@ -21,11 +21,6 @@ domainName: kubefunk.net
 externalDnsProviderName: cloudflare
 
 # @input.type: string
-# @input.description: the domain name filter for external-dns
-# @input.required: false
-workloadExternalDnsDomainName: example.com
-
-# @input.type: string
 # @input.description: the environment variable name for the DNS provider token (e.g., CF_API_TOKEN)
 # @input.required: false
 externalDnsProviderTokenEnvName: CF_API_TOKEN
