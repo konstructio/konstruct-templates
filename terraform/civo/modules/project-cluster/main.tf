@@ -126,20 +126,20 @@ resource "kubernetes_secret_v1" "argocd_manager" {
   depends_on = [kubernetes_service_account_v1.argocd_manager]
 }
 
-data "vault_generic_secret" "external_dns" {
-  path = "secret/external-dns"
-}
-
 resource "kubernetes_namespace_v1" "external_dns" {
   metadata {
     name = "external-dns"
   }
 }
 
+data "vault_generic_secret" "external_dns" {
+  path = "secret/external-dns"
+}
+
 resource "kubernetes_secret_v1" "external_dns" {
   metadata {
     name      = "external-dns-secrets"
-    namespace = "external-dns"
+    namespace = kubernetes_namespace_v1.external_dns.metadata.0.name
   }
   data = {
     token = data.vault_generic_secret.external_dns.data["token"]
@@ -148,22 +148,14 @@ resource "kubernetes_secret_v1" "external_dns" {
 }
 
 # ──────────────────────────────────────────────
-# Variables
-# ──────────────────────────────────────────────
-
-variable "workload_cluster_name" {
-  description = "Name of the workload cluster"
-  type        = string
-}
-
-variable "project_name" {
-  description = "Project name used in Vault path"
-  type        = string
-}
-
-# ──────────────────────────────────────────────
 # 1. Crossplane Secrets (extract all keys from /crossplane)
 # ──────────────────────────────────────────────
+
+resource "kubernetes_namespace_v1" "crossplane_system" {
+  metadata {
+    name = "crossplane-system"
+  }
+}
 
 data "vault_generic_secret" "crossplane" {
   path = "secret/crossplane"  # maps to key: /crossplane
@@ -172,7 +164,7 @@ data "vault_generic_secret" "crossplane" {
 resource "kubernetes_secret_v1" "crossplane_secrets" {
   metadata {
     name      = "crossplane-secrets"
-    namespace = "crossplane-system"
+    namespace = kubernetes_namespace_v1.crossplane_system.metadata.0.name
   }
 
   # Extract all key-value pairs from Vault into the secret
@@ -192,7 +184,7 @@ data "vault_generic_secret" "git_credentials" {
 resource "kubernetes_secret_v1" "git_credentials" {
   metadata {
     name      = "git-credentials"
-    namespace = "crossplane-system"
+    namespace = kubernetes_namespace_v1.crossplane_system.metadata.0.name
   }
 
   data = {
@@ -201,3 +193,4 @@ resource "kubernetes_secret_v1" "git_credentials" {
 
   type = "Opaque"
 }
+
