@@ -5,6 +5,11 @@
 workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/gitops-template.git//terraform/civo/modules/workload-cluster?ref=main"
 
 # @input.type: string
+# @input.description: Alert email address for cert-manager notifications
+# @input.required: false
+email: 123@gmail.com
+
+# @input.type: string
 # @input.description: the Domain Name
 # @input.required: false
 domainName: kubefunk.net
