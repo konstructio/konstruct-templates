@@ -146,3 +146,58 @@ resource "kubernetes_secret_v1" "external_dns" {
   }
   type = "Opaque"
 }
+
+# ──────────────────────────────────────────────
+# Variables
+# ──────────────────────────────────────────────
+
+variable "workload_cluster_name" {
+  description = "Name of the workload cluster"
+  type        = string
+}
+
+variable "project_name" {
+  description = "Project name used in Vault path"
+  type        = string
+}
+
+# ──────────────────────────────────────────────
+# 1. Crossplane Secrets (extract all keys from /crossplane)
+# ──────────────────────────────────────────────
+
+data "vault_generic_secret" "crossplane" {
+  path = "secret/crossplane"  # maps to key: /crossplane
+}
+
+resource "kubernetes_secret_v1" "crossplane_secrets" {
+  metadata {
+    name      = "crossplane-secrets"
+    namespace = "crossplane-system"
+  }
+
+  # Extract all key-value pairs from Vault into the secret
+  data = data.vault_generic_secret.crossplane.data
+
+  type = "Opaque"
+}
+
+# ──────────────────────────────────────────────
+# 2. Git Credentials (templated creds file)
+# ──────────────────────────────────────────────
+
+data "vault_generic_secret" "git_credentials" {
+  path = "secret/argocd/repo-credentials-template/${var.project_name}"
+}
+
+resource "kubernetes_secret_v1" "git_credentials" {
+  metadata {
+    name      = "git-credentials"
+    namespace = "crossplane-system"
+  }
+
+  data = {
+    creds = "https://${data.vault_generic_secret.git_credentials.data["username"]}:${data.vault_generic_secret.git_credentials.data["password"]}@github.com"
+  }
+
+  type = "Opaque"
+}
