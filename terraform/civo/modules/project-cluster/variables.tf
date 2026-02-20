@@ -13,3 +13,7 @@ variable "node_count" {
 variable "node_type" {
   type = string
 }
+
+variable "project_name" {
+  type        = string
+}
