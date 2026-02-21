@@ -19,5 +19,4 @@ spec:
       value: "{{ .Values.workloadNodeCount }}"
     - key: node_type
       value: {{ .Values.workloadNodeType }}
-    - key: is_gpu
-      value: "false"
+

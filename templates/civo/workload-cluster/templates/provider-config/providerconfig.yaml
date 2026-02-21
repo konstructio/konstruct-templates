@@ -29,24 +29,13 @@ spec:
         credentials_file = "civo.json"
         region = "{{ .Values.workloadClusterRegion }}"
       }
-      provider "civo" {
-        alias  = "PROJECT_REGION"
-        region = "{{ .Values.projectRegion }}"
-        credentials_file = "projectclustercivo.json"
-      }
   pluginCache: false
   credentials:
-  - filename: projectclustercivo.json
-    source: Secret
-    secretRef:
-      namespace: crossplane-system
-      name: {{ .Values.workloadClusterName }}-civo-creds
-      key: config.json
   - filename: civo.json
     source: Secret
     secretRef:
       namespace: crossplane-system
-      name: civo-creds
+      name: {{ .Values.cloudAccountName }}-civo-creds
       key: config.json
   - filename: .git-credentials
     source: Secret

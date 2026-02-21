@@ -194,3 +194,25 @@ resource "kubernetes_secret_v1" "git_credentials" {
   type = "Opaque"
 }
 
+resource "kubernetes_namespace_v1" "argocd" {
+  metadata {
+    name = "argocd"
+  }
+}
+
+resource "kubernetes_secret_v1" "argocd_git_credentials" {
+  metadata {
+    name      = "repo-credentials-template-${var.project_name}"
+    namespace = kubernetes_namespace_v1.argocd.metadata.0.name
+  }
+
+  data = {
+    type: data.vault_generic_secret.git_credentials.data["type"],
+    url: data.vault_generic_secret.git_credentials.data["url"],
+    username: data.vault_generic_secret.git_credentials.data["username"],
+    password: data.vault_generic_secret.git_credentials.data["password"],
+    name: data.vault_generic_secret.git_credentials.data["name"],
+  }
+
+  type = "Opaque"
+}
