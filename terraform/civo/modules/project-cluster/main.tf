@@ -157,22 +157,19 @@ resource "kubernetes_namespace_v1" "crossplane_system" {
   }
 }
 
-data "vault_generic_secret" "crossplane" {
-  path = "secret/crossplane"  # maps to key: /crossplane
-}
-
 resource "kubernetes_secret_v1" "crossplane_secrets" {
   metadata {
     name      = "crossplane-secrets"
     namespace = kubernetes_namespace_v1.crossplane_system.metadata.0.name
   }
 
-  # Extract all key-value pairs from Vault into the secret
-  data = data.vault_generic_secret.crossplane.data
+  data = {
+    AWS_ACCESS_KEY_ID     = data.civo_object_store_credential.backup.access_key_id
+    AWS_SECRET_ACCESS_KEY = data.civo_object_store_credential.backup.secret_access_key
+  }
 
   type = "Opaque"
 }
-
 # ──────────────────────────────────────────────
 # 2. Git Credentials (templated creds file)
 # ──────────────────────────────────────────────
