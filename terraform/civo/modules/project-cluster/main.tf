@@ -203,7 +203,10 @@ resource "kubernetes_namespace_v1" "argocd" {
 resource "kubernetes_secret_v1" "argocd_git_credentials" {
   metadata {
     name      = "repo-credentials-template-${var.project_name}"
-    namespace = kubernetes_namespace_v1.argocd.metadata.0.name
+    namespace = "argocd"
+    labels = {
+      "argocd.argoproj.io/secret-type" = "repository"
+    }
   }
 
   data = {
