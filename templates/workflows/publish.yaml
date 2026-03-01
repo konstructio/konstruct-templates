@@ -1,4 +1,4 @@
-name: Publish image and helm chart to ECR
+name: Publish image and helm chart to GHCR
 on:
   workflow_dispatch:
   push:
@@ -6,12 +6,8 @@ on:
       - main
 
 permissions:
-  id-token: write
   contents: read
-
-env:
-  AWS_REGION: <AWS_REGION>
-  ASSUME_ROLE_ARN: <ROLE_ARN>
+  packages: write
 
 jobs:
   publish:
@@ -38,26 +34,26 @@ jobs:
           sudo mv linux-amd64/helm /usr/local/bin/helm
           helm version
 
-      - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          role-to-assume: ${{ env.ASSUME_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push image to Amazon ECR
+      - name: Build, tag, and push image to GHCR
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REGISTRY: ghcr.io
           ECR_REPOSITORY: ${{ steps.extract-repo-name.outputs.repo_name }}
           REPO_OWNER: ${{ github.repository_owner }}
           SHORT_SHA: ${{ steps.get-sha.outputs.SHORT_SHA }}
         run: |
-          docker build -t $ECR_REGISTRY/$REPO_OWNER/$ECR_REPOSITORY:$SHORT_SHA .
-          docker push $ECR_REGISTRY/$REPO_OWNER/$ECR_REPOSITORY:$SHORT_SHA
-          echo "Pushed image: $ECR_REGISTRY/$REPO_OWNER/$ECR_REPOSITORY:$SHORT_SHA"
+          IMAGE="$REGISTRY/$REPO_OWNER/$ECR_REPOSITORY:$SHORT_SHA"
+          # GHCR requires lowercase image names
+          IMAGE=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "Pushed image: $IMAGE"
 
       - name: Update Chart.yaml
         env:
@@ -66,35 +62,37 @@ jobs:
           SHORT_SHA: ${{ steps.get-sha.outputs.SHORT_SHA }}
         run: |
           cd charts/$REPO_OWNER/$ECR_REPOSITORY
-          
+
           CURRENT_VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
           BASE_VERSION=${CURRENT_VERSION%-rc.*}
           NEW_VERSION="${BASE_VERSION}-rc.${SHORT_SHA}"
-          
+
           sed -i "s/^version: .*$/version: ${NEW_VERSION}/" Chart.yaml
           sed -i "s/^appVersion: .*$/appVersion: \"${SHORT_SHA}\"/" Chart.yaml
-          
+
           echo "📝 Updated Chart.yaml:"
           grep -E '^(version|appVersion):' Chart.yaml
 
-      - name: push-chart-to-ecr
+      - name: Push chart to GHCR
         id: publish-chart
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REGISTRY: ghcr.io
           ECR_REPOSITORY: ${{ steps.extract-repo-name.outputs.repo_name }}
           REPO_OWNER: ${{ github.repository_owner }}
           SHORT_SHA: ${{ steps.get-sha.outputs.SHORT_SHA }}
         run: |
           cd charts/$REPO_OWNER/$ECR_REPOSITORY
-          
+
           helm package .
-          
+
           CHART_NAME=$(grep "^name:" Chart.yaml | awk '{print $2}')
           CHART_VERSION=$(grep "^version:" Chart.yaml | awk '{print $2}')
           CHART_ARCHIVE_FILE="${CHART_NAME}-${CHART_VERSION}.tgz"
-          
-          helm push "$CHART_ARCHIVE_FILE" "oci://$ECR_REGISTRY/$REPO_OWNER/charts"
-          
+
+          # Helm OCI push to GHCR (must be lowercase)
+          OCI_REF="oci://$REGISTRY/$(echo $REPO_OWNER | tr '[:upper:]' '[:lower:]')/charts"
+          helm push "$CHART_ARCHIVE_FILE" "$OCI_REF"
+
           echo "✅ Pushed chart: $CHART_ARCHIVE_FILE"
           echo "chart_version=$CHART_VERSION" >> $GITHUB_OUTPUT
           echo "chart_name=$CHART_NAME" >> $GITHUB_OUTPUT
@@ -103,6 +101,6 @@ jobs:
         run: |
           echo "### 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image**: \`${{ steps.login-ecr.outputs.registry }}/${{ github.repository_owner }}/${{ steps.extract-repo-name.outputs.repo_name }}:${{ steps.get-sha.outputs.SHORT_SHA }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image**: \`ghcr.io/${{ github.repository_owner }}/${{ steps.extract-repo-name.outputs.repo_name }}:${{ steps.get-sha.outputs.SHORT_SHA }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Chart**: \`${{ steps.publish-chart.outputs.chart_name }}:${{ steps.publish-chart.outputs.chart_version }}\`" >> $GITHUB_STEP_SUMMARY
