@@ -1,0 +1,29 @@
+# Terraform Module Configuration
+# @input.type: string
+# @input.description: the complete URL for the Terraform module for infrastructure provisioning
+# @input.required: true
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/gitops-template.git//terraform/civo/modules/workload-cluster?ref=main"
+
+# @input.type: string
+# @input.description: Alert email address for cert-manager notifications
+# @input.required: false
+email: 123@gmail.com
+
+# @input.type: string
+# @input.description: the Domain Name
+# @input.required: false
+domainName: kubefunk.net
+
+# External DNS Configuration
+# @input.type: string
+# @input.description: the DNS provider name for external-dns (e.g., cloudflare, aws, digitalocean)
+# @input.required: false
+externalDnsProviderName: cloudflare
+
+# @input.type: string
+# @input.description: the environment variable name for the DNS provider token (e.g., CF_API_TOKEN)
+# @input.required: false
+externalDnsProviderTokenEnvName: CF_API_TOKEN
+
+# Wait Job Configuration
+waitJobImage: "dtzar/helm-kubectl:3.19.0"

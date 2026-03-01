@@ -1,0 +1,15 @@
+apiVersion: v2
+name: civo-project-cluster
+description: "Civo project cluster template for Konstruct with ArgoCD Applications, Crossplane infrastructure, and core platform services"
+type: application
+version: 2.0.0
+appVersion: "2.0"
+keywords:
+  - argocd
+  - project-cluster
+  - gitops
+  - crossplane
+  - terraform
+  - civo
+maintainers:
+  - name: Konstruct

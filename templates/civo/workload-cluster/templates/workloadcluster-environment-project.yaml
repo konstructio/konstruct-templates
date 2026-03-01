@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ .Values.workloadClusterName }}-environment
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: {{ .Values.workloadClusterName }} description
+  sourceRepos:
+  - '{{ .Values.teamGitopsRepoUrl }}'
+  destinations:
+  - name: in-cluster
+    namespace: {{ .Values.workloadClusterName }}-environment
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  roles:
+  - description: {{ .Values.workloadClusterName }}-admin-role
+    groups:
+    - admins
+    name: admin-role
+    policies:
+    - p, proj:{{ .Values.workloadClusterName }}:admin-role, applications, *, {{ .Values.workloadClusterName }}/*, allow
