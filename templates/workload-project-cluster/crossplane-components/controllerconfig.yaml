@@ -24,6 +24,10 @@ spec:
         metadata:
           labels:
             pkg.crossplane.io/provider: terraform
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "8080"
+            prometheus.io/path: "/metrics"
         spec:
           securityContext:  
             fsGroup: 65532
@@ -44,7 +48,7 @@ spec:
                 name: shared-logs
           - name: log-streamer
             imagePullPolicy: Always
-            image: ghcr.io/konstructio/logs-streamer:v0.0.8
+            image: ghcr.io/konstructio/logs-streamer:v0.0.10
             ports:
               - containerPort: 9090
                 name: http
