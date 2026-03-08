@@ -112,6 +112,7 @@ secretPath: /datadog-agent
 # @input.required: true
 # @input.secretKey: api-key
 # @input.secretEnv: DATADOG_API_KEY
+# @input.secretBackend: aws-secrets-store
 # @input.secretPath: /datadog-agent
 datadogApiKey: ""
 
@@ -120,5 +121,6 @@ datadogApiKey: ""
 # @input.required: true
 # @input.secretKey: app-key
 # @input.secretEnv: DATADOG_APP_KEY
+# @input.secretBackend: aws-secrets-store
 # @input.secretPath: /datadog-agent
 datadogAppKey: ""
