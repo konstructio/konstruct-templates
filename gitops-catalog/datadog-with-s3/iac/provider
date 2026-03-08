@@ -1,0 +1,36 @@
+terraform {
+  backend "s3" {
+    bucket   = "<PROJECT_STATE_STORE_BUCKET>"
+    key      = "registry/clusters/<S3_NAME>/infrastructure/provider-config/terraform.tfstate"
+    region = "<PROJECT_REGION>"
+    encrypt = true
+  }
+  required_providers {
+    kubernetes = {
+      source = "hashicorp/kubernetes"
+      version = ">= 2.23.0, < 3.0.0"
+    }
+    vault = {
+      source = "hashicorp/vault"
+      version = ">= 3.19.0, < 4.0.0"
+    }
+    random = {
+      source = "hashicorp/random"
+      version = ">= 3.6.2, < 4.0.0"
+    }
+    aws = {
+      source = "hashicorp/aws"
+      version = ">= 5.30.0, < 6.0.0"
+    }
+  }
+}
+provider "aws" {
+  alias  = "PROJECT_REGION"
+  region = "<PROJECT_REGION>"
+  allowed_account_ids = ["<PROJECT_AWS_ACCOUNT_ID>"]
+  assume_role_with_web_identity {
+    session_name = "kubefirst-pro"
+    role_arn = "<PROJECT_ASSUME_ROLE>"
+    web_identity_token_file = "/var/run/secrets/eks.amazonaws.com/serviceaccount/token"
+  }
+}

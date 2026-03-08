@@ -1,0 +1,6 @@
+apiVersion: v2
+name: datadog-with-s3
+description: Hybrid catalog item - Datadog Agent monitoring with S3 bucket infrastructure
+type: application
+version: 0.1.0
+appVersion: "3.57.3"
