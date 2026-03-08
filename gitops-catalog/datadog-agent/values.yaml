@@ -107,6 +107,10 @@ secretStoreName: cluster-secret-store
 # @input.default: /datadog-agent
 secretPath: /datadog-agent
 
+# IMPORTANT: Secret field defaults MUST use <TOKEN> placeholder format (e.g. <DATADOG_API_KEY>).
+# The operator matches these tokens to yamlValues in the CatalogDeployment CR.
+# Using "" or literal values will cause the operator to skip secret provisioning.
+
 # @input.type: secret
 # @input.description: Datadog API key for authentication
 # @input.required: true
@@ -114,7 +118,7 @@ secretPath: /datadog-agent
 # @input.secretEnv: DATADOG_API_KEY
 # @input.secretBackend: aws-secrets-store
 # @input.secretPath: /datadog-agent
-datadogApiKey: ""
+datadogApiKey: <DATADOG_API_KEY>
 
 # @input.type: secret
 # @input.description: Datadog application key for API access
@@ -123,4 +127,4 @@ datadogApiKey: ""
 # @input.secretEnv: DATADOG_APP_KEY
 # @input.secretBackend: aws-secrets-store
 # @input.secretPath: /datadog-agent
-datadogAppKey: ""
+datadogAppKey: <DATADOG_APP_KEY>
