@@ -29,15 +29,15 @@ spec:
           logs:
             enabled: {{ .Values.logsEnabled }}
             containerCollectAll: {{ .Values.containerCollectAll }}
-{{- if .Values.apmEnabled }}
+{{- if eq (toString .Values.apmEnabled) "true" }}
           apm:
             enabled: true
 {{- end }}
-{{- if .Values.networkMonitoringEnabled }}
+{{- if eq (toString .Values.networkMonitoringEnabled) "true" }}
           networkMonitoring:
             enabled: true
 {{- end }}
-{{- if .Values.processAgentEnabled }}
+{{- if eq (toString .Values.processAgentEnabled) "true" }}
           processAgent:
             enabled: true
             processCollection: true
