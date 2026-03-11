@@ -33,7 +33,7 @@ spec:
             fsGroup: 65532
           containers:
           - name: package-runtime
-            image: ghcr.io/konstructio/provider-terraform:v0.0.1-rc.2
+            image: ghcr.io/konstructio/provider-terraform:v0.0.1-rc.3
             args:
               - -d
               - --poll=4m
