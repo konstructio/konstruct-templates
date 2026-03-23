@@ -10,7 +10,7 @@ metadata:
 spec:
   project: {{ .Values.workloadClusterName }}
   source:
-    repoURL: https://github.com/k1-civo/gitops.git
+    repoURL: {{ .Values.gitopsRepoUrl }}
     path: registry/clusters/{{ .Values.workloadClusterName }}/cert-issuers
     targetRevision: HEAD
   destination:

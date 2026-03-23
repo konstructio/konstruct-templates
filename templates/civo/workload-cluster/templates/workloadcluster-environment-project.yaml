@@ -10,7 +10,7 @@ metadata:
 spec:
   description: {{ .Values.workloadClusterName }} description
   sourceRepos:
-  - '{{ .Values.teamGitopsRepoUrl }}'
+  - '{{ .Values.gitopsRepoUrl }}'
   destinations:
   - name: in-cluster
     namespace: {{ .Values.workloadClusterName }}-environment
