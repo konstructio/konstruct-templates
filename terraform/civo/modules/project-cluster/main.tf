@@ -180,12 +180,16 @@ data "vault_generic_secret" "git_credentials" {
 
 resource "kubernetes_secret_v1" "git_credentials" {
   metadata {
-    name      = "git-credentials"
+    name      = "github-app-credentials"
     namespace = kubernetes_namespace_v1.crossplane_system.metadata.0.name
   }
 
   data = {
-    creds = "https://${data.vault_generic_secret.git_credentials.data["username"]}:${data.vault_generic_secret.git_credentials.data["password"]}@github.com"
+    type: data.vault_generic_secret.git_credentials.data["type"],
+    url: data.vault_generic_secret.git_credentials.data["url"],
+    app_id: data.vault_generic_secret.git_credentials.data["githubAppID"],
+    installation_id: data.vault_generic_secret.git_credentials.data["githubAppInstallationID"],
+    github_app_private_key: data.vault_generic_secret.git_credentials.data["githubAppPrivateKey"],
   }
 
   type = "Opaque"
@@ -209,9 +213,9 @@ resource "kubernetes_secret_v1" "argocd_git_credentials" {
   data = {
     type: data.vault_generic_secret.git_credentials.data["type"],
     url: data.vault_generic_secret.git_credentials.data["url"],
-    username: data.vault_generic_secret.git_credentials.data["username"],
-    password: data.vault_generic_secret.git_credentials.data["password"],
-    name: data.vault_generic_secret.git_credentials.data["name"],
+    githubAppID: data.vault_generic_secret.git_credentials.data["githubAppID"],
+    githubAppInstallationID: data.vault_generic_secret.git_credentials.data["githubAppInstallationID"],
+    githubAppPrivateKey: data.vault_generic_secret.git_credentials.data["githubAppPrivateKey"],
   }
 
   type = "Opaque"
