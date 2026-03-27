@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - <ENVIORNMENT>
+          - <ENVIRONMENT>
       app_version:
         description: 'Application version to deploy'
         required: true
@@ -24,10 +24,19 @@ jobs:
   trigger-update:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: <ORG_NAME>
+          repositories: <GITOPS_REPO_NAME>
+
       - name: Trigger workflow
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.WORKFLOW_TRIGGER_TOKEN }}
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
             await github.rest.actions.createWorkflowDispatch({
               owner: '<ORG_NAME>',
@@ -44,7 +53,6 @@ jobs:
             });
             console.log('✅ Triggered update workflow');
 
-  # Stage 3: Notify
   notify:
     runs-on: ubuntu-latest
     needs: trigger-update
