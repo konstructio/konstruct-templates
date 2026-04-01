@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - <ENVIORNMENT>
+          - <ENVIRONMENT>
       app_version:
         description: 'Application version to deploy'
         required: true
