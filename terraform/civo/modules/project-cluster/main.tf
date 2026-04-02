@@ -184,7 +184,7 @@ resource "kubernetes_secret" "preshared_token_mgmt" {
   provider = kubernetes.incluster
   metadata {
     name      = "pre-shared-token"
-    namespace = var.org_id  
+    namespace = var.project_name  
   }
   data = {
     token = random_password.cluster_token.result
@@ -198,7 +198,7 @@ resource "kubernetes_secret" "preshared_token_argocd" {
   }
   data = {
     token  = random_password.cluster_token.result
-    org_id = var.org_id
+    org_id = var.project_name
   }
 }
 
@@ -210,6 +210,6 @@ resource "kubernetes_secret" "preshared_token_crossplane" {
   }
   data = {
     token  = random_password.cluster_token.result
-    org_id = var.org_id
+    org_id = var.project_name
   }
 }
