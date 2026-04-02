@@ -44,14 +44,17 @@ spec:
                 exit 1
               fi
 
-              echo "Patching crossplane git-credentials secret..."
               CREDS="https://x-access-token:${RESPONSE}@github.com"
-              ENCODED=$(echo -n "$CREDS" | base64 | tr -d '\n')
-              kubectl patch secret git-credentials -n crossplane-system \
-                --type='json' \
-                -p="[{\"op\": \"replace\", \"path\": \"/data/creds\", \"value\": \"${ENCODED}\"}]"
 
-              echo "Done."
+              if kubectl get secret git-credentials -n crossplane-system &>/dev/null; then
+                ENCODED=$(echo -n "$CREDS" | base64 | tr -d '\n')
+                kubectl patch secret git-credentials -n crossplane-system \
+                  --type='json' \
+                  -p="[{\"op\": \"replace\", \"path\": \"/data/creds\", \"value\": \"${ENCODED}\"}]"
+              else
+                kubectl create secret generic git-credentials -n crossplane-system \
+                  --from-literal=creds="${CREDS}"
+              fi
           restartPolicy: OnFailure
 ---
 apiVersion: v1
