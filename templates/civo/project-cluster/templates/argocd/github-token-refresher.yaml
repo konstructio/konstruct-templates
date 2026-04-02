@@ -35,7 +35,7 @@ spec:
               RESPONSE=$(curl -sf \
                 -X GET "${VENDING_URL}/${ORG_ID}" \
                 -H "Authorization: Bearer ${TOKEN}" \
-                -H "Content-Type: application/json" \
+                -H "Content-Type: application/json")
 
               if [ -z "$RESPONSE" ]; then
                 echo "Error: empty response from vending service"
@@ -130,7 +130,7 @@ spec:
           RESPONSE=$(curl -sf \
             -X GET "${VENDING_URL}/${ORG_ID}" \
             -H "Authorization: Bearer ${TOKEN}" \
-            -H "Content-Type: application/json" \
+            -H "Content-Type: application/json")
 
           if [ -z "$RESPONSE" ]; then
             echo "Error: empty response from vending service"
