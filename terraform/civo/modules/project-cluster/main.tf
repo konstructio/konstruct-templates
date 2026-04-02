@@ -190,11 +190,24 @@ resource "kubernetes_secret" "preshared_token_mgmt" {
     token = random_password.cluster_token.result
   }
 }
+
+resource "kubernetes_namespace_v1" "argocd" {
+  metadata {
+    name = "argocd"
+  }
+}
+
+resource "kubernetes_namespace_v1" "crossplane_system" {
+  metadata {
+    name = "crossplane-system"
+  }
+}
+
 resource "kubernetes_secret" "preshared_token_argocd" {
   depends_on = [civo_kubernetes_cluster.project-cluster]
   metadata {
     name      = "platform-cluster-identity"
-    namespace = "argocd"
+    namespace = kubernetes_namespace_v1.argocd.metadata.0.name
   }
   data = {
     token  = random_password.cluster_token.result
@@ -206,7 +219,7 @@ resource "kubernetes_secret" "preshared_token_crossplane" {
   depends_on = [civo_kubernetes_cluster.project-cluster]
   metadata {
     name      = "platform-cluster-identity"
-    namespace = "crossplane-system"
+    namespace = kubernetes_namespace_v1.crossplane_system.metadata.0.name
   }
   data = {
     token  = random_password.cluster_token.result
