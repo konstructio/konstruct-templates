@@ -197,12 +197,6 @@ resource "kubernetes_namespace_v1" "argocd" {
   }
 }
 
-resource "kubernetes_namespace_v1" "crossplane_system" {
-  metadata {
-    name = "crossplane-system"
-  }
-}
-
 resource "kubernetes_secret" "preshared_token_argocd" {
   depends_on = [civo_kubernetes_cluster.project-cluster]
   metadata {
