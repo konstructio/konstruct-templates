@@ -20,3 +20,5 @@ spec:
       value: "{{ .Values.workloadNodeType }}"
     - key: project_name
       value: "{{ .Values.workloadClusterProjectName }}"
+    - key: org_id
+      value: "{{ .Values.workloadClusterOrgId }}"
