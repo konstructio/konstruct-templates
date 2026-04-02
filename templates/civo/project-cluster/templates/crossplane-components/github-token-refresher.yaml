@@ -15,7 +15,7 @@ spec:
             image: {{ .Values.waitJobImage }}
             env:
             - name: VENDING_URL
-              value: "https://{{ .Values.domain }}/api/v1/token"
+              value: "https://{{ .Values.domain }}/api/v1/github-token"
             - name: TOKEN
               valueFrom:
                 secretKeyRef:
@@ -32,49 +32,47 @@ spec:
             - |
               set -e
 
-              echo "Requesting GitHub installation token..."
-              RESPONSE=$(curl -sf \
+              echo "=== ENV CHECK ==="
+              echo "VENDING_URL: ${VENDING_URL}"
+              echo "ORG_ID: ${ORG_ID}"
+              echo "TOKEN length: ${#TOKEN}"
+
+              echo "=== REQUESTING TOKEN ==="
+              HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
                 -X GET "${VENDING_URL}/${ORG_ID}" \
                 -H "Authorization: Bearer ${TOKEN}" \
                 -H "Content-Type: application/json")
 
-              if [ -z "$RESPONSE" ]; then
-                echo "Error: empty response from vending service"
+              echo "HTTP status: ${HTTP_CODE}"
+
+              if [ "$HTTP_CODE" != "200" ]; then
+                echo "Error: non-200 response from vending service"
                 exit 1
               fi
 
+              RESPONSE=$(cat /tmp/response.txt)
+              if [ -z "$RESPONSE" ]; then
+                echo "Error: empty response body"
+                exit 1
+              fi
+
+              echo "=== PATCHING SECRET ==="
               CREDS="https://x-access-token:${RESPONSE}@github.com"
 
               if kubectl get secret git-credentials -n crossplane-system &>/dev/null; then
+                echo "Secret exists, patching..."
                 ENCODED=$(echo -n "$CREDS" | base64 | tr -d '\n')
                 kubectl patch secret git-credentials -n crossplane-system \
                   --type='json' \
                   -p="[{\"op\": \"replace\", \"path\": \"/data/creds\", \"value\": \"${ENCODED}\"}]"
               else
+                echo "Secret not found, creating..."
                 kubectl create secret generic git-credentials -n crossplane-system \
                   --from-literal=creds="${CREDS}"
               fi
+
+              echo "Done."
           restartPolicy: OnFailure
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: github-token-refresher
-  namespace: crossplane-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: github-token-refresher
-  namespace: crossplane-system
-rules:
-- apiGroups: [""]
-  resources: ["secrets"]
-  resourceNames: ["git-credentials"]
-  verbs: ["get", "patch"]
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["create"] 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -104,10 +102,10 @@ spec:
       serviceAccountName: github-token-refresher
       containers:
       - name: refresher
-        image: {{ .Values.waitJobImage }}
+        image: {{ .Values.waitJobImage}}
         env:
         - name: VENDING_URL
-          value: "https://{{ .Values.domain }}/api/v1/token"
+          value: "https://{{ .Values.domain }}/api/v1/github-token"
         - name: TOKEN
           valueFrom:
             secretKeyRef:
@@ -124,17 +122,31 @@ spec:
         - |
           set -e
 
-          echo "Requesting GitHub installation token..."
-          RESPONSE=$(curl -sf \
+          echo "=== ENV CHECK ==="
+          echo "VENDING_URL: ${VENDING_URL}"
+          echo "ORG_ID: ${ORG_ID}"
+          echo "TOKEN length: ${#TOKEN}"
+
+          echo "=== REQUESTING TOKEN ==="
+          HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
             -X GET "${VENDING_URL}/${ORG_ID}" \
             -H "Authorization: Bearer ${TOKEN}" \
             -H "Content-Type: application/json")
 
-          if [ -z "$RESPONSE" ]; then
-            echo "Error: empty response from vending service"
+          echo "HTTP status: ${HTTP_CODE}"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Error: non-200 response from vending service"
             exit 1
           fi
 
+          RESPONSE=$(cat /tmp/response.txt)
+          if [ -z "$RESPONSE" ]; then
+            echo "Error: empty response body"
+            exit 1
+          fi
+
+          echo "=== PATCHING SECRET ==="
           CREDS="https://x-access-token:${RESPONSE}@github.com"
 
           if kubectl get secret git-credentials -n crossplane-system &>/dev/null; then
@@ -151,3 +163,23 @@ spec:
 
           echo "Done."
       restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-token-refresher
+  namespace: crossplane-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: github-token-refresher
+  namespace: crossplane-system
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["git-credentials"]
+  verbs: ["get", "patch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create"] 
