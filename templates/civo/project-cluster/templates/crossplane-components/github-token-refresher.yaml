@@ -12,7 +12,7 @@ spec:
           serviceAccountName: github-token-refresher
           containers:
           - name: refresher
-            image: bitnami/kubectl:latest
+            image: {{ .Values.waitJobImage }}
             env:
             - name: VENDING_URL
               value: "https://{{ .Values.domain }}/api/v1/token"
