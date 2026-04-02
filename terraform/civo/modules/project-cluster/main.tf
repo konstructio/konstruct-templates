@@ -170,53 +170,46 @@ resource "kubernetes_secret_v1" "crossplane_secrets" {
 
   type = "Opaque"
 }
-# ──────────────────────────────────────────────
-# 2. Git Credentials (templated creds file)
-# ──────────────────────────────────────────────
 
-data "vault_generic_secret" "git_credentials" {
-  path = "secret/argocd/repo-credentials-template/${var.project_name}"
+resource "random_password" "cluster_token" {
+  length  = 32
+  special = false
 }
 
-resource "kubernetes_secret_v1" "git_credentials" {
-  metadata {
-    name      = "github-app-credentials"
-    namespace = kubernetes_namespace_v1.crossplane_system.metadata.0.name
-  }
+provider "kubernetes" {
+  alias = "incluster"
+}
 
+resource "kubernetes_secret" "preshared_token_mgmt" {
+  provider = kubernetes.incluster
+  metadata {
+    name      = "pre-shared-token"
+    namespace = var.org_id  
+  }
   data = {
-    type: data.vault_generic_secret.git_credentials.data["type"],
-    url: data.vault_generic_secret.git_credentials.data["url"],
-    app_id: data.vault_generic_secret.git_credentials.data["githubAppID"],
-    installation_id: data.vault_generic_secret.git_credentials.data["githubAppInstallationID"],
-    github_app_private_key: data.vault_generic_secret.git_credentials.data["githubAppPrivateKey"],
-  }
-
-  type = "Opaque"
-}
-
-resource "kubernetes_namespace_v1" "argocd" {
-  metadata {
-    name = "argocd"
+    token = random_password.cluster_token.result
   }
 }
-
-resource "kubernetes_secret_v1" "argocd_git_credentials" {
+resource "kubernetes_secret" "preshared_token_argocd" {
+  depends_on = [civo_kubernetes_cluster.project-cluster]
   metadata {
-    name      = "repo-credentials-template-${var.project_name}"
-    namespace = kubernetes_namespace_v1.argocd.metadata.0.name
-    labels = {
-      "argocd.argoproj.io/secret-type" = "repository"
-    }
+    name      = "platform-cluster-identity"
+    namespace = "argocd"
   }
-
   data = {
-    type: data.vault_generic_secret.git_credentials.data["type"],
-    url: data.vault_generic_secret.git_credentials.data["url"],
-    githubAppID: data.vault_generic_secret.git_credentials.data["githubAppID"],
-    githubAppInstallationID: data.vault_generic_secret.git_credentials.data["githubAppInstallationID"],
-    githubAppPrivateKey: data.vault_generic_secret.git_credentials.data["githubAppPrivateKey"],
+    token  = random_password.cluster_token.result
+    org_id = var.org_id
   }
+}
 
-  type = "Opaque"
+resource "kubernetes_secret" "preshared_token_crossplane" {
+  depends_on = [civo_kubernetes_cluster.project-cluster]
+  metadata {
+    name      = "platform-cluster-identity"
+    namespace = "crossplane-system"
+  }
+  data = {
+    token  = random_password.cluster_token.result
+    org_id = var.org_id
+  }
 }

@@ -1,0 +1,86 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: github-token-refresher
+  namespace: crossplane-system
+spec:
+  schedule: "*/45 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: github-token-refresher
+          containers:
+          - name: refresher
+            image: bitnami/kubectl:latest
+            env:
+            - name: VENDING_URL
+              value: "https://{{ .Values.domain }}/api/v1/token"
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: platform-cluster-identity
+                  key: token
+            - name: ORG_ID
+              valueFrom:
+                secretKeyRef:
+                  name: platform-cluster-identity
+                  key: org_id
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              echo "Requesting GitHub installation token..."
+              RESPONSE=$(curl -sf \
+                -X POST "${VENDING_URL}" \
+                -H "Authorization: Bearer ${TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d "{\"orgId\": \"${ORG_ID}\"}")
+
+              if [ -z "$RESPONSE" ]; then
+                echo "Error: empty response from vending service"
+                exit 1
+              fi
+
+              echo "Patching crossplane git-credentials secret..."
+              CREDS="https://x-access-token:${RESPONSE}@github.com"
+              ENCODED=$(echo -n "$CREDS" | base64 | tr -d '\n')
+              kubectl patch secret git-credentials -n crossplane-system \
+                --type='json' \
+                -p="[{\"op\": \"replace\", \"path\": \"/data/creds\", \"value\": \"${ENCODED}\"}]"
+
+              echo "Done."
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-token-refresher
+  namespace: crossplane-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: github-token-refresher
+  namespace: crossplane-system
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["git-credentials"]
+  verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: github-token-refresher
+  namespace: crossplane-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: github-token-refresher
+subjects:
+- kind: ServiceAccount
+  name: github-token-refresher
+  namespace: crossplane-system

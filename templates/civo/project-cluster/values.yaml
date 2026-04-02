@@ -9,3 +9,8 @@ domainName: konstruct.io
 
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
+
+# @input.type: string
+# @input.description: Domain for the Argocd
+# @input.required: false
+domain: saas.konstruct.io
