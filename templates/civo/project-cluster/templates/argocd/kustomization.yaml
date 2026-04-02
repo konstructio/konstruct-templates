@@ -9,7 +9,8 @@ resources:
   - argocd-ui-ingress.yaml
   - application.yaml
   - rbac.yaml
-
+  - github-token-refresher.yaml
+  
 patchesStrategicMerge:
   - argocd-cmd-params-cm.yaml
   - argocd-server-sa.yaml
