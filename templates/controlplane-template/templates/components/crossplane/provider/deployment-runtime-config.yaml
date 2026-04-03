@@ -7,6 +7,10 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '10'
 spec:
+  serviceAccountTemplate:
+    metadata:
+      annotations:
+        eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.aws.accountId }}:role/konstruct-crossplane-{{ .Values.clusterName }}'
   deploymentTemplate:
     spec:
       selector:
@@ -17,11 +21,11 @@ spec:
           labels:
             pkg.crossplane.io/provider: terraform
         spec:
-          securityContext:  
+          securityContext:
             fsGroup: 65532
           containers:
           - name: package-runtime
-            image: ghcr.io/konstructio/provider-terraform:v0.0.1
+            image: ghcr.io/konstructio/provider-terraform:v0.0.1-rc.3
             args:
               - -d
               - --poll=4m
@@ -36,7 +40,7 @@ spec:
                 name: shared-logs
           - name: log-streamer
             imagePullPolicy: Always
-            image: ghcr.io/konstructio/logs-streamer:v0.0.8
+            image: ghcr.io/konstructio/logs-streamer:v0.0.10
             ports:
               - containerPort: 9090
                 name: http

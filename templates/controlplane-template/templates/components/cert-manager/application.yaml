@@ -17,6 +17,8 @@ spec:
         serviceAccount:
           create: true
           name: cert-manager
+          annotations:
+            eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.aws.accountId }}:role/konstruct-cert-manager-{{ .Values.clusterName }}'
         installCRDs: true
     chart: cert-manager
   destination:

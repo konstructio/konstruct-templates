@@ -64,18 +64,6 @@ alertsEmail: alerts@example.com
 # @input.default: github
 gitProvider: github
 
-# @input.type: string
-# @input.description: GitHub organization or user name
-# @input.required: false
-# @input.default: ""
-githubOwner: ""
-
-# @input.type: string
-# @input.description: GitLab group or user name
-# @input.required: false
-# @input.default: ""
-gitlabOwner: ""
-
 # =============================================================================
 # CERT MANAGER ISSUER ANNOTATIONS
 # =============================================================================
@@ -87,83 +75,47 @@ certManager:
   # @input.default: "cert-manager.io/cluster-issuer: letsencrypt-prod"
   issuerAnnotation1: "cert-manager.io/cluster-issuer: letsencrypt-prod"
 
+# =============================================================================
+# AWS SETTINGS (for IRSA annotations)
+# =============================================================================
+
+aws:
   # @input.type: string
-  # @input.description: Second cert-manager issuer annotation (optional)
+  # @input.description: AWS Account ID for IRSA role ARNs
+  # @input.required: true
+  # @input.default: ""
+  accountId: ""
+
+  # @input.type: string
+  # @input.description: AWS region
+  # @input.required: true
+  # @input.default: us-west-2
+  region: us-west-2
+
+# =============================================================================
+# SECRET STORE SETTINGS
+# =============================================================================
+
+secretStore:
+  # @input.type: enum
+  # @input.description: Secret store provider (aws-ssm or vault)
+  # @input.required: true
+  # @input.default: aws-ssm
+  provider: aws-ssm
+
+# =============================================================================
+# GITHUB APP SETTINGS (for ArgoCD repo secret and runner auth)
+# =============================================================================
+
+githubApp:
+  # @input.type: string
+  # @input.description: GitHub App ID
   # @input.required: false
   # @input.default: ""
-  issuerAnnotation2: ""
+  appId: ""
 
   # @input.type: string
-  # @input.description: Third cert-manager issuer annotation (optional)
+  # @input.description: GitHub App Installation ID
   # @input.required: false
   # @input.default: ""
-  issuerAnnotation3: ""
-
-  # @input.type: string
-  # @input.description: Fourth cert-manager issuer annotation (optional)
-  # @input.required: false
-  # @input.default: ""
-  issuerAnnotation4: ""
-
-# =============================================================================
-# EXTERNAL DNS SETTINGS
-# =============================================================================
-
-externalDns:
-  # @input.type: string
-  # @input.description: External DNS provider name (e.g., cloudflare, route53, civo)
-  # @input.required: true
-  # @input.default: cloudflare
-  providerName: cloudflare
-
-  # @input.type: string
-  # @input.description: Domain name filter for external DNS
-  # @input.required: true
-  # @input.default: example.com
-  domainName: example.com
-
-  # @input.type: string
-  # @input.description: Environment variable name for provider token
-  # @input.required: true
-  # @input.default: CF_API_TOKEN
-  providerTokenEnvName: CF_API_TOKEN
-
-# =============================================================================
-# ATLANTIS SETTINGS
-# =============================================================================
-
-atlantis:
-  # @input.type: string
-  # @input.description: Atlantis repository allowlist (e.g., github.com/org/*)
-  # @input.required: true
-  # @input.default: github.com/example/*
-  allowList: github.com/example/*
-
-# =============================================================================
-# COMPONENT VERSIONS (Chart Versions)
-# =============================================================================
-
-versions:
-  # @input.type: string
-  # @input.description: Atlantis Helm chart version
-  # @input.required: false
-  # @input.default: 4.11.2
-  atlantis: "4.11.2"
-
-  # @input.type: string
-  # @input.description: External DNS Helm chart version
-  # @input.required: false
-  # @input.default: 1.14.4
-  externalDns: "1.14.4"
-
-  # @input.type: string
-  # @input.description: ChartMuseum Helm chart version
-  # @input.required: false
-  # @input.default: 3.9.3
-  chartmuseum: "3.9.3"
-
-  # @input.type: string
-  # @input.description: Argo Workflows Helm chart version
-  # @input.required: false
-  # @input.default: 0.20.1
-  argoWorkflows: "0.20.1"
+  installationId: ""
