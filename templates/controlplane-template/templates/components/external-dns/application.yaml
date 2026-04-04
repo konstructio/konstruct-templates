@@ -21,19 +21,28 @@ spec:
         serviceAccount:
           create: true
           name: external-dns
+          {{- if .Values.aws.accountId }}
           annotations:
             eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.aws.accountId }}:role/konstruct-external-dns-{{ .Values.clusterName }}'
+          {{- end }}
         provider: {{ .Values.externalDns.providerName }}
         sources:
         - ingress
         domainFilters:
         - {{ .Values.externalDns.domainName }}
+        {{- if eq .Values.externalDns.providerName "aws" }}
+        aws:
+          region: {{ .Values.aws.region }}
+          zoneType: public
+        {{- end }}
+        {{- if eq .Values.externalDns.providerName "cloudflare" }}
         env:
-        - name: {{ .Values.externalDns.providerTokenEnvName }}
+        - name: CF_API_TOKEN
           valueFrom:
             secretKeyRef:
               name: external-dns-secrets
               key: token
+        {{- end }}
     chart: external-dns
   destination:
     name: {{ .Values.clusterDestination }}
