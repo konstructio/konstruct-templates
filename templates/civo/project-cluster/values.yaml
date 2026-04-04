@@ -1,4 +1,4 @@
-workloadClusterTerraformModuleUrl: "git::https://github.com/konstruct-saas/gitops.git//terraform/civo/modules/project-cluster?ref=main"
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/project-cluster?ref=main"
 
 # @input.type: string
 # @input.description: Alert email address for cert-manager notifications
