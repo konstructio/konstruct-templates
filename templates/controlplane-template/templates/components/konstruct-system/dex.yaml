@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dex
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  project: default
+  source:
+    repoURL: https://charts.dexidp.io
+    targetRevision: 0.24.0
+    helm:
+      values: |-
+        image:
+          repository: europe-west2-docker.pkg.dev/civo-com/images/dex
+          tag: 0.1.3
+        ingress:
+          enabled: true
+          className: nginx
+          annotations:
+            cert-manager.io/cluster-issuer: "letsencrypt-prod"
+          hosts:
+            - host: dex.{{ .Values.domainName }}
+              paths:
+                - path: /
+                  pathType: Prefix
+          tls:
+            - secretName: dex-tls
+              hosts:
+                - dex.{{ .Values.domainName }}
+        configSecret:
+          create: false
+          name: "dex-config"
+    chart: dex
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dex
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
