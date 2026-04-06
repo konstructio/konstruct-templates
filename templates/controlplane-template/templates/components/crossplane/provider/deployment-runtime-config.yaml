@@ -9,6 +9,7 @@ metadata:
 spec:
   serviceAccountTemplate:
     metadata:
+      name: crossplane-provider-terraform-{{ .Values.clusterName }}
       annotations:
         eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.aws.accountId }}:role/konstruct-crossplane-{{ .Values.clusterName }}'
   deploymentTemplate:
