@@ -30,9 +30,6 @@ spec:
               - -d
               - --poll=4m
               - --max-reconcile-rate=10
-            envFrom:
-              - secretRef:
-                  name: crossplane-secrets
             volumeMounts:
               - mountPath: /.cache
                 name: helmcache
