@@ -36,3 +36,7 @@ variable s3_bucket_name {
   description = "the name of the s3 bucket to store terraform state"
   type        = string
 }
+
+variable "mgmt_cluster_name" {
+  type = string
+}

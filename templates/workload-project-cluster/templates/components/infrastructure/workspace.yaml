@@ -1,0 +1,28 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: {{ .Values.projectClusterName }}-infrastructure
+spec:
+  providerConfigRef:
+    name: {{ .Values.projectClusterName }}
+  forProvider:
+    source: Remote
+    module: {{ .Values.terraform.moduleUrl }}
+    enableTerraformCLILogging: true
+    vars:
+    - key: cluster_name
+      value: "{{ .Values.projectClusterName }}"
+    - key: cluster_region
+      value: "{{ .Values.aws.workloadRegion }}"
+    - key: node_count
+      value: "{{ .Values.workload.nodeCount }}"
+    - key: node_type
+      value: "{{ .Values.workload.nodeType }}"
+    - key: ami_type
+      value: "{{ .Values.workload.amiType }}"
+    - key: s3_bucket_name
+      value: "{{ .Values.workload.s3BucketName }}"
+    - key: account_id
+      value: "{{ .Values.aws.workloadAccountId }}"
+    - key : mgmt_cluster_name
+      value: "{{ .Values.managementClusterName }}"

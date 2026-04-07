@@ -1,0 +1,16 @@
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: actions-runner-{{ .Values.projectClusterName }}
+  namespace: github-runner
+  annotations:
+    argocd.argoproj.io/sync-wave: '52'
+spec:
+  replicas: 2
+  template:
+    spec:
+      organization: {{ .Values.projectOrg }}
+      image: mirror.gcr.io/summerwind/actions-runner-dind
+      serviceAccountName: github-runner-{{ .Values.projectClusterName }}
+      dockerdWithinRunnerContainer: true
+      automountServiceAccountToken: true

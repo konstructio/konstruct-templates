@@ -1,0 +1,21 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: {{ .Values.workloadClusterName }}-infrastructure
+spec:
+  providerConfigRef:
+    name: {{ .Values.workloadClusterName }}
+  forProvider:
+    source: Remote
+    module: {{ .Values.terraform.moduleUrl }}
+    vars:
+    - key: cluster_name
+      value: "{{ .Values.workloadClusterName }}"
+    - key: cluster_region
+      value: "{{ .Values.aws.workloadRegion }}"
+    - key: node_count
+      value: "{{ .Values.workload.nodeCount }}"
+    - key: node_type
+      value: "{{ .Values.workload.nodeType }}"
+    - key: ami_type
+      value: "{{ .Values.workload.amiType }}"

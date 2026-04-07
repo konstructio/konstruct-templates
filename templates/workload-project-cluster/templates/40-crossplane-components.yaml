@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.projectClusterName }}-crossplane-components
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '40'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: {{ .Values.projectClusterName }}
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl }}
+    path: registry/konstruct-clusters/{{ .Values.projectClusterName }}/crossplane-components
+    targetRevision: HEAD
+  destination:
+    name: {{ .Values.projectClusterName }}
+    namespace: crossplane-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - Replace=true

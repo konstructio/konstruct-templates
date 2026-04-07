@@ -1,0 +1,13 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: {{ .Values.projectClusterName }}-bootstrap
+spec:
+  providerConfigRef:
+    name: {{ .Values.projectClusterName }}
+  forProvider:
+    source: Remote
+    module: {{ .Values.terraform.bootstrapModuleUrl }}
+    vars:
+    - key: cluster_name
+      value: "{{ .Values.projectClusterName }}"

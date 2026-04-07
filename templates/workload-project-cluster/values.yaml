@@ -1,0 +1,203 @@
+# Workload Project Cluster Template Configuration
+# This values file contains all configurable parameters for deploying a workload cluster
+
+# =============================================================================
+# CLUSTER IDENTITY
+# =============================================================================
+
+# @input.type: string
+# @input.description: Workload cluster name identifier used in registry paths and resource names
+# @input.required: true
+# @input.default: ""
+projectClusterName: ""
+
+# @input.type: string
+# @input.description: Domain name for all services (e.g., example.com)
+# @input.required: true
+# @input.default: example.com
+domainName: example.com
+
+# @input.type: string
+# @input.description: GitOps repository URL for ArgoCD sync
+# @input.required: true
+# @input.default: https://github.com/example/gitops-repo
+gitopsRepoUrl: https://github.com/example/gitops-repo
+
+# @input.type: string
+# @input.description: Cloud region for management cluster services (e.g., us-east-1)
+# @input.required: true
+# @input.default: us-east-1
+cloudRegion: us-east-1
+
+# @input.type: string
+# @input.description: Management cluster name
+# @input.required: true
+# @input.default: mgmt
+mgmtClusterName: mgmt
+
+# @input.type: string
+# @input.description: State store bucket name for Kubefirst artifacts and state
+# @input.required: true
+# @input.default: kubefirst-state-store
+kubefirstStateStoreBucket: kubefirst-state-store
+
+# @input.type: string
+# @input.description: Dex domain name for OIDC auth (full URL including https://)
+# @input.required: true
+# @input.default: https://dex.example.com
+dexDomainName: https://dex.example.com
+
+# =============================================================================
+# GIT / ORG SETTINGS
+# =============================================================================
+
+# @input.type: string
+# @input.description: GitHub organization name
+# @input.required: true
+# @input.default: ""
+orgName: ""
+
+# @input.type: string
+# @input.description: GitOps repository name
+# @input.required: true
+# @input.default: ""
+repoName: ""
+
+# @input.type: string
+# @input.description: Project name identifier
+# @input.required: true
+# @input.default: ""
+projectName: ""
+
+# @input.type: string
+# @input.description: Project organization (used for runner deployments and repo credentials)
+# @input.required: true
+# @input.default: ""
+projectOrg: ""
+
+# @input.type: string
+# @input.description: Platform organization (used for platform repo credentials)
+# @input.required: true
+# @input.default: ""
+platformOrg: ""
+
+# =============================================================================
+# AWS SETTINGS
+# =============================================================================
+
+aws:
+  # @input.type: string
+  # @input.description: AWS Account ID for the workload cluster
+  # @input.required: true
+  # @input.default: ""
+  workloadAccountId: ""
+
+  # @input.type: string
+  # @input.description: AWS region for the workload cluster
+  # @input.required: true
+  # @input.default: us-east-1
+  workloadRegion: us-east-1
+
+  # @input.type: string
+  # @input.description: AWS Account ID for the management cluster (used for S3/crossplane roles)
+  # @input.required: true
+  # @input.default: ""
+  mgmtAccountId: ""
+
+# =============================================================================
+# TERRAFORM SETTINGS
+# =============================================================================
+
+terraform:
+  # @input.type: string
+  # @input.description: Terraform module URL for workload cluster infrastructure
+  # @input.required: true
+  # @input.default: ""
+  moduleUrl: ""
+
+  # @input.type: string
+  # @input.description: Terraform module URL for workload cluster bootstrap
+  # @input.required: true
+  # @input.default: ""
+  bootstrapModuleUrl: ""
+
+# =============================================================================
+# WORKLOAD SETTINGS
+# =============================================================================
+
+workload:
+  # @input.type: string
+  # @input.description: Number of worker nodes for the workload cluster
+  # @input.required: true
+  # @input.default: "3"
+  nodeCount: "3"
+
+  # @input.type: string
+  # @input.description: EC2 instance type for worker nodes
+  # @input.required: true
+  # @input.default: t3.medium
+  nodeType: t3.medium
+
+  # @input.type: string
+  # @input.description: AMI type for EKS managed node group
+  # @input.required: true
+  # @input.default: AL2_x86_64
+  amiType: AL2_x86_64
+
+  # @input.type: string
+  # @input.description: S3 bucket name for workload cluster state
+  # @input.required: true
+  # @input.default: ""
+  s3BucketName: ""
+
+  # @input.type: string
+  # @input.description: IAM role ARN to assume for workload cluster provisioning
+  # @input.required: true
+  # @input.default: ""
+  assumeRole: ""
+
+  # @input.type: string
+  # @input.description: Environment name for workload cluster (e.g., dev, staging, production)
+  # @input.required: true
+  # @input.default: ""
+  environment: ""
+
+# =============================================================================
+# EXTERNAL DNS SETTINGS
+# =============================================================================
+
+externalDns:
+  # @input.type: string
+  # @input.description: Domain name filter for external DNS on the workload cluster
+  # @input.required: true
+  # @input.default: example.com
+  domainName: example.com
+
+# =============================================================================
+# CERT MANAGER ISSUER ANNOTATIONS
+# =============================================================================
+
+certManager:
+  # @input.type: string
+  # @input.description: First cert-manager issuer annotation (key: value format)
+  # @input.required: false
+  # @input.default: "cert-manager.io/cluster-issuer: letsencrypt-prod"
+  issuerAnnotation1: "cert-manager.io/cluster-issuer: letsencrypt-prod"
+
+  # @input.type: string
+  # @input.description: Second cert-manager issuer annotation
+  # @input.required: false
+  # @input.default: ""
+  issuerAnnotation2: ""
+
+  # @input.type: string
+  # @input.description: Third cert-manager issuer annotation
+  # @input.required: false
+  # @input.default: ""
+  issuerAnnotation3: ""
+
+  # @input.type: string
+  # @input.description: Fourth cert-manager issuer annotation
+  # @input.required: false
+  # @input.default: ""
+  issuerAnnotation4: ""

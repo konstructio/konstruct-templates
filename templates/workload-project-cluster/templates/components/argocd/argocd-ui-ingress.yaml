@@ -1,0 +1,74 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-http-ingress
+  namespace: argocd
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    {{- if .Values.certManager.issuerAnnotation1 }}
+    {{ .Values.certManager.issuerAnnotation1 }}
+    {{- end }}
+    {{- if .Values.certManager.issuerAnnotation2 }}
+    {{ .Values.certManager.issuerAnnotation2 }}
+    {{- end }}
+    {{- if .Values.certManager.issuerAnnotation3 }}
+    {{ .Values.certManager.issuerAnnotation3 }}
+    {{- end }}
+    {{- if .Values.certManager.issuerAnnotation4 }}
+    {{ .Values.certManager.issuerAnnotation4 }}
+    {{- end }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server
+            port:
+              name: http
+    host: argocd-{{ .Values.projectClusterName }}.{{ .Values.domainName }}
+  tls:
+  - hosts:
+    - argocd-{{ .Values.projectClusterName }}.{{ .Values.domainName }}
+    secretName: argocd-ingress-http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-grpc-ingress
+  namespace: argocd
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    {{- if .Values.certManager.issuerAnnotation1 }}
+    {{ .Values.certManager.issuerAnnotation1 }}
+    {{- end }}
+    {{- if .Values.certManager.issuerAnnotation2 }}
+    {{ .Values.certManager.issuerAnnotation2 }}
+    {{- end }}
+    {{- if .Values.certManager.issuerAnnotation3 }}
+    {{ .Values.certManager.issuerAnnotation3 }}
+    {{- end }}
+    {{- if .Values.certManager.issuerAnnotation4 }}
+    {{ .Values.certManager.issuerAnnotation4 }}
+    {{- end }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server
+            port:
+              name: https
+    host: grpc-{{ .Values.projectClusterName }}.argocd.{{ .Values.domainName }}
+  tls:
+  - hosts:
+    - grpc-argocd-{{ .Values.projectClusterName }}.{{ .Values.domainName }}
+    secretName: argocd-ingress-grpc

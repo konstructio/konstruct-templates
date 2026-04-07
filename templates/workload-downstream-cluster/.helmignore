@@ -1,0 +1,23 @@
+# Patterns to ignore when building packages.
+.DS_Store
+.git/
+.gitignore
+.helmignore
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+.project
+.idea/
+*.tmproj
+.vscode/
+
+# Ignore .gitkeep files in templates
+.gitkeep
+*/.gitkeep
+*/*/.gitkeep
+*/*/*/.gitkeep
+
+# Konstruct metadata
+kubefirst.yaml

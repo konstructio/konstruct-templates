@@ -1,0 +1,54 @@
+apiVersion: "external-secrets.io/v1"
+kind: ExternalSecret
+metadata:
+  name: {{ .Values.workloadClusterName }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+  labels:
+    app.kubernetes.io/part-of: argocd
+spec:
+  target:
+    name: {{ .Values.workloadClusterName }}
+    template:
+      metadata:
+        labels:
+          argocd.argoproj.io/secret-type: cluster
+      engineVersion: v2
+      data:
+        name: "{{ "{{ .cluster_name }}" }}"
+        server: "{{ "{{ .host }}" }}"
+        clusterResources: "true"
+        config: |
+          {
+              "awsAuthConfig": {
+                  "clusterName": "{{ "{{ .cluster_name }}" }}",
+                  "roleARN": "{{ "{{ .argocd_role_arn }}" }}"
+              },
+              "tlsClientConfig": {
+                  "insecure": false,
+                  "caData": "{{ "{{ .cluster_ca_certificate }}" }}"
+              }
+          }
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: {{ .Values.projectClusterName }}-aws-ssm
+  refreshInterval: 10s
+  data:
+    - remoteRef:
+        key: /clusters/{{ .Values.workloadClusterName }}
+        property: argocd_role_arn
+        conversionStrategy: Default
+      secretKey: argocd_role_arn
+    - remoteRef:
+        key: /clusters/{{ .Values.workloadClusterName }}
+        property: cluster_ca_certificate
+        conversionStrategy: Default
+      secretKey: cluster_ca_certificate
+    - remoteRef:
+        key: /clusters/{{ .Values.workloadClusterName }}
+        property: cluster_name
+      secretKey: cluster_name
+    - remoteRef:
+        key: /clusters/{{ .Values.workloadClusterName }}
+        property: host
+      secretKey: host

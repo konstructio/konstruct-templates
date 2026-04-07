@@ -1,0 +1,17 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: {{ .Values.workloadClusterName }}-infrastructure
+spec:
+  providerConfigRef:
+    name: {{ .Values.workloadClusterName }}
+  forProvider:
+    source: Remote
+    module: {{ .Values.terraform.moduleUrl }}
+    vars:
+    - key: vcluster_name
+      value: "{{ .Values.workloadClusterName }}"
+    - key: host_cluster
+      value: "{{ .Values.hostCluster }}"
+    - key: domain_name
+      value: "{{ .Values.domainName }}"

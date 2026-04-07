@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ .Values.projectClusterName }}
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: {{ .Values.projectClusterName }} description
+  sourceRepos:
+  - '*'
+  destinations:
+  - namespace: '*'
+    server: '*'
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  roles:
+  - description: {{ .Values.projectClusterName }}-admin-role
+    groups:
+    - admins
+    name: admin-role
+    policies:
+    - p, proj:{{ .Values.projectClusterName }}:admin-role, applications, *, {{ .Values.projectClusterName }}/*, allow

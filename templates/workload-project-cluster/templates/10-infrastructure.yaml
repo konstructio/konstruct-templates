@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.projectClusterName }}-infrastructure
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl }}
+    path: registry/konstruct-clusters/{{ .Values.projectClusterName }}/infrastructure
+    targetRevision: HEAD
+  destination:
+    name: in-cluster
+    namespace: {{ .Values.projectClusterName }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 30
+      backoff:
+        duration: 1m
+        factor: 1

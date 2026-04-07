@@ -53,7 +53,7 @@ module "eks" {
   access_entries = {
     "argocd_${var.cluster_name}" = {
       cluster_name  = "${var.cluster_name}"
-      principal_arn = "arn:aws:iam::${data.aws_caller_identity.kubefirst_mgmt.account_id}:role/argocd-<KUBEFIRST_MGMT_CLUSTER_NAME>"
+      principal_arn = "arn:aws:iam::${data.aws_caller_identity.kubefirst_mgmt.account_id}:role/argocd-${var.mgmt_cluster_name}"
       policy_associations = {
         argocdAdminAccess = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
@@ -563,7 +563,7 @@ resource "vault_generic_secret" "clusters" {
       host                   = module.eks.cluster_endpoint
       cluster_name           = var.cluster_name
       environment            = var.cluster_name
-      argocd_role_arn        = "arn:aws:iam::${data.aws_caller_identity.kubefirst_mgmt.account_id}:role/argocd-<KUBEFIRST_MGMT_CLUSTER_NAME>"
+      argocd_role_arn        = "arn:aws:iam::${data.aws_caller_identity.kubefirst_mgmt.account_id}:role/argocd-${var.mgmt_cluster_name}"
     }
   )
 }

@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.workloadClusterName }}-rbac
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: '40'
+spec:
+  project: {{ .Values.workloadClusterName }}-platform
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl }}
+    path: registry/clusters/{{ .Values.workloadClusterName }}/rbac
+    targetRevision: HEAD
+  destination:
+    name: {{ .Values.workloadClusterName }}
+    namespace: rbac
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
