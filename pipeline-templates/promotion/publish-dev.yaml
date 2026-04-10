@@ -1,0 +1,139 @@
+name: Publish Dev
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - hotfix-*
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  AWS_REGION: <AWS_REGION>
+  ASSUME_ROLE_ARN: <ROLE_ARN>
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.get-sha.outputs.SHORT_SHA }}
+      chart_version: ${{ steps.publish-chart.outputs.chart_version }}
+      chart_name: ${{ steps.publish-chart.outputs.chart_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create build commit (dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "konstruct[bot]"
+          git config user.email "konstruct[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: trigger build"
+          git push
+
+      - name: Extract repo name
+        id: extract-repo-name
+        run: echo "repo_name=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
+
+      - name: Get short SHA
+        id: get-sha
+        run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Install Helm
+        run: |
+          wget -q https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz
+          tar xf helm-v3.16.2-linux-amd64.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
+        with:
+          role-to-assume: ${{ env.ASSUME_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ steps.extract-repo-name.outputs.repo_name }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          SHORT_SHA: ${{ steps.get-sha.outputs.SHORT_SHA }}
+        run: |
+          docker build -t $ECR_REGISTRY/$REPO_OWNER/$ECR_REPOSITORY:$SHORT_SHA .
+          docker push $ECR_REGISTRY/$REPO_OWNER/$ECR_REPOSITORY:$SHORT_SHA
+          echo "Pushed image: $ECR_REGISTRY/$REPO_OWNER/$ECR_REPOSITORY:$SHORT_SHA"
+
+      - name: Package and push chart
+        id: publish-chart
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ steps.extract-repo-name.outputs.repo_name }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          SHORT_SHA: ${{ steps.get-sha.outputs.SHORT_SHA }}
+        run: |
+          cd charts/$REPO_OWNER/$ECR_REPOSITORY
+
+          CHART_NAME=$(grep "^name:" Chart.yaml | awk '{print $2}' | tr -d '"')
+          CHART_VERSION=$(grep "^version:" Chart.yaml | awk '{print $2}' | tr -d '"')
+
+          helm package . --version "${CHART_VERSION}-rc.${SHORT_SHA}" --app-version "${SHORT_SHA}"
+
+          CHART_ARCHIVE_FILE="${CHART_NAME}-${CHART_VERSION}-rc.${SHORT_SHA}.tgz"
+          helm push "$CHART_ARCHIVE_FILE" "oci://$ECR_REGISTRY/$REPO_OWNER/charts"
+
+          echo "chart_version=${CHART_VERSION}-rc.${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "chart_name=$CHART_NAME" >> $GITHUB_OUTPUT
+
+      - name: Summary
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ steps.extract-repo-name.outputs.repo_name }}
+          SHORT_SHA: ${{ steps.get-sha.outputs.SHORT_SHA }}
+          CHART_NAME: ${{ steps.publish-chart.outputs.chart_name }}
+          CHART_VERSION: ${{ steps.publish-chart.outputs.chart_version }}
+        run: |
+          echo "### Publish Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Image**: \`$ECR_REGISTRY/$REPO_OWNER/$REPO_NAME:$SHORT_SHA\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Chart**: \`$CHART_NAME:$CHART_VERSION\`" >> $GITHUB_STEP_SUMMARY
+
+  deploy-dev:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: <ORG_NAME>
+          repositories: <GITOPS_REPO_NAME>
+
+      - name: Deploy to dev
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: '<ORG_NAME>',
+              repo: '<GITOPS_REPO_NAME>',
+              workflow_id: 'update-environment.yaml',
+              ref: 'main',
+              inputs: {
+                environment: 'dev',
+                app_version: '${{ needs.publish.outputs.chart_version }}',
+                app_name: '<APP_NAME>',
+                triggered_by: '${{ github.actor }}',
+                source_run_id: '${{ github.run_id }}'
+              }
+            });
+            console.log('Triggered dev deployment: ${{ needs.publish.outputs.chart_version }}');
