@@ -104,8 +104,8 @@ secretStoreName: cluster-secret-store
 # @input.type: string
 # @input.description: Key path in the secret store for Datadog credentials
 # @input.required: true
-# @input.default: /datadog-agent
-secretPath: /datadog-agent
+# @input.default: konstruct/shared/datadog
+secretPath: konstruct/shared/datadog
 
 # IMPORTANT: Secret field defaults MUST use <TOKEN> placeholder format (e.g. <DATADOG_API_KEY>).
 # The operator matches these tokens to yamlValues in the CatalogDeployment CR.
@@ -117,7 +117,7 @@ secretPath: /datadog-agent
 # @input.secretKey: api-key
 # @input.secretEnv: DATADOG_API_KEY
 # @input.secretBackend: aws-secrets-store
-# @input.secretPath: /datadog-agent
+# @input.secretPath: konstruct/shared/datadog
 datadogApiKey: <DATADOG_API_KEY>
 
 # @input.type: secret
@@ -126,5 +126,5 @@ datadogApiKey: <DATADOG_API_KEY>
 # @input.secretKey: app-key
 # @input.secretEnv: DATADOG_APP_KEY
 # @input.secretBackend: aws-secrets-store
-# @input.secretPath: /datadog-agent
+# @input.secretPath: konstruct/shared/datadog
 datadogAppKey: <DATADOG_APP_KEY>
