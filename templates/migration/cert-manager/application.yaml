@@ -17,6 +17,8 @@ spec:
         serviceAccount:
           create: true
           name: cert-manager
+          annotations:
+            eks.amazonaws.com/role-arn: 'arn:aws:iam::126827061464:role/cert-manager-mgmt-gitops-ing'
         installCRDs: true
     chart: cert-manager
   destination:
