@@ -1,0 +1,243 @@
+---
+# EnvoyProxy CR — data-plane tuning for proxy pods
+# Referenced by the GatewayClass so every Gateway inherits these settings
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: proxy-config
+  namespace: envoy-gateway-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 3
+        pod:
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: proxy
+        container:
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+  concurrency: 0
+  shutdown:
+    drainTimeout: 30s
+    minDrainDuration: 5s
+---
+# GatewayClass — tells the controller which proxy config to use
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: eg
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: proxy-config
+    namespace: envoy-gateway-system
+---
+# Gateway — HTTP, HTTPS (per-hostname TLS termination), and TLS passthrough
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: eg
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "35"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  gatewayClassName: eg
+  listeners:
+    # --- HTTP listener (redirect to HTTPS) ---
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    # --- HTTPS listeners (TLS terminated, cert-manager auto-provisions certs) ---
+    - name: argocd-https
+      protocol: HTTPS
+      port: 443
+      hostname: argocd.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: argocd-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: argocd-grpc-https
+      protocol: HTTPS
+      port: 443
+      hostname: grpc.argocd.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: argocd-grpc-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: atlantis-https
+      protocol: HTTPS
+      port: 443
+      hostname: atlantis.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: atlantis-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: vault-https
+      protocol: HTTPS
+      port: 443
+      hostname: vault.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: vault-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: argo-https
+      protocol: HTTPS
+      port: 443
+      hostname: argo.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: argo-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: chartmuseum-https
+      protocol: HTTPS
+      port: 443
+      hostname: chartmuseum.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: chartmuseum-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: grafana-https
+      protocol: HTTPS
+      port: 443
+      hostname: grafana.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: grafana-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: prometheus-https
+      protocol: HTTPS
+      port: 443
+      hostname: prometheus-remote-write.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: prometheus-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: logs-https
+      protocol: HTTPS
+      port: 443
+      hostname: logs.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: logs-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: metaphor-dev-https
+      protocol: HTTPS
+      port: 443
+      hostname: metaphor-development.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: metaphor-dev-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: metaphor-stg-https
+      protocol: HTTPS
+      port: 443
+      hostname: metaphor-staging.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: metaphor-stg-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: metaphor-prod-https
+      protocol: HTTPS
+      port: 443
+      hostname: metaphor-production.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: metaphor-prod-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+# Add this listener to the existing Gateway eg
+    - name: konstruct-https
+      protocol: HTTPS
+      port: 443
+      hostname: konstruct.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: konstruct-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: dex-https
+      protocol: HTTPS
+      port: 443
+      hostname: dex.gitops.ing
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: dex-tls
+      allowedRoutes:
+        namespaces:
+          from: All
