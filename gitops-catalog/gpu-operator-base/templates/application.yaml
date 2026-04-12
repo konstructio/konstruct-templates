@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-gpu-operator
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: gpu-operator-base
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: gpu-operator
+    repoURL: https://helm.ngc.nvidia.com/nvidia
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: gpu-operator
+      values: |
+        driver:
+          enabled: {{ .Values.driverEnabled }}
+        toolkit:
+          enabled: {{ .Values.toolkitEnabled }}
+        devicePlugin:
+          enabled: {{ .Values.devicePluginEnabled }}
+        gfd:
+          enabled: {{ .Values.gfdEnabled }}
+        operator:
+          defaultRuntime: "{{ .Values.defaultRuntime }}"
+        validator:
+          cuda:
+            runtimeClassName: "{{ .Values.cudaRuntimeClassName }}"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
