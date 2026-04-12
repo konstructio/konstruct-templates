@@ -11,7 +11,7 @@ spec:
   project: {{ .Values.workloadClusterName }}
   source:
     repoURL: https://kubernetes-sigs.github.io/external-dns
-    targetRevision: 1.14.4
+    targetRevision: 1.20.0
     helm:
       releaseName: external-dns
       values: |
@@ -20,7 +20,11 @@ spec:
           name: external-dns
         provider: {{ .Values.externalDnsProviderName }}
         sources:
-        - ingress
+          - service
+          - gateway-httproute
+          - gateway-tlsroute
+          - gateway-tcproute
+          - gateway-udproute
         domainFilters:
         - {{ .Values.domainName }}
         env:
@@ -39,3 +43,25 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: external-dns-gateway
+rules:
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["gateways", "httproutes", "grpcroutes", "tlsroutes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: external-dns-gateway
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: external-dns-gateway
+subjects:
+  - kind: ServiceAccount
+    name: external-dns
+    namespace: external-dns

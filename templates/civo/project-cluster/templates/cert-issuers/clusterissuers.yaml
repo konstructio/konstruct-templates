@@ -9,9 +9,12 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-staging
     solvers:
-      - http01:
-          ingress:
-            class: nginx
+    - http01:
+        gatewayHTTPRoute:
+          parentRefs:
+          - name: eg
+            namespace: default
+            kind: Gateway
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -24,6 +27,9 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
-      - http01:
-          ingress:
-            class: nginx
+    - http01:
+        gatewayHTTPRoute:
+          parentRefs:
+          - name: eg
+            namespace: default
+            kind: Gateway

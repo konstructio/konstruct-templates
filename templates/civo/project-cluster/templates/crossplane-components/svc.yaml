@@ -14,31 +14,40 @@ spec:
     pkg.crossplane.io/provider: provider-terraform
     pkg.crossplane.io/revision: crossplane-provider-terraform-6fe8d52ff0a1
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/proxy-buffering: 'off'
-    nginx.ingress.kubernetes.io/proxy-cache-bypass: '1'
-    nginx.ingress.kubernetes.io/proxy-read-timeout: '3600'
-    nginx.ingress.kubernetes.io/proxy-send-timeout: '3600'
-  name: log-streamer-ingress
+  name: log-streamer
   namespace: crossplane-system
 spec:
-  ingressClassName: nginx
+  parentRefs:
+    - name: eg
+      namespace: default
+      sectionName: https-logs
+  hostnames:
+    - logs-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
   rules:
-    - host: logs-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
-      http:
-        paths:
-          - backend:
-              service:
-                name: log-streamer-service
-                port:
-                  number: 9090
-            path: /
-            pathType: Prefix
-  tls:
-    - hosts:
-        - logs-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
-      secretName: logs-mgmt-cluster
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: log-streamer-service
+          port: 9090
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: log-streamer-timeout
+  namespace: crossplane-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: log-streamer
+  timeout:
+    http:
+      requestTimeout: "3600s"
+      idleTimeout: "3600s"
+    tcp:
+      connectTimeout: "30s"

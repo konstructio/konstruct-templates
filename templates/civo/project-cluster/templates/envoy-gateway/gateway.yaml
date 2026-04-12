@@ -1,0 +1,56 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: eg
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "35"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  gatewayClassName: eg
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-argocd
+      hostname: argocd-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: argocd-ingress-http
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-grpc-argocd
+      hostname: grpc-{{ .Values.workloadClusterName }}.argocd.{{ .Values.domainName }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: argocd-ingress-grpc
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-logs
+      hostname: logs-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: logs-mgmt-cluster
+      allowedRoutes:
+        namespaces:
+          from: All
