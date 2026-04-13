@@ -90,8 +90,8 @@ persistentVolumeSize: 50Gi
 # @input.description: Expose Open WebUI via an Ingress
 # @input.options: true,false
 # @input.required: true
-# @input.default: true
-ingressEnabled: true
+# @input.default: false
+ingressEnabled: false
 
 # @input.type: string
 # @input.description: Base domain name for the Ingress host (final host is "ollama.<domainName>")
