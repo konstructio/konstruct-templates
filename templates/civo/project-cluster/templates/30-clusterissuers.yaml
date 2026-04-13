@@ -11,7 +11,7 @@ spec:
   project: {{ .Values.workloadClusterName }}
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
-    path: registry/clusters/{{ .Values.workloadClusterName }}/cert-issuers
+    path: registry/konstruct-clusters/{{ .Values.workloadClusterName }}/cert-issuers
     targetRevision: HEAD
   destination:
     name: {{ .Values.workloadClusterName }}
