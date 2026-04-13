@@ -1,4 +1,4 @@
-workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/project-cluster?ref=main"
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/project-cluster?ref=saas-rishi"
 
 # @input.type: string
 # @input.description: Alert email address for cert-manager notifications
@@ -10,9 +10,7 @@ domainName: konstruct.io
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
 
-# @input.type: string
-# @input.description: Domain for the Argocd
-# @input.required: false
+
 domain: saas.konstruct.io
 
 externalDnsProviderName: cloudflare
