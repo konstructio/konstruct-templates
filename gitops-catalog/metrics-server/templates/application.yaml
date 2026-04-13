@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-metrics-server
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: metrics-server
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: metrics-server
+    repoURL: https://kubernetes-sigs.github.io/metrics-server/
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: metrics-server
+      values: |
+        replicas: {{ .Values.replicas }}
+        hostNetwork:
+          enabled: {{ .Values.hostNetwork }}
+        args:
+          - --kubelet-preferred-address-types={{ .Values.kubeletPreferredAddressType }}
+          - --metric-resolution={{ .Values.metricResolution }}
+          {{- if .Values.kubeletInsecureTls }}
+          - --kubelet-insecure-tls
+          {{- end }}
+        podDisruptionBudget:
+          enabled: {{ .Values.pdbEnabled }}
+        serviceMonitor:
+          enabled: {{ .Values.serviceMonitorEnabled }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

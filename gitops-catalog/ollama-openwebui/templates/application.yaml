@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-openwebui
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: ollama-openwebui
+    kubefirst.konstruct.io/source: catalog-templates
+    argocd.argoproj.io/sync-wave: '50'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    repoURL: https://helm.openwebui.com/
+    chart: open-webui
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: open-webui
+      values: |
+        image:
+          repository: {{ .Values.imageRepository }}
+          tag: "{{ .Values.imageTag }}"
+        serviceAccount:
+          create: true
+          name: openwebui-sa
+        ollama:
+          enabled: {{ .Values.ollamaEnabled }}
+        {{- if .Values.gpuEnabled }}
+        extraArgs:
+          - "--gpus all"
+        extraHosts:
+          - "host.docker.internal:host-gateway"
+        {{- end }}
+        persistentVolume:
+          enabled: true
+          size: {{ .Values.persistentVolumeSize }}
+        ingress:
+          enabled: {{ .Values.ingressEnabled }}
+          class: "{{ .Values.ingressClassName }}"
+          annotations:
+            nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+            nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+            cert-manager.io/cluster-issuer: "{{ .Values.clusterIssuer }}"
+          host: "ollama.{{ .Values.domainName }}"
+          tls: true
+          existingSecret: "{{ .Values.clusterName }}-{{ .Values.tlsSecretName }}"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
