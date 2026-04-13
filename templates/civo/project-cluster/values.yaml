@@ -16,3 +16,5 @@ waitJobImage: "dtzar/helm-kubectl:3.19.0"
 domain: saas.konstruct.io
 
 externalDnsProviderName: cloudflare
+
+externalDnsProviderTokenEnvName: CLOUDFLARE_API_TOKEN
