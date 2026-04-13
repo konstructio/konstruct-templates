@@ -17,4 +17,4 @@ domain: saas.konstruct.io
 
 externalDnsProviderName: cloudflare
 
-externalDnsProviderTokenEnvName: CLOUDFLARE_API_TOKEN
+externalDnsProviderTokenEnvName: CF_API_TOKEN
