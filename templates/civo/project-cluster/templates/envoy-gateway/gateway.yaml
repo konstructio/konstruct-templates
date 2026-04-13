@@ -17,7 +17,7 @@ spec:
           from: All
 
     - name: https-argocd
-      hostname: argocd-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
+      hostname: argocd-{{ .Values.workloadClusterName }}.{{ .Values.domain }}
       protocol: HTTPS
       port: 443
       tls:
@@ -30,7 +30,7 @@ spec:
           from: All
 
     - name: https-grpc-argocd
-      hostname: grpc-{{ .Values.workloadClusterName }}.argocd.{{ .Values.domainName }}
+      hostname: grpc-{{ .Values.workloadClusterName }}.argocd.{{ .Values.domain }}
       protocol: HTTPS
       port: 443
       tls:
@@ -43,7 +43,7 @@ spec:
           from: All
 
     - name: https-logs
-      hostname: logs-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
+      hostname: logs-{{ .Values.workloadClusterName }}.{{ .Values.domain }}
       protocol: HTTPS
       port: 443
       tls:

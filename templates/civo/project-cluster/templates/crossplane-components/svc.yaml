@@ -25,7 +25,7 @@ spec:
       namespace: default
       sectionName: https-logs
   hostnames:
-    - logs-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
+    - logs-{{ .Values.workloadClusterName }}.{{ .Values.domain }}
   rules:
     - matches:
         - path:

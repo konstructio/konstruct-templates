@@ -9,7 +9,7 @@ spec:
       namespace: default
       sectionName: https-argocd
   hostnames:
-    - argocd-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
+    - argocd-{{ .Values.workloadClusterName }}.{{ .Values.domain }}
   rules:
     - matches:
         - path:
@@ -30,7 +30,7 @@ spec:
       namespace: default
       sectionName: https-grpc-argocd
   hostnames:
-    - grpc-{{ .Values.workloadClusterName }}.argocd.{{ .Values.domainName }}
+    - grpc-{{ .Values.workloadClusterName }}.argocd.{{ .Values.domain }}
   rules:
     - backendRefs:
         - name: argocd-server
