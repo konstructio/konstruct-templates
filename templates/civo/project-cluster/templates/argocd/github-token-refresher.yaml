@@ -1,80 +1,3 @@
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: github-token-refresher
-  namespace: argocd
-spec:
-  schedule: "*/45 * * * *"
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          serviceAccountName: github-token-refresher
-          containers:
-          - name: refresher
-            image: {{ .Values.waitJobImage }}
-            env:
-            - name: VENDING_URL
-              value: "https://konstruct.{{ .Values.domain }}/api/v1/github-token"
-            - name: TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: platform-cluster-identity
-                  key: token
-            - name: ORG_ID
-              valueFrom:
-                secretKeyRef:
-                  name: platform-cluster-identity
-                  key: org_id
-            command:
-            - /bin/bash
-            - -c
-            - |
-              set -e
-
-              echo "=== ENV CHECK ==="
-              echo "VENDING_URL: ${VENDING_URL}"
-              echo "ORG_ID: ${ORG_ID}"
-              echo "TOKEN length: ${#TOKEN}"
-
-              echo "=== REQUESTING TOKEN ==="
-              HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
-                -X GET "${VENDING_URL}/${ORG_ID}" \
-                -H "Authorization: Bearer ${TOKEN}" \
-                -H "Content-Type: application/json")
-
-              echo "HTTP status: ${HTTP_CODE}"
-
-              if [ "$HTTP_CODE" != "200" ]; then
-                echo "Error: non-200 response from vending service"
-                exit 1
-              fi
-
-              RESPONSE=$(cat /tmp/response.txt)
-              if [ -z "$RESPONSE" ]; then
-                echo "Error: empty response body"
-                exit 1
-              fi
-
-              echo "=== PATCHING SECRET ==="
-              ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
-
-              if kubectl get secret github-repo-creds -n argocd &>/dev/null; then
-                echo "Secret exists, patching..."
-                kubectl patch secret github-repo-creds -n argocd \
-                  --type='json' \
-                  -p="[{\"op\": \"replace\", \"path\": \"/data/password\", \"value\": \"${ENCODED}\"}]"
-                echo "Secret patched successfully."
-              else
-                echo "Secret not found, creating..."
-                kubectl create secret generic github-repo-creds -n argocd \
-                  --from-literal=password="${RESPONSE}"
-                echo "Secret created successfully."
-              fi
-
-              echo "Done."
-          restartPolicy: OnFailure
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -110,6 +33,100 @@ subjects:
   namespace: argocd
 ---
 apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: github-token-refresher
+  namespace: argocd
+spec:
+  schedule: "*/45 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: github-token-refresher
+          containers:
+          - name: refresher
+            image: {{ .Values.waitJobImage }}
+            env:
+            - name: VENDING_URL
+              value: "https://konstruct.{{ .Values.domain }}/api/v1/github-token"
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: platform-cluster-identity
+                  key: token
+            - name: ORG_ID
+              valueFrom:
+                secretKeyRef:
+                  name: platform-cluster-identity
+                  key: org_id
+            - name: ORG_NAME
+              value: "{{ .Values.orgName }}"
+            - name: REPO_NAME
+              value: "{{ .Values.repoName }}"
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              echo "=== ENV CHECK ==="
+              echo "VENDING_URL: ${VENDING_URL}"
+              echo "ORG_ID: ${ORG_ID}"
+              echo "GITHUB_REPO_URL: https://github.com/${ORG_NAME}/${REPO_NAME}.git"
+              echo "TOKEN length: ${#TOKEN}"
+
+              echo "=== REQUESTING TOKEN ==="
+              HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
+                -X GET "${VENDING_URL}/${ORG_ID}" \
+                -H "Authorization: Bearer ${TOKEN}" \
+                -H "Content-Type: application/json")
+
+              echo "HTTP status: ${HTTP_CODE}"
+
+              if [ "$HTTP_CODE" != "200" ]; then
+                echo "Error: non-200 response from vending service"
+                cat /tmp/response.txt
+                exit 1
+              fi
+
+              RESPONSE=$(cat /tmp/response.txt)
+              if [ -z "$RESPONSE" ]; then
+                echo "Error: empty response body"
+                exit 1
+              fi
+
+              echo "=== PATCHING SECRET ==="
+              GITHUB_REPO_URL="https://github.com/${ORG_NAME}/${REPO_NAME}.git"
+              ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
+
+              if kubectl get secret github-repo-creds -n argocd &>/dev/null; then
+                echo "Secret exists, patching password..."
+                kubectl patch secret github-repo-creds -n argocd \
+                  --type='json' \
+                  -p="[{\"op\": \"replace\", \"path\": \"/data/password\", \"value\": \"${ENCODED}\"}]"
+                kubectl label secret github-repo-creds -n argocd \
+                  argocd.argoproj.io/secret-type=repository --overwrite
+                echo "Secret patched successfully."
+              else
+                echo "Secret not found, creating..."
+                kubectl create secret generic github-repo-creds -n argocd \
+                  --from-literal=type=git \
+                  --from-literal=url="${GITHUB_REPO_URL}" \
+                  --from-literal=username=x-access-token \
+                  --from-literal=password="${RESPONSE}"
+                kubectl label secret github-repo-creds -n argocd \
+                  argocd.argoproj.io/secret-type=repository
+                echo "Secret created successfully."
+              fi
+
+              echo "=== VERIFYING SECRET ==="
+              kubectl get secret github-repo-creds -n argocd -o jsonpath='{.metadata.labels}' && echo ""
+
+              echo "Done."
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
 kind: Job
 metadata:
   name: github-token-refresher-init
@@ -126,7 +143,7 @@ spec:
         image: {{ .Values.waitJobImage }}
         env:
         - name: VENDING_URL
-          value: "https://{{ .Values.domain }}/api/v1/github-token"
+          value: "https://konstruct.{{ .Values.domain }}/api/v1/github-token"
         - name: TOKEN
           valueFrom:
             secretKeyRef:
@@ -137,6 +154,10 @@ spec:
             secretKeyRef:
               name: platform-cluster-identity
               key: org_id
+        - name: ORG_NAME
+          value: "{{ .Values.orgName }}"
+        - name: REPO_NAME
+          value: "{{ .Values.repoName }}"
         command:
         - /bin/bash
         - -c
@@ -146,6 +167,7 @@ spec:
           echo "=== ENV CHECK ==="
           echo "VENDING_URL: ${VENDING_URL}"
           echo "ORG_ID: ${ORG_ID}"
+          echo "GITHUB_REPO_URL: https://github.com/${ORG_NAME}/${REPO_NAME}.git"
           echo "TOKEN length: ${#TOKEN}"
 
           echo "=== REQUESTING TOKEN ==="
@@ -158,6 +180,7 @@ spec:
 
           if [ "$HTTP_CODE" != "200" ]; then
             echo "Error: non-200 response from vending service"
+            cat /tmp/response.txt
             exit 1
           fi
 
@@ -168,20 +191,31 @@ spec:
           fi
 
           echo "=== PATCHING SECRET ==="
+          GITHUB_REPO_URL="https://github.com/${ORG_NAME}/${REPO_NAME}.git"
           ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
 
           if kubectl get secret github-repo-creds -n argocd &>/dev/null; then
-            echo "Secret exists, patching..."
+            echo "Secret exists, patching password..."
             kubectl patch secret github-repo-creds -n argocd \
               --type='json' \
               -p="[{\"op\": \"replace\", \"path\": \"/data/password\", \"value\": \"${ENCODED}\"}]"
+            kubectl label secret github-repo-creds -n argocd \
+              argocd.argoproj.io/secret-type=repository --overwrite
             echo "Secret patched successfully."
           else
             echo "Secret not found, creating..."
             kubectl create secret generic github-repo-creds -n argocd \
+              --from-literal=type=git \
+              --from-literal=url="${GITHUB_REPO_URL}" \
+              --from-literal=username=x-access-token \
               --from-literal=password="${RESPONSE}"
+            kubectl label secret github-repo-creds -n argocd \
+              argocd.argoproj.io/secret-type=repository
             echo "Secret created successfully."
           fi
+
+          echo "=== VERIFYING SECRET ==="
+          kubectl get secret github-repo-creds -n argocd -o jsonpath='{.metadata.labels}' && echo ""
 
           echo "Done."
       restartPolicy: OnFailure
