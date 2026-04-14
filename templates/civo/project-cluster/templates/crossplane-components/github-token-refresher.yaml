@@ -105,7 +105,7 @@ spec:
         image: {{ .Values.waitJobImage}}
         env:
         - name: VENDING_URL
-          value: "https://{{ .Values.domain }}/api/v1/github-token"
+          value: "https://konstruct.{{ .Values.domain }}/api/v1/github-token"
         - name: TOKEN
           valueFrom:
             secretKeyRef:
