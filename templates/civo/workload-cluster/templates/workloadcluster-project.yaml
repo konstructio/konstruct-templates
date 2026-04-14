@@ -11,7 +11,7 @@ spec:
   description: {{ .Values.workloadClusterName }} description
   sourceNamespaces: ["{{ .Values.workloadClusterName }}-environment"]
   sourceRepos:
-  - '{{ .Values.teamGitopsRepoUrl }}'
+  - '*'
   destinations:
   - name: {{ .Values.workloadClusterName }}
     namespace: '*'
