@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.workloadClusterName }}-cert-manager
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: '35'
+spec:
+  project: {{ .Values.workloadClusterName }}-platform
+  source:
+    repoURL: https://charts.jetstack.io
+    targetRevision: v1.20.1
+    helm:
+      values: |-
+        serviceAccount:
+          create: true
+          name: cert-manager
+        installCRDs: true
+        extraArgs:
+          - --enable-gateway-api
+    chart: cert-manager
+  destination:
+    name: {{ .Values.workloadClusterName }}
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
