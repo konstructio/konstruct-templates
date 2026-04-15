@@ -29,7 +29,7 @@ resource "civo_kubernetes_cluster" "project-cluster" {
   firewall_id         = civo_firewall.project-cluster.id
   write_kubeconfig    = true
   cluster_type        = "k3s" 
-  kubernetes_version  = "1.33.6-k3s1"
+  kubernetes_version  = "1.34.2-k3s1"
   pools {
     label      = var.cluster_name
     size       = var.node_type
