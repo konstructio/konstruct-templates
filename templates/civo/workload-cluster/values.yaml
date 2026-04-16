@@ -2,7 +2,7 @@
 # @input.type: string
 # @input.description: the complete URL for the Terraform module for infrastructure provisioning
 # @input.required: true
-workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/gitops-template.git//terraform/civo/modules/workload-cluster?ref=main"
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/gitops-template.git//civo-github/terraform/civo/modules/workload-cluster?ref=main"
 
 # GPU Configuration
 isGpu: false
