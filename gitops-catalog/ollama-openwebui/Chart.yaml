@@ -3,4 +3,4 @@ name: ollama-openwebui
 description: A Helm chart for deploying Ollama + Open WebUI with ArgoCD for running and interacting with local LLMs on Kubernetes (GPU-enabled by default via the CUDA image)
 type: application
 version: 0.1.0
-appVersion: "3.1.19"
+appVersion: "0.8.12"

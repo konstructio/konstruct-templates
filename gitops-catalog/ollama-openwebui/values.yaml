@@ -43,7 +43,7 @@ namespace: openwebui
 # @input.description: Open WebUI Helm chart version (from https://helm.openwebui.com)
 # @input.required: true
 # @input.default: 6.38.0
-chartVersion: 6.38.0
+chartVersion: 13.3.1
 
 # =============================================================================
 # OPEN WEBUI CONFIGURATION
