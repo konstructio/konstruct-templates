@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-nim-operator
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: nvidia-nim-operator
+    kubefirst.konstruct.io/source: catalog-templates
+    argocd.argoproj.io/sync-wave: '50'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    repoURL: https://helm.ngc.nvidia.com/nvidia
+    chart: k8s-nim-operator
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: nim-operator
+      values: |
+        operator:
+          image:
+            repository: nvcr.io/nvidia/cloud-native/k8s-nim-operator
+        admissionController:
+          enabled: {{ .Values.admissionControllerEnabled }}
+        certManager:
+          enabled: {{ .Values.certManagerEnabled }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

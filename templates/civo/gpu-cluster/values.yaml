@@ -5,7 +5,7 @@
 workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/gitops-template.git//terraform/civo/modules/workload-cluster?ref=main"
 
 # GPU Configuration
-isGpu: false
+isGpu: true
 
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"

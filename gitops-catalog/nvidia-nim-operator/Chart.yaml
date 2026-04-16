@@ -1,0 +1,6 @@
+apiVersion: v2
+name: nvidia-nim-operator
+description: A Helm chart for deploying NVIDIA NIM Operator with ArgoCD for GPU-accelerated inference microservices
+type: application
+version: 0.1.0
+appVersion: "3.0.2"

@@ -1,0 +1,72 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-runai
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: runai
+    kubefirst.konstruct.io/source: catalog-templates
+    argocd.argoproj.io/sync-wave: '50'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    repoURL: https://runai.jfrog.io/artifactory/cp-charts-prod
+    chart: control-plane
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: runai
+      values: |
+        global:
+          domain: {{ .Values.runaiDomain }}
+        {{- if .Values.tlsEnabled }}
+        tls:
+          enabled: true
+          clusterIssuer: {{ .Values.clusterIssuer }}
+        {{- end }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+{{- if .Values.clusterAgentEnabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-runai-agent
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: runai-agent
+    kubefirst.konstruct.io/source: catalog-templates
+    argocd.argoproj.io/sync-wave: '55'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    repoURL: https://runai.jfrog.io/artifactory/cp-charts-prod
+    chart: runai-cluster
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: runai-agent
+      values: |
+        controlPlane:
+          url: {{ .Values.controlPlaneUrl }}
+        cluster:
+          name: {{ .Values.clusterName }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}
