@@ -1,7 +1,7 @@
 # Run.ai GPU Orchestration Platform Configuration
-# This values file contains all configurable parameters for deploying
-# Run.ai via ArgoCD. Run.ai enables GPU resource scheduling, sharing,
-# and management across Kubernetes clusters.
+# Deploys Run.ai cluster agent via pre-rendered manifests (hook annotations
+# stripped for ArgoCD compatibility). Prereqs app creates required namespaces
+# at sync-wave 49, manifests app deploys Run.ai at sync-wave 50.
 
 # @input.type: string
 # @input.description: Cluster name identifier
@@ -16,12 +16,6 @@ clusterName: my-cluster
 gitopsRepoUrl: https://github.com/example/gitops-repo
 
 # @input.type: string
-# @input.description: Registry path in GitOps repository
-# @input.required: true
-# @input.default: registry/clusters/my-cluster
-registryPath: registry/clusters/my-cluster
-
-# @input.type: string
 # @input.description: Target cluster destination for ArgoCD
 # @input.required: true
 # @input.default: in-cluster
@@ -34,19 +28,14 @@ clusterDestination: in-cluster
 project: default
 
 # @input.type: string
-# @input.description: Namespace for Run.ai deployment
+# @input.description: ArgoCD Application namespace (where app-of-apps lives)
 # @input.required: true
-# @input.default: runai
-namespace: runai
-
-# @input.type: string
-# @input.description: Run.ai cluster agent Helm chart version
-# @input.required: true
-# @input.default: 2.16.79
-chartVersion: 2.16.79
+# @input.default: argocd
+argocdAppNamespace: argocd
 
 # =============================================================================
 # RUN.AI CLUSTER CONFIGURATION
+# These values are used as token replacements in the rendered manifests.
 # =============================================================================
 
 # @input.type: string
