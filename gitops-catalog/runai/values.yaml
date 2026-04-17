@@ -6,32 +6,32 @@
 # @input.type: string
 # @input.description: Cluster name identifier
 # @input.required: true
-# @input.default: my-cluster
-clusterName: my-cluster
+# @input.default: civo-gpu
+clusterName: civo-gpu
 
 # @input.type: string
 # @input.description: GitOps repository URL for ArgoCD sync
 # @input.required: true
-# @input.default: https://github.com/example/gitops-repo
-gitopsRepoUrl: https://github.com/example/gitops-repo
+# @input.default: https://github.com/civonetes/demo-organization-gitops.git
+gitopsRepoUrl: https://github.com/civonetes/demo-organization-gitops.git
 
 # @input.type: string
 # @input.description: Target cluster destination for ArgoCD
 # @input.required: true
-# @input.default: in-cluster
-clusterDestination: in-cluster
+# @input.default: civo-gpu
+clusterDestination: civo-gpu
 
 # @input.type: string
 # @input.description: ArgoCD project name
 # @input.required: true
-# @input.default: default
-project: default
+# @input.default: civo-gpu
+project: civo-gpu
 
 # @input.type: string
 # @input.description: ArgoCD Application namespace (where app-of-apps lives)
 # @input.required: true
-# @input.default: argocd
-argocdAppNamespace: argocd
+# @input.default: civo-gpu-environment
+argocdAppNamespace: civo-gpu-environment
 
 # =============================================================================
 # RUN.AI CLUSTER CONFIGURATION
