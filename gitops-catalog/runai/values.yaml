@@ -40,43 +40,23 @@ project: default
 namespace: runai
 
 # @input.type: string
-# @input.description: Run.ai control-plane Helm chart version
+# @input.description: Run.ai cluster agent Helm chart version
 # @input.required: true
-# @input.default: 2.20.0
-chartVersion: 2.20.0
+# @input.default: 2.16.79
+chartVersion: 2.16.79
 
 # =============================================================================
-# RUN.AI CONFIGURATION
+# RUN.AI CLUSTER CONFIGURATION
 # =============================================================================
 
 # @input.type: string
-# @input.description: Domain name for the Run.ai control plane (e.g., runai.example.com)
+# @input.description: Run.ai control plane URL (provided by Run.ai after account setup)
 # @input.required: true
-# @input.default: runai.example.com
-runaiDomain: runai.example.com
-
-# @input.type: enum
-# @input.description: Enable TLS for the Run.ai control plane
-# @input.options: true,false
-# @input.required: true
-# @input.default: true
-tlsEnabled: true
+# @input.default: https://placeholder.runai.ai
+clusterUrl: https://placeholder.runai.ai
 
 # @input.type: string
-# @input.description: cert-manager ClusterIssuer for TLS certificates
+# @input.description: Cluster UID (provided by Run.ai onboarding wizard)
 # @input.required: true
-# @input.default: letsencrypt-prod
-clusterIssuer: letsencrypt-prod
-
-# @input.type: enum
-# @input.description: Enable the Run.ai cluster agent (connects cluster to Run.ai control plane)
-# @input.options: true,false
-# @input.required: true
-# @input.default: true
-clusterAgentEnabled: true
-
-# @input.type: string
-# @input.description: Run.ai cluster URL for the agent to connect to
-# @input.required: true
-# @input.default: https://runai.example.com
-controlPlaneUrl: https://runai.example.com
+# @input.default: demo-cluster-uid
+clusterUid: demo-cluster-uid

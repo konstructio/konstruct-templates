@@ -3,4 +3,4 @@ name: runai
 description: A Helm chart for deploying Run.ai GPU orchestration platform with ArgoCD for GPU resource scheduling and management
 type: application
 version: 0.1.0
-appVersion: "2.20.0"
+appVersion: "2.16.79"
