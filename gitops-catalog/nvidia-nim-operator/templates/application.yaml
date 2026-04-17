@@ -22,6 +22,7 @@ spec:
       releaseName: nim-operator
       values: |
         operator:
+          upgradeCRD: false
           image:
             repository: nvcr.io/nvidia/cloud-native/k8s-nim-operator
         admissionController:
