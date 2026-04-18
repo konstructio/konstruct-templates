@@ -1,0 +1,15 @@
+apiVersion: v2
+name: civo-gpu-cluster
+description: "Civo GPU cluster template — Talos-based with NVIDIA GPU operator"
+type: application
+version: 2.0.0
+appVersion: "2.0"
+keywords:
+  - argocd
+  - gpu-cluster
+  - gitops
+  - crossplane
+  - terraform
+  - civo
+maintainers:
+  - name: Konstruct

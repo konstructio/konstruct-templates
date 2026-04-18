@@ -1,0 +1,77 @@
+# NVIDIA NIM Operator Configuration
+# This values file contains all configurable parameters for deploying
+# NVIDIA NIM Operator via ArgoCD. NIM enables deployment and management
+# of GPU-accelerated inference microservices.
+
+# @input.type: string
+# @input.description: Cluster name identifier
+# @input.required: true
+# @input.default: civo-gpu
+clusterName: civo-gpu
+
+# @input.type: string
+# @input.description: GitOps repository URL for ArgoCD sync
+# @input.required: true
+# @input.default: https://github.com/civonetes/demo-organization-gitops.git
+gitopsRepoUrl: https://github.com/civonetes/demo-organization-gitops.git
+
+# @input.type: string
+# @input.description: Registry path in GitOps repository
+# @input.required: true
+# @input.default: registry/clusters/civo-gpu
+registryPath: registry/clusters/civo-gpu
+
+# @input.type: string
+# @input.description: Target cluster destination for ArgoCD
+# @input.required: true
+# @input.default: civo-gpu
+clusterDestination: civo-gpu
+
+# @input.type: string
+# @input.description: ArgoCD project name
+# @input.required: true
+# @input.default: civo-gpu
+project: civo-gpu
+
+# @input.type: string
+# @input.description: Namespace for NIM Operator deployment
+# @input.required: true
+# @input.default: nim-operator
+namespace: nim-operator
+
+# @input.type: string
+# @input.description: NVIDIA NIM Operator Helm chart version
+# @input.required: true
+# @input.default: 3.0.2
+chartVersion: 3.0.2
+
+# =============================================================================
+# NIM OPERATOR CONFIGURATION
+# =============================================================================
+
+# @input.type: enum
+# @input.description: Enable the NIM admission controller webhook
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+admissionControllerEnabled: true
+
+# @input.type: enum
+# @input.description: Enable cert-manager integration for webhook TLS
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+certManagerEnabled: true
+
+# =============================================================================
+# NGC CREDENTIALS - Required to pull NIM container images
+# =============================================================================
+
+# @input.type: secret
+# @input.description: NVIDIA NGC API key for pulling NIM container images (get from ngc.nvidia.com)
+# @input.required: true
+# @input.secretKey: ngc-api-key
+# @input.secretEnv: NGC_API_KEY
+# @input.secretBackend: vault
+# @input.secretPath: /nvidia-nim
+ngcApiKey: ""
