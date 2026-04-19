@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-reloader
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: reloader
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: reloader
+    repoURL: https://stakater.github.io/stakater-charts
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: reloader
+      values: |
+        reloader:
+          watchGlobally: true
+          ignoreConfigMaps: {{ not .Values.watchConfigMaps }}
+          ignoreSecrets: {{ not .Values.watchSecrets }}
+          isArgoRollouts: false
+          deployment:
+            env:
+              open:
+                IGNORE_CONFIGMAPS_WITHOUT_ANNOTATION: "{{ .Values.ignoreConfigMapsWithoutAnnotation }}"
+                IGNORE_SECRETS_WITHOUT_ANNOTATION: "{{ .Values.ignoreSecretsWithoutAnnotation }}"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-groundcover
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: groundcover
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: groundcover
+    repoURL: https://helm.groundcover.com/
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: groundcover
+      values: |
+        global:
+          groundcover_token: {{ .Values.apiKey }}
+          cluster:
+            name: {{ .Values.clusterDisplayName }}
+        agent:
+          logs:
+            enabled: {{ .Values.logsEnabled }}
+          traces:
+            enabled: {{ .Values.tracesEnabled }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

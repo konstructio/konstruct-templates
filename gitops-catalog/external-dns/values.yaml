@@ -1,0 +1,81 @@
+# ExternalDNS Configuration
+# This values file contains all configurable parameters for deploying ExternalDNS via ArgoCD
+
+# @input.type: string
+# @input.description: Cluster name identifier
+# @input.required: true
+# @input.default: my-cluster
+clusterName: my-cluster
+
+# @input.type: string
+# @input.description: GitOps repository URL for ArgoCD sync
+# @input.required: true
+# @input.default: https://github.com/example/gitops-repo
+gitopsRepoUrl: https://github.com/example/gitops-repo
+
+# @input.type: string
+# @input.description: Registry path in GitOps repository
+# @input.required: true
+# @input.default: registry/clusters/my-cluster
+registryPath: registry/clusters/my-cluster
+
+# @input.type: string
+# @input.description: Target cluster destination for ArgoCD
+# @input.required: true
+# @input.default: in-cluster
+clusterDestination: in-cluster
+
+# @input.type: string
+# @input.description: ArgoCD project name
+# @input.required: true
+# @input.default: default
+project: default
+
+# @input.type: string
+# @input.description: Namespace for ExternalDNS deployment
+# @input.required: true
+# @input.default: external-dns
+namespace: external-dns
+
+# @input.type: string
+# @input.description: ExternalDNS Helm chart version
+# @input.required: true
+# @input.default: 1.15.1
+chartVersion: 1.15.1
+
+# =============================================================================
+# EXTERNAL DNS CONFIGURATION
+# =============================================================================
+
+# @input.type: enum
+# @input.description: DNS provider (e.g., aws, cloudflare, google, azure, civo)
+# @input.options: aws,cloudflare,google,azure,civo,digitalocean,rfc2136
+# @input.required: true
+# @input.default: aws
+provider: aws
+
+# @input.type: string
+# @input.description: Comma-separated list of DNS zones to manage
+# @input.required: true
+# @input.default: example.com
+domainFilters: example.com
+
+# @input.type: enum
+# @input.description: DNS record ownership policy (sync deletes unmanaged records, upsert-only is safer)
+# @input.options: sync,upsert-only
+# @input.required: true
+# @input.default: upsert-only
+policy: upsert-only
+
+# @input.type: enum
+# @input.description: Kubernetes resource types to watch for DNS records
+# @input.options: ingress,service,istio-gateway,istio-virtualservice
+# @input.required: true
+# @input.default: ingress
+sources: ingress
+
+# @input.type: string
+# @input.description: TXT record owner ID to avoid conflicts between multiple ExternalDNS instances
+# @input.required: true
+# @input.default: default
+txtOwnerId: default

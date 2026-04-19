@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-external-secrets
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: external-secrets
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: external-secrets
+    repoURL: https://charts.external-secrets.io
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: external-secrets
+      values: |
+        installCRDs: {{ .Values.installCRDs }}
+        replicaCount: {{ .Values.replicas }}
+        webhook:
+          create: {{ .Values.webhookEnabled }}
+        certController:
+          create: {{ .Values.certControllerEnabled }}
+        serviceMonitor:
+          enabled: {{ .Values.serviceMonitorEnabled }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

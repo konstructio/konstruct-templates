@@ -1,0 +1,76 @@
+# Stakater Reloader Configuration
+# This values file contains all configurable parameters for deploying Reloader via ArgoCD
+
+# @input.type: string
+# @input.description: Cluster name identifier
+# @input.required: true
+# @input.default: my-cluster
+clusterName: my-cluster
+
+# @input.type: string
+# @input.description: GitOps repository URL for ArgoCD sync
+# @input.required: true
+# @input.default: https://github.com/example/gitops-repo
+gitopsRepoUrl: https://github.com/example/gitops-repo
+
+# @input.type: string
+# @input.description: Registry path in GitOps repository
+# @input.required: true
+# @input.default: registry/clusters/my-cluster
+registryPath: registry/clusters/my-cluster
+
+# @input.type: string
+# @input.description: Target cluster destination for ArgoCD
+# @input.required: true
+# @input.default: in-cluster
+clusterDestination: in-cluster
+
+# @input.type: string
+# @input.description: ArgoCD project name
+# @input.required: true
+# @input.default: default
+project: default
+
+# @input.type: string
+# @input.description: Namespace for Reloader deployment
+# @input.required: true
+# @input.default: reloader
+namespace: reloader
+
+# @input.type: string
+# @input.description: Reloader Helm chart version
+# @input.required: true
+# @input.default: 1.2.1
+chartVersion: 1.2.1
+
+# =============================================================================
+# RELOADER CONFIGURATION
+# =============================================================================
+
+# @input.type: enum
+# @input.description: Watch ConfigMaps for changes and trigger rolling restarts
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+watchConfigMaps: true
+
+# @input.type: enum
+# @input.description: Watch Secrets for changes and trigger rolling restarts
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+watchSecrets: true
+
+# @input.type: enum
+# @input.description: Only watch resources with the reloader annotation (false = watch all resources)
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+ignoreConfigMapsWithoutAnnotation: false
+
+# @input.type: enum
+# @input.description: Only watch secrets with the reloader annotation (false = watch all secrets)
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+ignoreSecretsWithoutAnnotation: false

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cert-manager
+description: A Helm chart for deploying cert-manager with ArgoCD for automated TLS certificate management using ACME, self-signed, and other issuers
+type: application
+version: 0.1.0
+appVersion: "1.17.1"

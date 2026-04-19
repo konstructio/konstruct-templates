@@ -1,0 +1,6 @@
+apiVersion: v2
+name: grafana
+description: A Helm chart for deploying standalone Grafana with ArgoCD for metrics visualization, dashboards, and alerting
+type: application
+version: 0.1.0
+appVersion: "8.12.1"

@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-cert-manager
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: cert-manager
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: cert-manager
+    repoURL: https://charts.jetstack.io
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: cert-manager
+      values: |
+        crds:
+          enabled: {{ .Values.installCRDs }}
+        replicaCount: {{ .Values.replicas }}
+        prometheus:
+          servicemonitor:
+            enabled: {{ .Values.serviceMonitorEnabled }}
+        startupapicheck:
+          enabled: {{ .Values.startupapicheck }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

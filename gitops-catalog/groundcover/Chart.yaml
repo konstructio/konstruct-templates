@@ -1,0 +1,6 @@
+apiVersion: v2
+name: groundcover
+description: A Helm chart for deploying groundcover eBPF-based observability platform with ArgoCD for zero-instrumentation APM, metrics, logs, and traces
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

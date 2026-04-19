@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-envoy-gateway
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: envoy-gateway
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: gateway-helm
+    repoURL: https://gateway.envoyproxy.io/charts
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: envoy-gateway
+      values: |
+        deployment:
+          replicas: {{ .Values.replicas }}
+        config:
+          envoyGateway:
+            provider:
+              kubernetes:
+                enabled: {{ .Values.kubernetesProviderEnabled }}
+        createGatewayClass: {{ .Values.gatewayClassEnabled }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
