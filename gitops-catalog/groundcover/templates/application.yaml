@@ -29,6 +29,26 @@ spec:
             enabled: {{ .Values.logsEnabled }}
           traces:
             enabled: {{ .Values.tracesEnabled }}
+          rbac:
+            pspEnabled: {{ .Values.pspEnabled }}
+        groundcover:
+          rbac:
+            pspEnabled: {{ .Values.pspEnabled }}
+        victoria-metrics-single:
+          rbac:
+            pspEnabled: {{ .Values.pspEnabled }}
+        victoria-metrics-agent:
+          rbac:
+            pspEnabled: {{ .Values.pspEnabled }}
+        loki:
+          rbac:
+            pspEnabled: {{ .Values.pspEnabled }}
+        promscale:
+          rbac:
+            pspEnabled: {{ .Values.pspEnabled }}
+        timescaledb-single:
+          rbac:
+            pspEnabled: {{ .Values.pspEnabled }}
   syncPolicy:
     automated:
       prune: true

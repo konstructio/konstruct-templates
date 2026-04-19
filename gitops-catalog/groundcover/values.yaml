@@ -72,3 +72,11 @@ logsEnabled: true
 # @input.required: true
 # @input.default: true
 tracesEnabled: true
+
+# @input.type: enum
+# @input.description: Enable PodSecurityPolicy resources (disable for Kubernetes 1.25+ where PSP is removed)
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+# @input.tip: PSP was removed in Kubernetes 1.25. Set to false for modern clusters.
+pspEnabled: false
