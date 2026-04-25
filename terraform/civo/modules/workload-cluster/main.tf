@@ -22,6 +22,23 @@ resource "civo_kubernetes_cluster" "kubefirst" {
   }
 }
 
+resource "aws_ssm_parameter" "clusters" {
+  provider    = aws.PROJECT_REGION
+  name        = "/clusters/${var.cluster_name}"
+  description = "Cluster configuration for ${var.cluster_name}"
+  type        = "String"
+  tier = "Advanced"
+  value = jsonencode({
+      kubeconfig              = civo_kubernetes_cluster.kubefirst.kubeconfig
+      client_certificate      = base64decode(yamldecode(civo_kubernetes_cluster.kubefirst.kubeconfig).users[0].user.client-certificate-data)
+      client_key              = base64decode(yamldecode(civo_kubernetes_cluster.kubefirst.kubeconfig).users[0].user.client-key-data)
+      cluster_ca_certificate  = base64decode(yamldecode(civo_kubernetes_cluster.kubefirst.kubeconfig).clusters[0].cluster.certificate-authority-data)
+      host                    = civo_kubernetes_cluster.kubefirst.api_endpoint
+      cluster_name            = var.cluster_name
+      argocd_manager_sa_token = kubernetes_secret_v1.argocd_manager.data.token
+  })
+}
+
 provider "kubernetes" {
   host                   = civo_kubernetes_cluster.kubefirst.api_endpoint
   client_certificate     = base64decode(yamldecode(civo_kubernetes_cluster.kubefirst.kubeconfig).users[0].user.client-certificate-data)
