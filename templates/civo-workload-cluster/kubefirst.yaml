@@ -1,1 +1,6 @@
 
+clusterType: "physical"
+inputs:
+  - name: "module url"
+    token: "<WORKLOAD_MODULE_URL>" 
+    prompt: "Example moudle url for your workload cluster template"
