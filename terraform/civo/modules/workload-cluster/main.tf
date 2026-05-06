@@ -22,6 +22,12 @@ resource "civo_kubernetes_cluster" "kubefirst" {
   }
 }
 
+resource "civo_kubernetes_node_pool" "back-end" {
+   cluster_id = civo_kubernetes_cluster.kubefirst.id
+   node_count = 1 // Optional
+   size = var.node_type
+}
+
 resource "aws_ssm_parameter" "clusters" {
   provider    = aws.PROJECT_REGION
   name        = "/clusters/${var.cluster_name}"
