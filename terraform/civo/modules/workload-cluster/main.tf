@@ -12,6 +12,7 @@ resource "civo_kubernetes_cluster" "kubefirst" {
   name                = var.cluster_name
   network_id          = civo_network.kubefirst.id
   firewall_id         = civo_firewall.kubefirst.id
+  cni                 = "cilium"
   write_kubeconfig    = true
   cluster_type        = "k3s" 
   kubernetes_version  = "1.35.0-k3s1"
