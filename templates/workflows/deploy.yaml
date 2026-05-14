@@ -51,7 +51,7 @@ jobs:
                 source_run_id: '${{ github.run_id }}'
               }
             });
-            console.log('✅ Triggered update workflow');
+            console.log('✅ Triggeredddd update workflow');
 
   notify:
     runs-on: ubuntu-latest
