@@ -24,7 +24,7 @@ data "civo_size" "gpu" {
 }
 
 resource "kubernetes_namespace" "gpu_operator" {
-  count = locals.deploy_gpu_operator ? 1 : 0
+  count = local.deploy_gpu_operator ? 1 : 0
 
   metadata {
     name = "gpu-operator"
@@ -34,7 +34,7 @@ resource "kubernetes_namespace" "gpu_operator" {
 }
 
 resource "kubernetes_config_map" "nvidia_kernel_config" {
-  count = locals.deploy_gpu_operator && local.gpu_is_single_h100 ? 1 : 0
+  count = local.deploy_gpu_operator && local.gpu_is_single_h100 ? 1 : 0
 
   metadata {
     name      = "nvidia-kernel-config"
@@ -47,7 +47,7 @@ resource "kubernetes_config_map" "nvidia_kernel_config" {
 }
 
 resource "helm_release" "gpu_operator" {
-  count = locals.deploy_gpu_operator ? 1 : 0
+  count = local.deploy_gpu_operator ? 1 : 0
 
   name       = "gpu-operator"
   repository = "https://helm.ngc.nvidia.com/nvidia"
