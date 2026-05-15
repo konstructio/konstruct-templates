@@ -1,0 +1,7 @@
+# @input.type: string
+# @input.description: Git URL of the Terraform module that provisions the downstream vCluster
+# @input.required: true
+# @input.default: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/workload-downstream-vcluster?ref=main"
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/workload-downstream-vcluster?ref=main"
+
+waitJobImage: "dtzar/helm-kubectl:3.19.0"

@@ -1,0 +1,13 @@
+# @input.type: string
+# @input.description: Git URL of the Terraform module that provisions the downstream EKS cluster
+# @input.required: true
+# @input.default: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/workload-downstream-cluster?ref=main"
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/workload-downstream-cluster?ref=main"
+
+# @input.type: string
+# @input.description: Git URL of the Terraform module that bootstraps the downstream EKS cluster (post-provisioning)
+# @input.required: true
+# @input.default: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/downstream-bootstrap?ref=main"
+workloadClusterBootstrapTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/downstream-bootstrap?ref=main"
+
+waitJobImage: "dtzar/helm-kubectl:3.19.0"
