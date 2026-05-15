@@ -2,10 +2,7 @@
 # @input.type: string
 # @input.description: the complete URL for the Terraform module for infrastructure provisioning
 # @input.required: true
-workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/gitops-template.git//civo-github/terraform/civo/modules/workload-cluster?ref=main"
-
-# GPU Configuration
-isGpu: false
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//civo-github/terraform/civo/modules/workload-cluster?ref=main"
 
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
