@@ -1,0 +1,17 @@
+apiVersion: v2
+name: workload-project-cluster
+description: "Workload project EKS cluster template for Konstruct with ArgoCD Applications, Crossplane, ARC, and core platform services"
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - argocd
+  - workload-cluster
+  - project
+  - eks
+  - gitops
+  - crossplane
+  - terraform
+  - aws
+maintainers:
+  - name: Konstruct

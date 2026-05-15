@@ -1,0 +1,13 @@
+# @input.type: string
+# @input.description: Git URL of the Terraform module that provisions the project EKS cluster
+# @input.required: true
+# @input.default: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/workload-project-cluster?ref=main"
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/workload-project-cluster?ref=main"
+
+# @input.type: string
+# @input.description: Git URL of the Terraform module that bootstraps the project cluster (post-provisioning)
+# @input.required: true
+# @input.default: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/project-bootstrap?ref=main"
+workloadClusterBootstrapTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/project-bootstrap?ref=main"
+
+waitJobImage: "dtzar/helm-kubectl:3.19.0"
