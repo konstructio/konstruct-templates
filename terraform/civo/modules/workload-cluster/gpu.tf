@@ -47,8 +47,7 @@ resource "kubernetes_config_map" "nvidia_kernel_config" {
 }
 
 resource "helm_release" "gpu_operator" {
-  count = local.deploy_gpu_operator ? 1 : 0
-
+  count      = local.deploy_gpu_operator ? 1 : 0
   name       = "gpu-operator"
   repository = "https://helm.ngc.nvidia.com/nvidia"
   chart      = "gpu-operator"
@@ -57,41 +56,19 @@ resource "helm_release" "gpu_operator" {
   timeout    = 900
   wait       = true
 
-  # Civo's GPU images bake in the NVIDIA container toolkit, so toolkit.enabled
-  # stays false; the rest match the Operator install validated against Civo
-  # Kubernetes.
-  set {
-    name  = "driver.enabled"
-    value = "true"
-  }
-  set {
-    name  = "toolkit.enabled"
-    value = "false"
-  }
-  set {
-    name  = "devicePlugin.enabled"
-    value = "true"
-  }
-  set {
-    name  = "gfd.enabled"
-    value = "true"
-  }
-  set {
-    name  = "operator.defaultRuntime"
-    value = "containerd"
-  }
-  set {
-    name  = "validator.cuda.runtimeClassName"
-    value = "nvidia"
-  }
-
-  dynamic "set" {
-    for_each = local.gpu_is_single_h100 ? [1] : []
-    content {
-      name  = "driver.kernelModuleConfig.name"
-      value = "nvidia-kernel-config"
-    }
-  }
+  values = [yamlencode({
+    driver = merge(
+      { enabled = true },
+      local.gpu_is_single_h100 ? {
+        kernelModuleConfig = { name = "nvidia-kernel-config" }
+      } : {}
+    )
+    toolkit        = { enabled = false }
+    devicePlugin   = { enabled = true }
+    gfd            = { enabled = true }
+    operator       = { defaultRuntime = "containerd" }
+    validator      = { cuda = { runtimeClassName = "nvidia" } }
+  })]
 
   depends_on = [
     kubernetes_config_map.nvidia_kernel_config,
