@@ -30,7 +30,7 @@ resource "kubernetes_namespace" "gpu_operator" {
     name = "gpu-operator"
   }
 
-  depends_on = [civo_kubernetes_cluster.cluster]
+  depends_on = [civo_kubernetes_cluster.kubefirst]
 }
 
 resource "kubernetes_config_map" "nvidia_kernel_config" {
