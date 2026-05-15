@@ -13,15 +13,12 @@ resource "civo_kubernetes_cluster" "kubefirst" {
   network_id          = civo_network.kubefirst.id
   firewall_id         = civo_firewall.kubefirst.id
   write_kubeconfig    = true
-  cluster_type        = local.is_gpu ? "talos" : "k3s" # k3s doesn't support GPU
-  kubernetes_version  = local.is_gpu ?  "1.27.0" : "1.32.5-k3s1"
+  cluster_type        = "k3s" 
+  kubernetes_version  = "1.35.0-k3s1"
   pools {
     label      = var.cluster_name
     size       = var.node_type
     node_count = var.node_count
-    labels = local.is_gpu ? {
-      "nvidia.com/gpu.deploy.operator-validator" = "false"
-    } : {}
   }
 }
 
@@ -115,21 +112,31 @@ resource "kubernetes_secret_v1" "argocd_manager" {
   depends_on = [kubernetes_service_account_v1.argocd_manager]
 }
 
-resource "kubernetes_namespace_v1" "external_dns" {
-  metadata {
-    name = "external-dns"
-  }
+provider "kubernetes" {
+  alias = "incluster"
 }
 
-resource "kubernetes_namespace_v1" "external_secrets_operator" {
+resource "kubernetes_secret_v1" "kubeconfig_secret" {
+  provider = kubernetes.incluster
   metadata {
-    name = "external-secrets-operator"
+    name      = var.cluster_name
+    namespace = "argocd"
+    labels = {
+      "argocd.argoproj.io/secret-type" = "cluster"
+    }
+  }
+
+  data = {
+    name   = var.cluster_name
+    server = civo_kubernetes_cluster.kubefirst.api_endpoint
+    config = jsonencode({
+      bearerToken = kubernetes_secret_v1.argocd_manager.data["token"]
+      tlsClientConfig = {
+        insecure = false
+        caData   = yamldecode(civo_kubernetes_cluster.kubefirst.kubeconfig).clusters[0].cluster.certificate-authority-data
+        certData = yamldecode(civo_kubernetes_cluster.kubefirst.kubeconfig).users[0].user.client-certificate-data
+        keyData  = yamldecode(civo_kubernetes_cluster.kubefirst.kubeconfig).users[0].user.client-key-data
+      }
+    })
   }
 }
-
-resource "kubernetes_namespace_v1" "environment" {
-  metadata {
-    name = var.cluster_name
-  }
-}
-

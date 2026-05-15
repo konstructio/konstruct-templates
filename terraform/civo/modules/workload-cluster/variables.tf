@@ -17,8 +17,3 @@ variable "node_count" {
 variable "node_type" {
   type = string
 }
-
-variable "is_gpu" {
-  type = bool
-  default = false
-}
