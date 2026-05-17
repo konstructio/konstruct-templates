@@ -180,7 +180,7 @@ provider "kubernetes" {
   alias = "incluster"
 }
 
-resource "kubernetes_secret" "preshared_token_mgmt" {
+resource "kubernetes_secret_v1" "preshared_token_mgmt" {
   provider = kubernetes.incluster
   metadata {
     name      = "pre-shared-token"
@@ -197,7 +197,7 @@ resource "kubernetes_namespace_v1" "argocd" {
   }
 }
 
-resource "kubernetes_secret" "preshared_token_argocd" {
+resource "kubernetes_secret_v1" "preshared_token_argocd" {
   depends_on = [civo_kubernetes_cluster.project-cluster]
   metadata {
     name      = "platform-cluster-identity"
@@ -209,7 +209,7 @@ resource "kubernetes_secret" "preshared_token_argocd" {
   }
 }
 
-resource "kubernetes_secret" "preshared_token_crossplane" {
+resource "kubernetes_secret_v1" "preshared_token_crossplane" {
   depends_on = [civo_kubernetes_cluster.project-cluster]
   metadata {
     name      = "platform-cluster-identity"
