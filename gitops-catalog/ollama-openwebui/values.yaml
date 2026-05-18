@@ -7,7 +7,7 @@
 # @input.description: Cluster name identifier
 # @input.required: true
 # @input.default: my-cluster
-clusterName: my-cluster
+clusterName: gg-gpu
 
 # @input.type: string
 # @input.description: GitOps repository URL for ArgoCD sync
@@ -25,13 +25,13 @@ registryPath: registry/clusters/my-cluster
 # @input.description: Target cluster destination for ArgoCD
 # @input.required: true
 # @input.default: in-cluster
-clusterDestination: in-cluster
+clusterDestination: gg-gpu
 
 # @input.type: string
 # @input.description: ArgoCD project name
 # @input.required: true
 # @input.default: default
-project: default
+project: gg-gpu
 
 # @input.type: string
 # @input.description: Namespace for Open WebUI and Ollama deployment
