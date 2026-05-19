@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.workloadClusterName }}-cilium-gateway
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: '30'
+spec:
+  project: {{ .Values.workloadClusterName }}-platform
+  source:
+    repoURL: https://helm.cilium.io/
+    chart: cilium
+    targetRevision: {{ .Values.ciliumChartVersion | quote }}
+    helm:
+      releaseName: cilium
+      valuesObject:
+        gatewayAPI:
+          enabled: true
+        kubeProxyReplacement: false
+        l7Proxy: true
+  destination:
+    name: {{ .Values.workloadClusterName }}
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
