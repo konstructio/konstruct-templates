@@ -1,0 +1,116 @@
+# Qwen3-Coder FP8 Model Deployment Configuration
+# Deploys the Qwen3-Coder-30B-A3B-Instruct-FP8 model on the NVIDIA AI Dynamo
+# Platform. Requires dynamo-platform to be installed (provides the
+# DynamoGraphDeployment CRD).
+
+# @input.type: string
+# @input.description: Cluster name identifier
+# @input.required: true
+# @input.default: my-cluster
+clusterName: my-cluster
+
+# @input.type: string
+# @input.description: Namespace where the model deployment resources land
+# @input.required: true
+# @input.default: dynamo
+namespace: dynamo
+
+# @input.type: string
+# @input.description: Name of the DynamoGraphDeployment resource (also used as the model-component selector value)
+# @input.required: true
+# @input.default: qwen3-coder-fp8
+deploymentName: qwen3-coder-fp8
+
+# =============================================================================
+# MODEL CONFIGURATION
+# =============================================================================
+
+# @input.type: string
+# @input.description: HuggingFace repository path of the model to serve
+# @input.required: true
+# @input.default: Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
+modelName: Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
+
+# @input.type: string
+# @input.description: Container image for the vLLM runtime worker
+# @input.required: true
+# @input.default: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.1.1
+vllmRuntimeImage: nvcr.io/nvidia/ai-dynamo/vllm-runtime:1.1.1
+
+# @input.type: string
+# @input.description: Container image used by the model-download Job (must include pip)
+# @input.required: true
+# @input.default: python:3.10-slim
+modelDownloadImage: python:3.10-slim
+
+# =============================================================================
+# MODEL CACHE (PVC)
+# =============================================================================
+
+# @input.type: string
+# @input.description: Name of the PVC backing the on-disk model cache
+# @input.required: true
+# @input.default: qwen-fp8-model-cache
+modelCachePvcName: qwen-fp8-model-cache
+
+# @input.type: string
+# @input.description: Size of the model-cache PVC (must be large enough for the model weights and HF cache metadata)
+# @input.required: true
+# @input.default: 60Gi
+modelCacheSize: 60Gi
+
+# @input.type: string
+# @input.description: StorageClass used for the model-cache PVC
+# @input.required: true
+# @input.default: civo-volume
+storageClassName: civo-volume
+
+# =============================================================================
+# WORKER / GPU CONFIGURATION
+# =============================================================================
+
+# @input.type: int
+# @input.description: GPU count requested per worker pod
+# @input.required: true
+# @input.default: 1
+gpuCount: 1
+
+# @input.type: int
+# @input.description: vLLM tensor-parallel size
+# @input.required: true
+# @input.default: 1
+tensorParallelSize: 1
+
+# @input.type: int
+# @input.description: vLLM data-parallel size
+# @input.required: true
+# @input.default: 1
+dataParallelSize: 1
+
+# @input.type: string
+# @input.description: Fraction of GPU memory vLLM is allowed to use (0.0-1.0)
+# @input.required: true
+# @input.default: "0.90"
+gpuMemoryUtilization: "0.90"
+
+# @input.type: int
+# @input.description: Replicas of the Dynamo frontend component
+# @input.required: true
+# @input.default: 1
+frontendReplicas: 1
+
+# @input.type: int
+# @input.description: Replicas of the vLLM prefill worker
+# @input.required: true
+# @input.default: 1
+workerReplicas: 1
+
+# =============================================================================
+# FRONTEND SERVICE
+# =============================================================================
+
+# @input.type: int
+# @input.description: Port exposed by the frontend LoadBalancer Service
+# @input.required: true
+# @input.default: 8000
+frontendServicePort: 8000
