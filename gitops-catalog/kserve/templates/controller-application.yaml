@@ -15,7 +15,7 @@ spec:
     name: {{ .Values.clusterDestination }}
   project: {{ .Values.project }}
   source:
-    chart: kserve
+    chart: kserve-resources
     repoURL: oci://ghcr.io/kserve/charts
     targetRevision: {{ .Values.chartVersion }}
     helm:
