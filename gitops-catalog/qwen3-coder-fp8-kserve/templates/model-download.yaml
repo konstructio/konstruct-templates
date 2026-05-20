@@ -23,6 +23,14 @@ spec:
               value: {{ .Values.modelName | quote }}
             - name: HF_XET_HIGH_PERFORMANCE
               value: "1"
+            {{- $hfSecret := .Values.hfTokenSecretName | toString }}
+            {{- if and $hfSecret (ne $hfSecret "") (ne $hfSecret "\"\"") }}
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $hfSecret }}
+                  key: {{ .Values.hfTokenSecretKey | default "HF_TOKEN" }}
+            {{- end }}
           args:
             - |
               set -eux

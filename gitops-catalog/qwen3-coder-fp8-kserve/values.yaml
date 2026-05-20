@@ -79,6 +79,18 @@ storageClassName: civo-volume
 # @input.default: python:3.10-slim
 modelDownloadImage: python:3.10-slim
 
+# @input.type: string
+# @input.description: Name of a pre-existing Secret in the same namespace containing an HF_TOKEN key. Leave empty to download anonymously (subject to HuggingFace's anonymous rate limit). Required if the model is gated
+# @input.required: false
+# @input.default: ""
+hfTokenSecretName: ""
+
+# @input.type: string
+# @input.description: Key inside hfTokenSecretName whose value is the HuggingFace token
+# @input.required: false
+# @input.default: HF_TOKEN
+hfTokenSecretKey: HF_TOKEN
+
 # =============================================================================
 # VLLM SERVING RUNTIME
 # =============================================================================
