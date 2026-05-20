@@ -25,32 +25,33 @@ spec:
           controller:
             deploymentMode: {{ .Values.deploymentMode | quote }}
             gateway:
-              disableIstioVirtualHost: {{ .Values.disableIstioVirtualHost }}
+              disableIstioVirtualHost: {{ eq (toString .Values.disableIstioVirtualHost) "true" }}
               ingressGateway:
-                createGateway: {{ .Values.createIngressGateway }}
-                enableGatewayApi: {{ .Values.enableGatewayApi }}
-                {{- if .Values.enableGatewayApi }}
-                kserveGateway: {{ .Values.kserveGateway | quote }}
+                createGateway: {{ eq (toString .Values.createIngressGateway) "true" }}
+                enableGatewayApi: {{ eq (toString .Values.enableGatewayApi) "true" }}
+                {{- $gw := .Values.kserveGateway | toString }}
+                {{- if and (eq (toString .Values.enableGatewayApi) "true") $gw (ne $gw "\"\"") (ne $gw "''") }}
+                kserveGateway: {{ $gw }}
                 {{- end }}
           servingruntime:
             tensorflow:
-              disabled: {{ not .Values.tensorflowEnabled }}
+              disabled: {{ ne (toString .Values.tensorflowEnabled) "true" }}
             triton:
-              disabled: {{ not .Values.tritonEnabled }}
+              disabled: {{ ne (toString .Values.tritonEnabled) "true" }}
             mlserver:
-              disabled: {{ not .Values.mlserverEnabled }}
+              disabled: {{ ne (toString .Values.mlserverEnabled) "true" }}
             sklearnserver:
-              disabled: {{ not .Values.sklearnserverEnabled }}
+              disabled: {{ ne (toString .Values.sklearnserverEnabled) "true" }}
             xgbserver:
-              disabled: {{ not .Values.xgbserverEnabled }}
+              disabled: {{ ne (toString .Values.xgbserverEnabled) "true" }}
             lgbserver:
-              disabled: {{ not .Values.lgbserverEnabled }}
+              disabled: {{ ne (toString .Values.lgbserverEnabled) "true" }}
             pmmlserver:
-              disabled: {{ not .Values.pmmlserverEnabled }}
+              disabled: {{ ne (toString .Values.pmmlserverEnabled) "true" }}
             paddleserver:
-              disabled: {{ not .Values.paddleserverEnabled }}
+              disabled: {{ ne (toString .Values.paddleserverEnabled) "true" }}
             huggingfaceserver:
-              disabled: {{ not .Values.huggingfaceserverEnabled }}
+              disabled: {{ ne (toString .Values.huggingfaceserverEnabled) "true" }}
   syncPolicy:
     automated:
       prune: true
