@@ -29,8 +29,8 @@ namespace: kserve
 # @input.type: string
 # @input.description: KServe Helm chart version (applies to both kserve-crd and kserve charts)
 # @input.required: true
-# @input.default: v0.15.2
-chartVersion: v0.15.2
+# @input.default: v1.0.3
+chartVersion: v1.0.3
 
 # =============================================================================
 # CONTROLLER CONFIGURATION
