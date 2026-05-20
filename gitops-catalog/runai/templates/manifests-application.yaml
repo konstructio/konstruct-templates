@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: runai-cluster-{{ .Values.clusterName }}
+  namespace: {{ .Values.argocdAppNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "50"
+    kubefirst.konstruct.io/application-name: runai
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    name: {{ .Values.clusterDestination }}
+    namespace: runai
+  project: {{ .Values.project }}
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl }}
+    path: registry/environments/runai/{{ .Values.clusterName }}/manifests
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

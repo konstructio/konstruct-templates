@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: runai
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: runai-scale-adjust
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: runai-reservation

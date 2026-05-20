@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-external-dns
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: external-dns
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: external-dns
+    repoURL: https://kubernetes-sigs.github.io/external-dns/
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: external-dns
+      values: |
+        provider:
+          name: {{ .Values.provider }}
+        domainFilters:
+          - {{ .Values.domainFilters }}
+        policy: {{ .Values.policy }}
+        sources:
+          - {{ .Values.sources }}
+        txtOwnerId: {{ .Values.txtOwnerId }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

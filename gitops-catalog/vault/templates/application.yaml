@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-vault
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: vault
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: vault
+    repoURL: https://helm.releases.hashicorp.com
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: vault
+      values: |
+        server:
+          dev:
+            enabled: {{ .Values.devMode }}
+          ha:
+            enabled: {{ .Values.haEnabled }}
+            {{- if .Values.haEnabled }}
+            raft:
+              enabled: true
+            replicas: {{ .Values.replicas }}
+            {{- end }}
+          {{- if not .Values.haEnabled }}
+          standalone:
+            enabled: true
+          {{- end }}
+          dataStorage:
+            size: {{ .Values.dataStorageSize }}
+          ui:
+            enabled: {{ .Values.uiEnabled }}
+        injector:
+          enabled: {{ .Values.injectorEnabled }}
+        ui:
+          enabled: {{ .Values.uiEnabled }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
