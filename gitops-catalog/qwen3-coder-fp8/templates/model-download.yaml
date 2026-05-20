@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.deploymentName }}-model-download
+  namespace: {{ .Values.namespace }}
+spec:
+  backoffLimit: 3
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.deploymentName }}-model-download
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: model-download
+          image: {{ .Values.modelDownloadImage }}
+          command: ["sh", "-c"]
+          env:
+            - name: MODEL_NAME
+              value: {{ .Values.modelName | quote }}
+            - name: HF_HOME
+              value: /model-store
+            - name: HF_XET_HIGH_PERFORMANCE
+              value: "1"
+          args:
+            - |
+              set -eux
+              pip install --no-cache-dir huggingface_hub==1.11.0
+              hf download $MODEL_NAME
+          volumeMounts:
+            - name: model-cache
+              mountPath: /model-store
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: {{ .Values.modelCachePvcName }}

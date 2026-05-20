@@ -1,0 +1,62 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-kserve
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    kubefirst.konstruct.io/application-name: kserve
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: kserve
+    repoURL: oci://ghcr.io/kserve/charts
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: kserve
+      values: |
+        kserve:
+          controller:
+            deploymentMode: {{ .Values.deploymentMode | quote }}
+            gateway:
+              disableIstioVirtualHost: {{ .Values.disableIstioVirtualHost }}
+              ingressGateway:
+                createGateway: {{ .Values.createIngressGateway }}
+          servingruntime:
+            tensorflow:
+              disabled: {{ not .Values.tensorflowEnabled }}
+            triton:
+              disabled: {{ not .Values.tritonEnabled }}
+            mlserver:
+              disabled: {{ not .Values.mlserverEnabled }}
+            sklearnserver:
+              disabled: {{ not .Values.sklearnserverEnabled }}
+            xgbserver:
+              disabled: {{ not .Values.xgbserverEnabled }}
+            lgbserver:
+              disabled: {{ not .Values.lgbserverEnabled }}
+            pmmlserver:
+              disabled: {{ not .Values.pmmlserverEnabled }}
+            paddleserver:
+              disabled: {{ not .Values.paddleserverEnabled }}
+            huggingfaceserver:
+              disabled: {{ not .Values.huggingfaceserverEnabled }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

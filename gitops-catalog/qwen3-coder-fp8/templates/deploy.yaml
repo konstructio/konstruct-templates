@@ -1,0 +1,47 @@
+apiVersion: nvidia.com/v1alpha1
+kind: DynamoGraphDeployment
+metadata:
+  name: {{ .Values.deploymentName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  backendFramework: vllm
+  pvcs:
+    - name: {{ .Values.modelCachePvcName }}
+      create: false
+  services:
+    Frontend:
+      componentType: frontend
+      extraPodSpec:
+        mainContainer:
+          image: {{ .Values.vllmRuntimeImage }}
+          workingDir: /workspace/examples/backends/vllm
+      replicas: {{ .Values.frontendReplicas }}
+    VllmPrefillWorker:
+      componentType: worker
+      volumeMounts:
+        - name: {{ .Values.modelCachePvcName }}
+          mountPoint: /opt/models
+      sharedMemory:
+        size: 20Gi
+      extraPodSpec:
+        mainContainer:
+          env:
+            - name: SERVED_MODEL_NAME
+              value: {{ .Values.modelName | quote }}
+            - name: MODEL_PATH
+              value: {{ .Values.modelName | quote }}
+            - name: HF_HOME
+              value: /opt/models
+          args:
+            - "python3 -m dynamo.vllm --model $MODEL_PATH --served-model-name $SERVED_MODEL_NAME --tensor-parallel-size {{ .Values.tensorParallelSize }} --data-parallel-size {{ .Values.dataParallelSize }} --gpu-memory-utilization {{ .Values.gpuMemoryUtilization }} --no-enable-prefix-caching --block-size 128 --dtype auto --dyn-tool-call-parser qwen3_coder"
+          command:
+            - /bin/sh
+            - -c
+          image: {{ .Values.vllmRuntimeImage }}
+          workingDir: /workspace/examples/backends/vllm
+      replicas: {{ .Values.workerReplicas }}
+      resources:
+        limits:
+          gpu: {{ .Values.gpuCount | quote }}
+        requests:
+          gpu: {{ .Values.gpuCount | quote }}

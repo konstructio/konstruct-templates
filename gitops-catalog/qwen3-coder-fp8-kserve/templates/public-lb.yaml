@@ -1,0 +1,17 @@
+{{- if .Values.publicLoadBalancerEnabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.inferenceServiceName }}-public
+  namespace: {{ .Values.namespace }}
+spec:
+  type: LoadBalancer
+  selector:
+    serving.kserve.io/inferenceservice: {{ .Values.inferenceServiceName }}
+    component: predictor
+  ports:
+    - name: http
+      port: {{ .Values.publicLoadBalancerPort }}
+      targetPort: {{ .Values.publicLoadBalancerTargetPort }}
+      protocol: TCP
+{{- end }}

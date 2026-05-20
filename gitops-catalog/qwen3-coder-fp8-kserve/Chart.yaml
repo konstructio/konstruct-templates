@@ -1,0 +1,6 @@
+apiVersion: v2
+name: qwen3-coder-fp8-kserve
+description: Deploys the Qwen3-Coder-30B-A3B-Instruct-FP8 model on KServe (huggingfaceserver / vLLM runtime, RawDeployment mode) with an optional public LoadBalancer. Requires the kserve catalog item to be installed first.
+type: application
+version: 0.1.0
+appVersion: "0.15.2"

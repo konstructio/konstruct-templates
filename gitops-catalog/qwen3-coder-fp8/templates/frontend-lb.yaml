@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.deploymentName }}-frontend-lb
+  namespace: {{ .Values.namespace }}
+spec:
+  type: LoadBalancer
+  selector:
+    nvidia.com/dynamo-component-type: frontend
+    nvidia.com/dynamo-graph-deployment-name: {{ .Values.deploymentName }}
+  ports:
+    - name: http
+      port: {{ .Values.frontendServicePort }}
+      targetPort: {{ .Values.frontendServicePort }}
+      protocol: TCP
