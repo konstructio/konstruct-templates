@@ -54,11 +54,11 @@ storageUri: hf://Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
 # @input.default: 1
 tensorParallelSize: 1
 
-# @input.type: string
+# @input.type: float
 # @input.description: Fraction of GPU memory vLLM is allowed to use (0.0-1.0)
 # @input.required: true
-# @input.default: "0.90"
-gpuMemoryUtilization: "0.90"
+# @input.default: 0.90
+gpuMemoryUtilization: 0.90
 
 # @input.type: int
 # @input.description: Maximum model context length (B200 with 180GB VRAM can serve the full 128k window)
@@ -101,17 +101,17 @@ maxReplicas: 1
 # @input.default: 1
 gpuCount: 1
 
-# @input.type: string
-# @input.description: CPU request per predictor pod
+# @input.type: int
+# @input.description: CPU request per predictor pod (whole cores)
 # @input.required: true
-# @input.default: "8"
-cpuRequest: "8"
+# @input.default: 8
+cpuRequest: 8
 
-# @input.type: string
-# @input.description: CPU limit per predictor pod
+# @input.type: int
+# @input.description: CPU limit per predictor pod (whole cores)
 # @input.required: true
-# @input.default: "16"
-cpuLimit: "16"
+# @input.default: 16
+cpuLimit: 16
 
 # @input.type: string
 # @input.description: Memory request per predictor pod
