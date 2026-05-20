@@ -37,11 +37,11 @@ chartVersion: v0.17.0
 # =============================================================================
 
 # @input.type: enum
-# @input.description: KServe deployment mode. RawDeployment avoids the Istio/Knative dependency
-# @input.options: RawDeployment,Serverless,ModelMesh
+# @input.description: KServe deployment mode. "Standard" (v0.17+ name for the former "RawDeployment") uses plain Kubernetes Deployments/Services with no Knative/Istio dependency
+# @input.options: Standard,Serverless,ModelMesh
 # @input.required: true
-# @input.default: RawDeployment
-deploymentMode: RawDeployment
+# @input.default: Standard
+deploymentMode: Standard
 
 # @input.type: enum
 # @input.description: Disable Istio VirtualHost generation (set true when not using Istio)
@@ -56,6 +56,19 @@ disableIstioVirtualHost: true
 # @input.required: true
 # @input.default: false
 createIngressGateway: false
+
+# @input.type: enum
+# @input.description: Configure KServe to route through a Gateway API Gateway instead of Ingress (requires Gateway API CRDs + a GatewayClass already installed)
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+enableGatewayApi: false
+
+# @input.description: Reference to the Gateway resource KServe should attach HTTPRoutes to, in the form "<namespace>/<gateway-name>". Only used when enableGatewayApi is true
+# @input.type: string
+# @input.required: false
+# @input.default: ""
+kserveGateway: ""
 
 # =============================================================================
 # SERVING RUNTIMES

@@ -3,8 +3,6 @@ kind: InferenceService
 metadata:
   name: {{ .Values.inferenceServiceName }}
   namespace: {{ .Values.namespace }}
-  annotations:
-    serving.kserve.io/deploymentMode: "RawDeployment"
 spec:
   predictor:
     minReplicas: {{ .Values.minReplicas }}
@@ -30,4 +28,4 @@ spec:
         requests:
           nvidia.com/gpu: {{ .Values.gpuCount | quote }}
           memory: {{ .Values.memoryRequest }}
-          cpu: {{ .Values.cpuRequest }}
+          cpu: {{ .Values.cpuRequest | quote }}

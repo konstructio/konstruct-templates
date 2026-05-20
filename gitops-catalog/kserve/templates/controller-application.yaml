@@ -28,6 +28,10 @@ spec:
               disableIstioVirtualHost: {{ .Values.disableIstioVirtualHost }}
               ingressGateway:
                 createGateway: {{ .Values.createIngressGateway }}
+                enableGatewayApi: {{ .Values.enableGatewayApi }}
+                {{- if .Values.enableGatewayApi }}
+                kserveGateway: {{ .Values.kserveGateway | quote }}
+                {{- end }}
           servingruntime:
             tensorflow:
               disabled: {{ not .Values.tensorflowEnabled }}
