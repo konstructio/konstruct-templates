@@ -1,0 +1,42 @@
+{{- if eq (toString .Values.installModelCache) "true" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.inferenceServiceName }}-model-download
+  namespace: {{ .Values.namespace }}
+spec:
+  backoffLimit: 3
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.inferenceServiceName }}-model-download
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: model-download
+          image: {{ .Values.modelDownloadImage }}
+          command: ["sh", "-c"]
+          env:
+            - name: MODEL_NAME
+              value: {{ .Values.modelName | quote }}
+            - name: HF_XET_HIGH_PERFORMANCE
+              value: "1"
+          args:
+            - |
+              set -eux
+              if [ -f /cache/model/config.json ]; then
+                echo "Model already cached at /cache/model, skipping download"
+                exit 0
+              fi
+              pip install --no-cache-dir huggingface_hub==1.11.0
+              hf download "$MODEL_NAME" --local-dir /cache/model
+          volumeMounts:
+            - name: model-cache
+              mountPath: /cache
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: {{ .Values.modelCachePvcName }}
+{{- end }}

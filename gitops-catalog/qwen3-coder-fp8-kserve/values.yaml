@@ -39,10 +39,45 @@ inferenceServiceName: qwen3-coder
 modelName: Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
 
 # @input.type: string
-# @input.description: storageUri for the model weights (hf:// pulls from HuggingFace at pod start)
+# @input.description: storageUri fallback for the InferenceService when installModelCache is false (pulls from HuggingFace on every pod start). Ignored when the PVC cache is installed
 # @input.required: true
 # @input.default: hf://Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
 storageUri: hf://Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
+
+# =============================================================================
+# MODEL CACHE (PVC + pre-download Job)
+# =============================================================================
+
+# @input.type: enum
+# @input.description: Pre-cache the model on a PVC via a one-shot download Job. When true, the InferenceService loads via pvc:// instead of pulling from HuggingFace on every pod start
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+installModelCache: true
+
+# @input.type: string
+# @input.description: Name of the PVC backing the on-disk model cache
+# @input.required: true
+# @input.default: qwen-fp8-model-cache
+modelCachePvcName: qwen-fp8-model-cache
+
+# @input.type: string
+# @input.description: Size of the model-cache PVC (must hold the full FP8 weights + tokenizer)
+# @input.required: true
+# @input.default: 60Gi
+modelCacheSize: 60Gi
+
+# @input.type: string
+# @input.description: StorageClass used for the model-cache PVC
+# @input.required: true
+# @input.default: civo-volume
+storageClassName: civo-volume
+
+# @input.type: string
+# @input.description: Container image used by the model-download Job (must include pip)
+# @input.required: true
+# @input.default: python:3.10-slim
+modelDownloadImage: python:3.10-slim
 
 # =============================================================================
 # VLLM SERVING RUNTIME
@@ -64,8 +99,8 @@ vllmRuntimeName: vllm-runtime
 # @input.type: string
 # @input.description: Container image for the vLLM runtime (must expose an OpenAI-compatible API on port 8080)
 # @input.required: true
-# @input.default: vllm/vllm-openai:v0.8.5
-vllmRuntimeImage: vllm/vllm-openai:v0.8.5
+# @input.default: vllm/vllm-openai:nightly
+vllmRuntimeImage: vllm/vllm-openai:nightly
 
 # =============================================================================
 # VLLM / RUNTIME ARGS

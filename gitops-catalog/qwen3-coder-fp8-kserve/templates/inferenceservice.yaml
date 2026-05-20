@@ -22,7 +22,11 @@ spec:
         - --tool-call-parser={{ .Values.toolCallParser }}
         {{- end }}
         - --max-model-len={{ .Values.maxModelLen }}
+      {{- if eq (toString .Values.installModelCache) "true" }}
+      storageUri: "pvc://{{ .Values.modelCachePvcName }}/model"
+      {{- else }}
       storageUri: {{ .Values.storageUri | quote }}
+      {{- end }}
       resources:
         limits:
           nvidia.com/gpu: {{ .Values.gpuCount | quote }}
