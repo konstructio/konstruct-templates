@@ -45,6 +45,29 @@ modelName: Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
 storageUri: hf://Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
 
 # =============================================================================
+# VLLM SERVING RUNTIME
+# =============================================================================
+
+# @input.type: enum
+# @input.description: Ship a custom vLLM ClusterServingRuntime alongside the InferenceService. Set false if a compatible huggingface runtime already exists in the cluster (e.g. one already shipped by kserve-runtime-configs)
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+installVllmRuntime: true
+
+# @input.type: string
+# @input.description: Name of the ClusterServingRuntime resource (also referenced by the InferenceService when installVllmRuntime is true)
+# @input.required: true
+# @input.default: vllm-runtime
+vllmRuntimeName: vllm-runtime
+
+# @input.type: string
+# @input.description: Container image for the vLLM runtime (must expose an OpenAI-compatible API on port 8080)
+# @input.required: true
+# @input.default: vllm/vllm-openai:v0.8.5
+vllmRuntimeImage: vllm/vllm-openai:v0.8.5
+
+# =============================================================================
 # VLLM / RUNTIME ARGS
 # =============================================================================
 

@@ -10,11 +10,14 @@ spec:
     model:
       modelFormat:
         name: huggingface
+      {{- if eq (toString .Values.installVllmRuntime) "true" }}
+      runtime: {{ .Values.vllmRuntimeName }}
+      {{- end }}
       args:
         - --tensor-parallel-size={{ .Values.tensorParallelSize }}
         - --gpu-memory-utilization={{ .Values.gpuMemoryUtilization }}
         - --served-model-name={{ .Values.modelName }}
-        {{- if .Values.enableAutoToolChoice }}
+        {{- if eq (toString .Values.enableAutoToolChoice) "true" }}
         - --enable-auto-tool-choice
         - --tool-call-parser={{ .Values.toolCallParser }}
         {{- end }}
