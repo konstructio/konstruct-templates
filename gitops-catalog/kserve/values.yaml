@@ -58,6 +58,13 @@ disableIstioVirtualHost: true
 createIngressGateway: false
 
 # @input.type: enum
+# @input.description: Stop KServe from auto-creating an Ingress resource per InferenceService (set true when you're exposing the predictor via a LoadBalancer Service or your own ingress/gateway instead)
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+disableIngressCreation: true
+
+# @input.type: enum
 # @input.description: Configure KServe to route through a Gateway API Gateway instead of Ingress (requires Gateway API CRDs + a GatewayClass already installed)
 # @input.options: true,false
 # @input.required: true

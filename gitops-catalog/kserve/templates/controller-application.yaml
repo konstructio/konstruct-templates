@@ -26,6 +26,7 @@ spec:
             deploymentMode: {{ .Values.deploymentMode | quote }}
             gateway:
               disableIstioVirtualHost: {{ eq (toString .Values.disableIstioVirtualHost) "true" }}
+              disableIngressCreation: {{ eq (toString .Values.disableIngressCreation) "true" }}
               ingressGateway:
                 createGateway: {{ eq (toString .Values.createIngressGateway) "true" }}
                 enableGatewayApi: {{ eq (toString .Values.enableGatewayApi) "true" }}
