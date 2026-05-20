@@ -16,7 +16,7 @@ spec:
   project: {{ .Values.project }}
   source:
     chart: kserve-resources
-    repoURL: oci://ghcr.io/kserve/charts
+    repoURL: ghcr.io/kserve/charts
     targetRevision: {{ .Values.chartVersion }}
     helm:
       releaseName: kserve
