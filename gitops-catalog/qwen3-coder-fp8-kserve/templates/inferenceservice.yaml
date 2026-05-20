@@ -24,7 +24,7 @@ spec:
         limits:
           nvidia.com/gpu: {{ .Values.gpuCount | quote }}
           memory: {{ .Values.memoryLimit }}
-          cpu: {{ .Values.cpuLimit }}
+          cpu: {{ .Values.cpuLimit | quote }}
         requests:
           nvidia.com/gpu: {{ .Values.gpuCount | quote }}
           memory: {{ .Values.memoryRequest }}
