@@ -1,0 +1,149 @@
+# Qwen3-Coder FP8 Model Deployment via KServe
+# Renders a Namespace, an InferenceService (huggingfaceserver/vLLM runtime in
+# RawDeployment mode), and an optional public LoadBalancer Service.
+# Requires the `kserve` catalog item to be installed first.
+
+# @input.type: string
+# @input.description: Cluster name identifier
+# @input.required: true
+# @input.default: my-cluster
+clusterName: my-cluster
+
+# @input.type: string
+# @input.description: Namespace where the model deployment lands
+# @input.required: true
+# @input.default: sovereign-ai
+namespace: sovereign-ai
+
+# @input.type: enum
+# @input.description: Create the namespace as part of this chart (set false if the namespace is provisioned elsewhere)
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+createNamespace: true
+
+# @input.type: string
+# @input.description: Name of the InferenceService resource
+# @input.required: true
+# @input.default: qwen3-coder
+inferenceServiceName: qwen3-coder
+
+# =============================================================================
+# MODEL CONFIGURATION
+# =============================================================================
+
+# @input.type: string
+# @input.description: HuggingFace repository path of the model to serve
+# @input.required: true
+# @input.default: Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
+modelName: Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
+
+# @input.type: string
+# @input.description: storageUri for the model weights (hf:// pulls from HuggingFace at pod start)
+# @input.required: true
+# @input.default: hf://Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
+storageUri: hf://Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
+
+# =============================================================================
+# VLLM / RUNTIME ARGS
+# =============================================================================
+
+# @input.type: int
+# @input.description: vLLM tensor-parallel size
+# @input.required: true
+# @input.default: 1
+tensorParallelSize: 1
+
+# @input.type: string
+# @input.description: Fraction of GPU memory vLLM is allowed to use (0.0-1.0)
+# @input.required: true
+# @input.default: "0.90"
+gpuMemoryUtilization: "0.90"
+
+# @input.type: int
+# @input.description: Maximum model context length
+# @input.required: true
+# @input.default: 32768
+maxModelLen: 32768
+
+# @input.type: enum
+# @input.description: Enable vLLM's --enable-auto-tool-choice flag
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+enableAutoToolChoice: true
+
+# @input.type: string
+# @input.description: vLLM tool-call parser (e.g. hermes for Qwen3-Coder)
+# @input.required: true
+# @input.default: hermes
+toolCallParser: hermes
+
+# =============================================================================
+# REPLICAS & RESOURCES
+# =============================================================================
+
+# @input.type: int
+# @input.description: Minimum predictor replicas (RawDeployment mode does not scale to zero)
+# @input.required: true
+# @input.default: 1
+minReplicas: 1
+
+# @input.type: int
+# @input.description: Maximum predictor replicas
+# @input.required: true
+# @input.default: 1
+maxReplicas: 1
+
+# @input.type: int
+# @input.description: GPU count requested per predictor pod
+# @input.required: true
+# @input.default: 1
+gpuCount: 1
+
+# @input.type: string
+# @input.description: CPU request per predictor pod
+# @input.required: true
+# @input.default: "4"
+cpuRequest: "4"
+
+# @input.type: string
+# @input.description: CPU limit per predictor pod
+# @input.required: true
+# @input.default: "8"
+cpuLimit: "8"
+
+# @input.type: string
+# @input.description: Memory request per predictor pod
+# @input.required: true
+# @input.default: 32Gi
+memoryRequest: 32Gi
+
+# @input.type: string
+# @input.description: Memory limit per predictor pod
+# @input.required: true
+# @input.default: 64Gi
+memoryLimit: 64Gi
+
+# =============================================================================
+# PUBLIC LOADBALANCER (optional)
+# =============================================================================
+
+# @input.type: enum
+# @input.description: Create a public LoadBalancer Service in front of the predictor (skip if you'd rather expose via a Gateway HTTPRoute)
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+publicLoadBalancerEnabled: true
+
+# @input.type: int
+# @input.description: Service port for the public LoadBalancer
+# @input.required: true
+# @input.default: 80
+publicLoadBalancerPort: 80
+
+# @input.type: int
+# @input.description: Target container port (huggingfaceserver listens on 8080)
+# @input.required: true
+# @input.default: 8080
+publicLoadBalancerTargetPort: 8080

@@ -1,0 +1,33 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: {{ .Values.inferenceServiceName }}
+  namespace: {{ .Values.namespace }}
+  annotations:
+    serving.kserve.io/deploymentMode: "RawDeployment"
+spec:
+  predictor:
+    minReplicas: {{ .Values.minReplicas }}
+    maxReplicas: {{ .Values.maxReplicas }}
+    model:
+      modelFormat:
+        name: huggingface
+      args:
+        - --tensor-parallel-size={{ .Values.tensorParallelSize }}
+        - --gpu-memory-utilization={{ .Values.gpuMemoryUtilization }}
+        - --served-model-name={{ .Values.modelName }}
+        {{- if .Values.enableAutoToolChoice }}
+        - --enable-auto-tool-choice
+        - --tool-call-parser={{ .Values.toolCallParser }}
+        {{- end }}
+        - --max-model-len={{ .Values.maxModelLen }}
+      storageUri: {{ .Values.storageUri | quote }}
+      resources:
+        limits:
+          nvidia.com/gpu: {{ .Values.gpuCount | quote }}
+          memory: {{ .Values.memoryLimit }}
+          cpu: {{ .Values.cpuLimit | quote }}
+        requests:
+          nvidia.com/gpu: {{ .Values.gpuCount | quote }}
+          memory: {{ .Values.memoryRequest }}
+          cpu: {{ .Values.cpuRequest | quote }}
