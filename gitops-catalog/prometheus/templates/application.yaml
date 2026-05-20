@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-prometheus
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: prometheus
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: kube-prometheus-stack
+    repoURL: https://prometheus-community.github.io/helm-charts
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: kube-prometheus-stack
+      values: |
+        grafana:
+          enabled: {{ .Values.grafanaEnabled }}
+        alertmanager:
+          enabled: {{ .Values.alertmanagerEnabled }}
+        prometheus:
+          prometheusSpec:
+            retention: {{ .Values.retention }}
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  resources:
+                    requests:
+                      storage: {{ .Values.storageSize }}
+        nodeExporter:
+          enabled: {{ .Values.nodeExporterEnabled }}
+        kubeStateMetrics:
+          enabled: {{ .Values.kubeStateMetricsEnabled }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

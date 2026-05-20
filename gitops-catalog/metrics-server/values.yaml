@@ -1,0 +1,94 @@
+# Kubernetes Metrics Server Configuration
+# This values file contains all configurable parameters for deploying Metrics Server via ArgoCD
+
+# @input.type: string
+# @input.description: Cluster name identifier
+# @input.required: true
+# @input.default: my-cluster
+clusterName: my-cluster
+
+# @input.type: string
+# @input.description: GitOps repository URL for ArgoCD sync
+# @input.required: true
+# @input.default: https://github.com/example/gitops-repo
+gitopsRepoUrl: https://github.com/example/gitops-repo
+
+# @input.type: string
+# @input.description: Registry path in GitOps repository
+# @input.required: true
+# @input.default: registry/clusters/my-cluster
+registryPath: registry/clusters/my-cluster
+
+# @input.type: string
+# @input.description: Target cluster destination for ArgoCD
+# @input.required: true
+# @input.default: in-cluster
+clusterDestination: in-cluster
+
+# @input.type: string
+# @input.description: ArgoCD project name
+# @input.required: true
+# @input.default: default
+project: default
+
+# @input.type: string
+# @input.description: Namespace for Metrics Server deployment
+# @input.required: true
+# @input.default: kube-system
+namespace: kube-system
+
+# @input.type: string
+# @input.description: Metrics Server Helm chart version
+# @input.required: true
+# @input.default: 3.12.2
+chartVersion: 3.12.2
+
+# =============================================================================
+# METRICS SERVER CONFIGURATION
+# =============================================================================
+
+# @input.type: number
+# @input.description: Number of Metrics Server replicas (use 2+ for HA on multi-node clusters)
+# @input.required: true
+# @input.default: 1
+replicas: 1
+
+# @input.type: enum
+# @input.description: Skip kubelet TLS verification (required on clusters with self-signed kubelet certs, e.g. kubeadm/kind/Civo)
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+kubeletInsecureTls: true
+
+# @input.type: string
+# @input.description: Preferred kubelet address type for metric scraping
+# @input.required: true
+# @input.default: InternalIP
+kubeletPreferredAddressType: InternalIP
+
+# @input.type: string
+# @input.description: Metric resolution interval (how often metrics are scraped)
+# @input.required: true
+# @input.default: 15s
+metricResolution: 15s
+
+# @input.type: enum
+# @input.description: Enable host network (set to true for clusters using CNI plugins that don't reach pods from the control plane, e.g. EKS with custom CNI)
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+hostNetwork: false
+
+# @input.type: enum
+# @input.description: Create a PodDisruptionBudget for Metrics Server
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+pdbEnabled: false
+
+# @input.type: enum
+# @input.description: Enable ServiceMonitor for Prometheus scraping (requires prometheus-operator CRDs)
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+serviceMonitorEnabled: false

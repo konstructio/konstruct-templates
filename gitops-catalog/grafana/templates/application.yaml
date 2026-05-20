@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-grafana
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: grafana
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: grafana
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: grafana
+      values: |
+        replicas: {{ .Values.replicas }}
+        persistence:
+          enabled: {{ .Values.persistenceEnabled }}
+          size: {{ .Values.persistenceSize }}
+        ingress:
+          enabled: {{ .Values.ingressEnabled }}
+        sidecar:
+          dashboards:
+            enabled: {{ .Values.sidecarDashboardsEnabled }}
+          datasources:
+            enabled: {{ .Values.sidecarDatasourcesEnabled }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

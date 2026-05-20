@@ -1,0 +1,6 @@
+apiVersion: v2
+name: reloader
+description: A Helm chart for deploying Stakater Reloader with ArgoCD to automatically restart pods when ConfigMaps or Secrets are updated
+type: application
+version: 0.1.0
+appVersion: "1.2.1"
