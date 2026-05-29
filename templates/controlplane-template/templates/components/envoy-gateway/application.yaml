@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: envoy-gateway
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  project: default
+  source:
+    repoURL: oci://docker.io/envoyproxy
+    chart: gateway-helm
+    targetRevision: {{ default "v1.5.4" .Values.versions.envoyGateway | quote }}
+    helm:
+      values: |-
+        config:
+          envoyGateway:
+            logging:
+              level:
+                default: info
+            gateway:
+              controllerName: gateway.envoyproxy.io/gatewayclass-controller
+        deployment:
+          replicas: 1
+          envoyGateway:
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
+  destination:
+    name: in-cluster
+    namespace: envoy-gateway-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
