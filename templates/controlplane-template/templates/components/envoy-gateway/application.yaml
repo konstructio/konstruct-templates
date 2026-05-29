@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: oci://docker.io/envoyproxy
     chart: gateway-helm
-    targetRevision: {{ default "v1.5.4" .Values.versions.envoyGateway | quote }}
+    targetRevision: {{ default "v1.7.0" .Values.versions.envoyGateway | quote }}
     helm:
       values: |-
         config:
