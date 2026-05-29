@@ -1,0 +1,15 @@
+apiVersion: v2
+name: civo-workload-cluster
+description: "Civo workload cluster template for Konstruct with ArgoCD Applications and core platform services"
+type: application
+version: 2.0.0
+appVersion: "2.0"
+keywords:
+  - argocd
+  - workload-cluster
+  - gitops
+  - crossplane
+  - terraform
+  - civo
+maintainers:
+  - name: Konstruct

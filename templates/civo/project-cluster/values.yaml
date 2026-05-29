@@ -1,0 +1,18 @@
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/project-cluster?ref=saas-rishi"
+
+# @input.type: string
+# @input.description: Alert email address for cert-manager notifications
+# @input.required: false
+email: 123@gmail.com
+
+domainName: konstruct.io
+
+# Wait Job Configuration
+waitJobImage: "dtzar/helm-kubectl:3.19.0"
+
+
+domain: saas.konstruct.io
+
+externalDnsProviderName: cloudflare
+
+externalDnsProviderTokenEnvName: CF_API_TOKEN

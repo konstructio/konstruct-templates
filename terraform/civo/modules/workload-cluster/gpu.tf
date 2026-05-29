@@ -23,7 +23,7 @@ data "civo_size" "gpu" {
   }
 }
 
-resource "kubernetes_namespace" "gpu_operator" {
+resource "kubernetes_namespace_v1" "gpu_operator" {
   count = local.deploy_gpu_operator ? 1 : 0
 
   metadata {
@@ -38,7 +38,7 @@ resource "kubernetes_config_map" "nvidia_kernel_config" {
 
   metadata {
     name      = "nvidia-kernel-config"
-    namespace = kubernetes_namespace.gpu_operator[0].metadata[0].name
+    namespace = kubernetes_namespace_v1.gpu_operator[0].metadata[0].name
   }
 
   data = {
@@ -52,7 +52,7 @@ resource "helm_release" "gpu_operator" {
   repository = "https://helm.ngc.nvidia.com/nvidia"
   chart      = "gpu-operator"
   version    = "v25.10.1"
-  namespace  = kubernetes_namespace.gpu_operator[0].metadata[0].name
+  namespace  = kubernetes_namespace_v1.gpu_operator[0].metadata[0].name
   timeout    = 900
   wait       = true
 
@@ -72,6 +72,6 @@ resource "helm_release" "gpu_operator" {
 
   depends_on = [
     kubernetes_config_map.nvidia_kernel_config,
-    kubernetes_namespace.gpu_operator,
+    kubernetes_namespace_v1.gpu_operator,
   ]
 }

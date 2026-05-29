@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-toolkit-envoy-gateway
+  namespace: envoy-gateway-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: k8s-toolkit-envoy-gateway
+  namespace: envoy-gateway-system
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - statefulsets
+    verbs:
+      - get
+      - watch
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: k8s-toolkit-envoy-gateway
+  namespace: envoy-gateway-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: k8s-toolkit-envoy-gateway
+subjects:
+  - kind: ServiceAccount
+    name: k8s-toolkit-envoy-gateway
+    namespace: envoy-gateway-system
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+  name: wait-envoy-gateway
+  namespace: envoy-gateway-system
+spec:
+  template:
+    spec:
+      containers:
+        - args:
+            - wait-for
+            - deployment
+            - --namespace
+            - envoy-gateway-system
+            - --label
+            - app.kubernetes.io/name=gateway-helm
+          image: ghcr.io/konstructio/kubernetes-toolkit:v0.1.3
+          imagePullPolicy: IfNotPresent
+          name: wait
+      restartPolicy: OnFailure
+      serviceAccountName: k8s-toolkit-envoy-gateway
