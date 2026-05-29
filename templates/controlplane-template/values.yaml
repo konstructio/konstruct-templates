@@ -151,6 +151,18 @@ gateway:
   # @input.default: https-konstruct
   sectionName: https-konstruct
 
+  # @input.type: string
+  # @input.description: Listener sectionName for the ArgoCD UI HTTPRoute.
+  # @input.required: false
+  # @input.default: https-argocd
+  argocdSectionName: https-argocd
+
+  # @input.type: string
+  # @input.description: Listener sectionName for the ArgoCD gRPC GRPCRoute.
+  # @input.required: false
+  # @input.default: https-grpc-argocd
+  argocdGrpcSectionName: https-grpc-argocd
+
 # =============================================================================
 # CLOUD PROVIDER
 # =============================================================================
