@@ -1,0 +1,65 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ default "eg" .Values.gateway.name }}
+  namespace: {{ default "envoy-gateway-system" .Values.gateway.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "35"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  gatewayClassName: {{ default "eg" .Values.gateway.name }}
+  listeners:
+    # Only listeners for HTTPRoutes/GRPCRoutes this chart actually emits.
+    # Add more as new components ship their own routes.
+
+    - name: {{ default "https-argocd" .Values.gateway.argocdSectionName }}
+      hostname: argocd.{{ .Values.domainName }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: argocd-ingress-http
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: {{ default "https-grpc-argocd" .Values.gateway.argocdGrpcSectionName }}
+      hostname: grpc.argocd.{{ .Values.domainName }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: argocd-ingress-grpc
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: {{ default "https-konstruct" .Values.gateway.sectionName }}
+      hostname: konstruct.{{ .Values.domainName }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: konstruct-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: {{ default "https-logs" .Values.gateway.logsSectionName }}
+      hostname: logs-{{ .Values.clusterName }}.{{ .Values.domainName }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: logs-{{ .Values.clusterName }}-cluster
+      allowedRoutes:
+        namespaces:
+          from: All

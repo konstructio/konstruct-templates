@@ -163,6 +163,12 @@ gateway:
   # @input.default: https-grpc-argocd
   argocdGrpcSectionName: https-grpc-argocd
 
+  # @input.type: string
+  # @input.description: Listener sectionName for the crossplane log-streamer HTTPRoute.
+  # @input.required: false
+  # @input.default: https-logs
+  logsSectionName: https-logs
+
 # =============================================================================
 # CLOUD PROVIDER
 # =============================================================================
