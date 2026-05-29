@@ -23,7 +23,7 @@ spec:
   parentRefs:
     - name: {{ default "eg" .Values.gateway.name }}
       namespace: {{ default "envoy-gateway-system" .Values.gateway.namespace }}
-      sectionName: {{ default "https-konstruct" .Values.gateway.sectionName }}
+      sectionName: {{ default "https-logs" .Values.gateway.logsSectionName }}
   hostnames:
     - logs-{{ .Values.clusterName }}.{{ .Values.domainName }}
   rules:
