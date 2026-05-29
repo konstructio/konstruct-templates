@@ -11,7 +11,7 @@ spec:
   project: {{ .Values.project }}
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
-    path: registry/clusters/{{ .Values.clusterName }}/components/konstruct-components
+    path: registry/clusters/{{ .Values.clusterName }}/components/konstruct-system
     targetRevision: HEAD
   destination:
     name: {{ .Values.clusterDestination }}
