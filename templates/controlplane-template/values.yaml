@@ -169,6 +169,12 @@ gateway:
   # @input.default: https-logs
   logsSectionName: https-logs
 
+  # @input.type: string
+  # @input.description: Listener sectionName for the Vault HTTPRoute (Civo only).
+  # @input.required: false
+  # @input.default: https-vault
+  vaultSectionName: https-vault
+
 # =============================================================================
 # CLOUD PROVIDER
 # =============================================================================

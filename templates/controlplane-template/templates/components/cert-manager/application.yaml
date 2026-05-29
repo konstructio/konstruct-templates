@@ -22,6 +22,11 @@ spec:
             eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.aws.accountId }}:role/konstruct-cert-manager-{{ .Values.clusterName }}'
 {{- end }}
         installCRDs: true
+        # Required for the gatewayHTTPRoute solver on the cluster issuers.
+        # Without this, cert-manager skips Certificate resources backed by
+        # the Gateway API and HTTPS listeners stay InvalidCertificateRef.
+        extraArgs:
+          - --enable-gateway-api
     chart: cert-manager
   destination:
     name: in-cluster
