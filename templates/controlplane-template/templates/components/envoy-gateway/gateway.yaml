@@ -9,8 +9,16 @@ metadata:
 spec:
   gatewayClassName: {{ default "eg" .Values.gateway.name }}
   listeners:
-    # Only listeners for HTTPRoutes/GRPCRoutes this chart actually emits.
-    # Add more as new components ship their own routes.
+    # http on port 80 is required for cert-manager's HTTP01 ACME challenge —
+    # the cluster-issuer attaches a temporary HTTPRoute here while the cert
+    # is being signed. Without it every HTTPS listener stays in
+    # InvalidCertificateRef and no cert ever gets issued.
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
 
     - name: {{ default "https-argocd" .Values.gateway.argocdSectionName }}
       hostname: argocd.{{ .Values.domainName }}
@@ -63,3 +71,20 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+
+{{- if eq .Values.cloudProvider "civo" }}
+    # Civo self-hosts Vault. Expose its UI/API through the same gateway so
+    # ESO + operators reach it on a stable hostname.
+    - name: {{ default "https-vault" .Values.gateway.vaultSectionName }}
+      hostname: vault.{{ .Values.domainName }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: vault-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+{{- end }}
