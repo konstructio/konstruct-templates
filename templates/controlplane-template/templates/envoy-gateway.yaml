@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ingress-nginx-components
+  name: envoy-gateway-components
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   namespace: argocd
@@ -11,11 +11,11 @@ spec:
   project: {{ .Values.project }}
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
-    path: registry/clusters/{{ .Values.clusterName }}/components/ingress-nginx
+    path: registry/clusters/{{ .Values.clusterName }}/components/envoy-gateway
     targetRevision: HEAD
   destination:
     name: {{ .Values.clusterDestination }}
-    namespace: ingress-nginx
+    namespace: envoy-gateway-system
   syncPolicy:
     automated:
       prune: true
