@@ -10,7 +10,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: oci://docker.io/envoyproxy
+    # ArgoCD OCI helm pull constructs the registry path from repoURL + chart;
+    # the oci:// prefix causes the chart segment to be dropped on Docker Hub.
+    repoURL: docker.io/envoyproxy
     chart: gateway-helm
     targetRevision: {{ default "v1.7.0" .Values.versions.envoyGateway | quote }}
     helm:
