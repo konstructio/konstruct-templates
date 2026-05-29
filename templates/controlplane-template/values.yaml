@@ -111,6 +111,20 @@ externalDns:
   domainName: example.com
 
 # =============================================================================
+# CHART VERSIONS
+# =============================================================================
+# Defaults track the rr23 reference cluster. Override via values to pin to a
+# different release without forking the chart.
+
+versions:
+  certManager: v1.20.1
+  externalDns: "1.20.0"
+  externalSecretsOperator: "0.19.2"
+  envoyGateway: v1.7.0
+  vault: "0.25.0"
+  reloader: v1.0.10
+
+# =============================================================================
 # GATEWAY / INGRESS
 # =============================================================================
 #
