@@ -1,35 +1,26 @@
-{{- if eq .Values.gitProvider "github" }}
+{{- if eq .Values.cloudProvider "civo" }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: github-runner-components
+  name: vault-components
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '60'
+    argocd.argoproj.io/sync-wave: '20'
 spec:
   project: {{ .Values.project }}
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
-    path: registry/clusters/{{ .Values.clusterName }}/components/github-runner
+    path: registry/clusters/{{ .Values.clusterName }}/components/vault
     targetRevision: HEAD
   destination:
     name: {{ .Values.clusterDestination }}
-    namespace: github-runner
+    namespace: vault
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ApplyOutOfSyncOnly=true
-      - Replace=true
-      - PruneLast=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        maxDuration: 5m0s
-        factor: 2
 {{- end }}

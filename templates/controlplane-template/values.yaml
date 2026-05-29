@@ -111,6 +111,45 @@ externalDns:
   domainName: example.com
 
 # =============================================================================
+# GATEWAY / INGRESS
+# =============================================================================
+#
+# The platform standardises on the Kubernetes Gateway API via Envoy Gateway.
+# HTTPRoutes in this chart parent themselves under .Values.gateway.{name,
+# namespace,sectionName}. The defaults below match the bootstrap terraform.
+
+gateway:
+  # @input.type: string
+  # @input.description: Name of the parent Gateway resource for HTTPRoutes.
+  # @input.required: false
+  # @input.default: eg
+  name: eg
+
+  # @input.type: string
+  # @input.description: Namespace of the parent Gateway.
+  # @input.required: false
+  # @input.default: envoy-gateway-system
+  namespace: envoy-gateway-system
+
+  # @input.type: string
+  # @input.description: Listener sectionName on the parent Gateway.
+  # @input.required: false
+  # @input.default: https-konstruct
+  sectionName: https-konstruct
+
+# =============================================================================
+# CLOUD PROVIDER
+# =============================================================================
+
+# @input.type: enum
+# @input.description: Cloud provider the management cluster runs on. Drives
+#   AWS-specific bits (IRSA annotations, SSM paths) and Vault-specific bits.
+# @input.options: aws,civo
+# @input.required: true
+# @input.default: aws
+cloudProvider: aws
+
+# =============================================================================
 # SECRET STORE SETTINGS
 # =============================================================================
 
@@ -120,6 +159,45 @@ secretStore:
   # @input.required: true
   # @input.default: aws-ssm
   provider: aws-ssm
+
+  # @input.type: string
+  # @input.description: Override the ClusterSecretStore name. Defaults to
+  #   konstruct-aws-ssm (aws-ssm) or vault-kv-secret (vault).
+  # @input.required: false
+  # @input.default: ""
+  name: ""
+
+  vault:
+    # @input.type: string
+    # @input.description: Vault server address used by the in-cluster
+    #   ClusterSecretStore. Only consulted when provider=vault.
+    # @input.required: false
+    # @input.default: http://vault.vault.svc:8200
+    address: http://vault.vault.svc:8200
+
+    # @input.type: string
+    # @input.description: Vault KV mount point.
+    # @input.required: false
+    # @input.default: secret
+    path: secret
+
+    # @input.type: string
+    # @input.description: Vault KV version.
+    # @input.required: false
+    # @input.default: v2
+    version: v2
+
+    # @input.type: string
+    # @input.description: Vault Kubernetes auth mount path.
+    # @input.required: false
+    # @input.default: kubernetes/kubefirst
+    kubernetesAuthPath: kubernetes/kubefirst
+
+    # @input.type: string
+    # @input.description: Vault role mapped to the external-secrets SA.
+    # @input.required: false
+    # @input.default: external-secrets
+    role: external-secrets
 
 # =============================================================================
 # GITHUB APP SETTINGS (for ArgoCD repo secret and runner auth)
