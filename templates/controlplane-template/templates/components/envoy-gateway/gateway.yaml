@@ -59,6 +59,19 @@ spec:
         namespaces:
           from: All
 
+    - name: {{ default "https-dex" .Values.gateway.dexSectionName }}
+      hostname: dex.{{ .Values.domainName }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: dex-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+
     - name: {{ default "https-logs" .Values.gateway.logsSectionName }}
       hostname: logs-{{ .Values.clusterName }}.{{ .Values.domainName }}
       protocol: HTTPS
