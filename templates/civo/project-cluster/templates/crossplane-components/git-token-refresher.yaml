@@ -1,7 +1,8 @@
+{{- if eq .Values.gitProvider "github" }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: github-token-refresher
+  name: git-token-refresher
   namespace: crossplane-system
 spec:
   schedule: "*/45 * * * *"
@@ -9,7 +10,7 @@ spec:
     spec:
       template:
         spec:
-          serviceAccountName: github-token-refresher
+          serviceAccountName: git-token-refresher
           containers:
           - name: refresher
             image: {{ .Values.waitJobImage }}
@@ -57,7 +58,7 @@ spec:
               fi
 
               echo "=== PATCHING SECRET ==="
-              CREDS="https://x-access-token:${RESPONSE}@github.com"
+              CREDS="https://x-access-token:${RESPONSE}@{{ (urlParse .Values.gitopsRepoUrl).host }}"
 
               if kubectl get secret git-credentials -n crossplane-system &>/dev/null; then
                 echo "Secret exists, patching..."
@@ -77,21 +78,21 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: github-token-refresher
+  name: git-token-refresher
   namespace: crossplane-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: github-token-refresher
+  name: git-token-refresher
 subjects:
 - kind: ServiceAccount
-  name: github-token-refresher
+  name: git-token-refresher
   namespace: crossplane-system
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: github-token-refresher-init
+  name: git-token-refresher-init
   namespace: crossplane-system
   annotations:
     helm.sh/hook: post-install,post-upgrade
@@ -99,7 +100,7 @@ metadata:
 spec:
   template:
     spec:
-      serviceAccountName: github-token-refresher
+      serviceAccountName: git-token-refresher
       containers:
       - name: refresher
         image: {{ .Values.waitJobImage}}
@@ -147,7 +148,7 @@ spec:
           fi
 
           echo "=== PATCHING SECRET ==="
-          CREDS="https://x-access-token:${RESPONSE}@github.com"
+          CREDS="https://x-access-token:${RESPONSE}@{{ (urlParse .Values.gitopsRepoUrl).host }}"
 
           if kubectl get secret git-credentials -n crossplane-system &>/dev/null; then
             echo "Secret exists, patching..."
@@ -167,13 +168,13 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: github-token-refresher
+  name: git-token-refresher
   namespace: crossplane-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: github-token-refresher
+  name: git-token-refresher
   namespace: crossplane-system
 rules:
 - apiGroups: [""]
@@ -182,4 +183,5 @@ rules:
   verbs: ["get", "patch"]
 - apiGroups: [""]
   resources: ["secrets"]
-  verbs: ["create"] 
+  verbs: ["create"]
+{{- end }} 

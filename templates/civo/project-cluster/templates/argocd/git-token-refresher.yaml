@@ -1,13 +1,14 @@
+{{- if eq .Values.gitProvider "github" }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: github-token-refresher
+  name: git-token-refresher
   namespace: argocd
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: github-token-refresher
+  name: git-token-refresher
   namespace: argocd
 rules:
 - apiGroups: [""]
@@ -21,21 +22,21 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: github-token-refresher
+  name: git-token-refresher
   namespace: argocd
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: github-token-refresher
+  name: git-token-refresher
 subjects:
 - kind: ServiceAccount
-  name: github-token-refresher
+  name: git-token-refresher
   namespace: argocd
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: github-token-refresher
+  name: git-token-refresher
   namespace: argocd
 spec:
   schedule: "*/45 * * * *"
@@ -43,7 +44,7 @@ spec:
     spec:
       template:
         spec:
-          serviceAccountName: github-token-refresher
+          serviceAccountName: git-token-refresher
           containers:
           - name: refresher
             image: {{ .Values.waitJobImage }}
@@ -73,7 +74,7 @@ spec:
               echo "=== ENV CHECK ==="
               echo "VENDING_URL: ${VENDING_URL}"
               echo "ORG_ID: ${ORG_ID}"
-              echo "GITHUB_REPO_URL: https://github.com/${ORG_NAME}/${REPO_NAME}.git"
+              echo "GITHUB_REPO_URL: https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}/${REPO_NAME}.git"
               echo "TOKEN length: ${#TOKEN}"
 
               echo "=== REQUESTING TOKEN ==="
@@ -97,7 +98,7 @@ spec:
               fi
 
               echo "=== PATCHING SECRET ==="
-              GITHUB_REPO_URL="https://github.com/${ORG_NAME}/${REPO_NAME}.git"
+              GITHUB_REPO_URL="https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}/${REPO_NAME}.git"
               ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
 
               if kubectl get secret github-repo-creds -n argocd &>/dev/null; then
@@ -129,7 +130,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: github-token-refresher-init
+  name: git-token-refresher-init
   namespace: argocd
   annotations:
     helm.sh/hook: post-install,post-upgrade
@@ -137,7 +138,7 @@ metadata:
 spec:
   template:
     spec:
-      serviceAccountName: github-token-refresher
+      serviceAccountName: git-token-refresher
       containers:
       - name: refresher
         image: {{ .Values.waitJobImage }}
@@ -167,7 +168,7 @@ spec:
           echo "=== ENV CHECK ==="
           echo "VENDING_URL: ${VENDING_URL}"
           echo "ORG_ID: ${ORG_ID}"
-          echo "GITHUB_REPO_URL: https://github.com/${ORG_NAME}/${REPO_NAME}.git"
+          echo "GITHUB_REPO_URL: https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}/${REPO_NAME}.git"
           echo "TOKEN length: ${#TOKEN}"
 
           echo "=== REQUESTING TOKEN ==="
@@ -191,7 +192,7 @@ spec:
           fi
 
           echo "=== PATCHING SECRET ==="
-          GITHUB_REPO_URL="https://github.com/${ORG_NAME}/${REPO_NAME}.git"
+          GITHUB_REPO_URL="https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}/${REPO_NAME}.git"
           ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
 
           if kubectl get secret github-repo-creds -n argocd &>/dev/null; then
@@ -219,3 +220,4 @@ spec:
 
           echo "Done."
       restartPolicy: OnFailure
+{{- end }}
