@@ -170,6 +170,12 @@ gateway:
   logsSectionName: https-logs
 
   # @input.type: string
+  # @input.description: Listener sectionName for the Dex HTTPRoute.
+  # @input.required: false
+  # @input.default: https-dex
+  dexSectionName: https-dex
+
+  # @input.type: string
   # @input.description: Listener sectionName for the Vault HTTPRoute (Civo only).
   # @input.required: false
   # @input.default: https-vault
