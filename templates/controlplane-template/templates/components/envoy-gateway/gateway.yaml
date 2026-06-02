@@ -73,14 +73,14 @@ spec:
           from: All
 
     - name: {{ default "https-logs" .Values.gateway.logsSectionName }}
-      hostname: logs-{{ .Values.clusterName }}.{{ .Values.domainName }}
+      hostname: logs.{{ .Values.domainName }}
       protocol: HTTPS
       port: 443
       tls:
         mode: Terminate
         certificateRefs:
           - kind: Secret
-            name: logs-{{ .Values.clusterName }}-cluster
+            name: logs-cluster
       allowedRoutes:
         namespaces:
           from: All
