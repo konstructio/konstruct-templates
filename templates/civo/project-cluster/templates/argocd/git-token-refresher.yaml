@@ -1,4 +1,3 @@
-{{- if eq .Values.gitProvider "github" }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -220,4 +219,3 @@ spec:
 
           echo "Done."
       restartPolicy: OnFailure
-{{- end }}

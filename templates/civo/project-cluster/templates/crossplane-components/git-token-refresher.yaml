@@ -1,4 +1,3 @@
-{{- if eq .Values.gitProvider "github" }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -183,5 +182,4 @@ rules:
   verbs: ["get", "patch"]
 - apiGroups: [""]
   resources: ["secrets"]
-  verbs: ["create"]
-{{- end }} 
+  verbs: ["create"] 
