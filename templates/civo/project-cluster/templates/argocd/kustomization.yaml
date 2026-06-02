@@ -9,7 +9,7 @@ resources:
   - argocd-ui-httproute.yaml
   - application.yaml
   - rbac.yaml
-  - github-token-refresher.yaml
+  - git-token-refresher.yaml
   
 patchesStrategicMerge:
   - argocd-cmd-params-cm.yaml

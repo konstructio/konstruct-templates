@@ -66,7 +66,7 @@ spec:
           spec:
             project: default
             source:
-              repoURL: https://github.com/${ORG_NAME}/${REPO_NAME}
+              repoURL: https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}/${REPO_NAME}
               path: registry/clusters/${CLUSTER_NAME}
               targetRevision: HEAD
             destination:
