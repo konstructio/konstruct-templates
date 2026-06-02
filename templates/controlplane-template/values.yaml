@@ -259,3 +259,26 @@ githubApp:
   # @input.required: false
   # @input.default: ""
   installationId: ""
+
+# =============================================================================
+# CROSSPLANE
+# =============================================================================
+
+crossplane:
+  # Terraform provider runs as a single pod with a PVC-backed workdir for
+  # module state (/tf) and streamed logs (/logs). Defaults to 20Gi; storage
+  # class is left empty so the cluster default is used unless overridden
+  # (Civo bootstrap should set "civo-volume", EKS typically "gp3").
+  terraformProvider:
+    workdir:
+      # @input.type: string
+      # @input.description: StorageClassName for the provider-terraform-workdir PVC. Empty uses the cluster default.
+      # @input.required: false
+      # @input.default: ""
+      storageClassName: ""
+
+      # @input.type: string
+      # @input.description: Size of the provider-terraform-workdir PVC.
+      # @input.required: false
+      # @input.default: 20Gi
+      size: 20Gi
