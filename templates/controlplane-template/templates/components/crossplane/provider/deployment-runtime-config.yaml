@@ -1,3 +1,22 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: provider-terraform-workdir
+  namespace: crossplane-system
+  labels:
+    app: crossplane-provider-terraform
+  annotations:
+    argocd.argoproj.io/sync-wave: '5'
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.crossplane.terraformProvider.workdir.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.crossplane.terraformProvider.workdir.size }}
+---
 apiVersion: pkg.crossplane.io/v1beta1
 kind: DeploymentRuntimeConfig
 metadata:
@@ -15,7 +34,14 @@ spec:
         eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.aws.accountId }}:role/konstruct-crossplane-{{ .Values.clusterName }}'
 {{- end }}
   deploymentTemplate:
+    metadata: {}
     spec:
+      # The terraform provider writes module state to /tf on the workdir PVC.
+      # ReadWriteOnce volumes can only attach to a single node, so a rolling
+      # update would deadlock the new pod waiting for the old one to release
+      # the PVC. Recreate avoids that.
+      strategy:
+        type: Recreate
       selector:
         matchLabels:
           pkg.crossplane.io/provider: terraform
@@ -25,7 +51,7 @@ spec:
             pkg.crossplane.io/provider: terraform
         spec:
           securityContext:
-            fsGroup: 65532
+            fsGroup: 2000
           containers:
           - name: package-runtime
             image: ghcr.io/konstructio/provider-terraform:v0.0.1-rc.3
@@ -33,11 +59,18 @@ spec:
               - -d
               - --poll=4m
               - --max-reconcile-rate=10
+            envFrom:
+              - secretRef:
+                  name: crossplane-secrets
             volumeMounts:
               - mountPath: /.cache
                 name: helmcache
+              - mountPath: /tf
+                name: workdir
+                subPath: tf
               - mountPath: /logs
-                name: shared-logs
+                name: workdir
+                subPath: logs
           - name: log-streamer
             imagePullPolicy: Always
             image: ghcr.io/konstructio/logs-streamer:v0.0.10
@@ -52,11 +85,32 @@ spec:
                 value: "/logs"
             volumeMounts:
               - mountPath: /logs
-                name: shared-logs
+                name: workdir
+                subPath: logs
                 readOnly: true
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 256Mi
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: 9090
+              initialDelaySeconds: 10
+              periodSeconds: 30
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 9090
+              initialDelaySeconds: 5
+              periodSeconds: 10
           volumes:
             - name: helmcache
               emptyDir:
                 sizeLimit: 500Mi
-            - name: shared-logs
-              emptyDir: {}
+            - name: workdir
+              persistentVolumeClaim:
+                claimName: provider-terraform-workdir

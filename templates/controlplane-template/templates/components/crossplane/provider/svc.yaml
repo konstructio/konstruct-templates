@@ -25,7 +25,7 @@ spec:
       namespace: {{ default "envoy-gateway-system" .Values.gateway.namespace }}
       sectionName: {{ default "https-logs" .Values.gateway.logsSectionName }}
   hostnames:
-    - logs-{{ .Values.clusterName }}.{{ .Values.domainName }}
+    - logs.{{ .Values.domainName }}
   rules:
     - matches:
         - path:
