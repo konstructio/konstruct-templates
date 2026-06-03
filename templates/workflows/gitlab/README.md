@@ -20,9 +20,11 @@ target `GitAccount.Spec.Provider == "gitlab"`. The layout is:
   built-in `$CI_JOB_TOKEN` (`$CI_REGISTRY_USER`/`$CI_REGISTRY_PASSWORD`
   injected automatically) and push to `$CI_REGISTRY_IMAGE`. No IAM trust
   policy, no AWS region, no cross-cloud auth.
-- **Cross-repo dispatch** uses GitLab's pipeline-trigger API rather than
-  GitHub's `createWorkflowDispatch`. Requires a project-scoped trigger
-  token on the GitOps repo (provisioned as `GITOPS_TRIGGER_TOKEN`).
+- **Cross-repo dispatch** uses GitLab's `POST /projects/:id/pipeline`
+  endpoint authenticated with the same group access token
+  gitaccount-operator already manages for the GitAccount. No separate
+  project-scoped trigger token to provision — the operator injects the
+  group token as a masked + protected CI variable (`GITLAB_ACCESS_TOKEN`).
 
 ## Tokens detokenised by the operator
 
@@ -46,7 +48,14 @@ API at the same point GitHub flows call `AddRepoSecret`:
 
 | Variable | Masked | Protected | Type | Source |
 |---|---|---|---|---|
-| `GITOPS_TRIGGER_TOKEN` | ✓ | ✓ | env_var | Pipeline trigger token on the GitOps project (created via Settings → CI/CD → Pipeline trigger tokens). Used by `deploy.yml` to kick the cross-repo update. |
+| `GITLAB_ACCESS_TOKEN` | ✓ | ✓ | env_var | Group access token on the GitAccount's `Spec.SecretRef`. Same token gitaccount-operator already uses for API operations. `deploy.yml` sends it as a `PRIVATE-TOKEN` header to trigger the GitOps pipeline. |
+
+### Security caveat
+
+The group access token has wider scope than a project-scoped trigger
+token — full `api` access across the group. Mark the variable masked +
+protected so it doesn't leak via job logs or unprotected branches.
+Rotation is owned by gitaccount-operator's existing flow.
 
 Everything else (`$CI_REGISTRY_*`, `$CI_PROJECT_*`, etc.) is supplied by
 GitLab Runner automatically — no extra variables required.
