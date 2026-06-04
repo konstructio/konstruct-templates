@@ -8,7 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '25'
 spec:
-  project: {{ .Values.workloadClusterName }}-platform
+  project: {{ .Values.workloadClusterName }}
   source:
     repoURL: https://github.com/kubernetes-sigs/gateway-api
     targetRevision: v1.2.1
