@@ -33,8 +33,10 @@ kind: Job
 metadata:
   name: apply-argocd-clusters-app
   namespace: argocd
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
 spec:
-  ttlSecondsAfterFinished: 100
   template:
     spec:
       serviceAccountName: argocd-application-creator
