@@ -5,8 +5,6 @@ workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruc
 # @input.required: false
 email: 123@gmail.com
 
-domainName: konstruct.io
-
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
 
