@@ -38,6 +38,17 @@ ingress:
   tls: false
   tlsSecretName: ""
 
+# gateway exposes the service via a Gateway API HTTPRoute attached to the
+# cluster's shared Envoy Gateway (the Foreman "public URL"). The operator sets
+# enabled + host; host must fall under the gateway's wildcard listener
+# (*.<region>.apps.<domain>). This is the path used on the workload clusters.
+gateway:
+  enabled: false
+  name: eg
+  namespace: default
+  sectionName: https-apps
+  host: ""
+
 # resources are mandatory in multi-tenant clusters — defaults are deliberately
 # modest and always rendered.
 resources:
