@@ -1,5 +1,5 @@
 # Defaults for konstruct-web-service. The foreman-operator overrides image,
-# containerPort, env, replicaCount, imagePullSecrets and ingress via the ArgoCD
+# containerPort, env, replicaCount, imagePullSecrets and gateway via the ArgoCD
 # Application's helm.valuesObject.
 
 # nameOverride / fullnameOverride let the operator pin the resource name.
@@ -29,14 +29,6 @@ service:
   type: ClusterIP
   port: 80
   targetPort: 8080
-
-ingress:
-  enabled: false
-  className: ""
-  annotations: {}
-  host: ""
-  tls: false
-  tlsSecretName: ""
 
 # gateway exposes the service via a Gateway API HTTPRoute attached to the
 # cluster's shared Envoy Gateway (the Foreman "public URL"). The operator sets
