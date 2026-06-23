@@ -1,0 +1,69 @@
+# Defaults for konstruct-web-service. The foreman-operator overrides image,
+# containerPort, env, replicaCount, imagePullSecrets and ingress via the ArgoCD
+# Application's helm.valuesObject.
+
+# nameOverride / fullnameOverride let the operator pin the resource name.
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  # repository is set by the operator to the digest-pinned reference.
+  repository: ""
+  # tag is optional when repository is digest-pinned.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# imagePullSecrets references the Harbor pull secret distributed by the operator.
+imagePullSecrets: []
+
+replicaCount: 1
+
+# containerPort is the port the app listens on (CNB convention; PORT is also
+# injected as an env var by the operator).
+containerPort: 8080
+
+# env is a list of {name, value} pairs.
+env: []
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: ""
+  tls: false
+  tlsSecretName: ""
+
+# resources are mandatory in multi-tenant clusters — defaults are deliberately
+# modest and always rendered.
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# probes default to an HTTP GET on the container port.
+probes:
+  enabled: true
+  path: /
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+# Hardened pod/container security context (overridable but secure by default).
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL

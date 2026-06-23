@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "konstruct-web-service.fullname" . }}
+  labels:
+    {{- include "konstruct-web-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "konstruct-web-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "konstruct-web-service.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: app
+          image: {{ include "konstruct-web-service.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.probes.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.periodSeconds }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
