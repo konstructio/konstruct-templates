@@ -41,6 +41,21 @@ gateway:
   sectionName: https-apps
   host: ""
 
+# networkPolicy renders per-app tenant-isolation policies into the shared
+# per-environment namespace: default-deny on this app's pods, ingress only from
+# sibling pods in the same environment + the gateway's Envoy proxies (on the
+# serving port), egress only to DNS, sibling pods, and the public internet
+# (private ranges + the cloud metadata endpoint are excluded). Policies are
+# scoped to this app's selector labels so apps sharing the namespace never
+# contend over the same objects. Enforcement requires a NetworkPolicy-capable
+# CNI (Cilium/Calico); under flannel they are inert.
+networkPolicy:
+  enabled: true
+  # gatewayNamespace is where the Envoy PROXY pods run (traffic originates
+  # there) — for Envoy Gateway that is envoy-gateway-system, NOT the namespace
+  # of the Gateway resource itself (gateway.namespace above).
+  gatewayNamespace: envoy-gateway-system
+
 # resources are mandatory in multi-tenant clusters — defaults are deliberately
 # modest and always rendered.
 resources:
