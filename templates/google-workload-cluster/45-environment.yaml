@@ -10,7 +10,7 @@ metadata:
 spec:
   project: <WORKLOAD_CLUSTER_NAME>-environment
   source:
-    repoURL: <GITOPS_REPO_URL>
+    repoURL: <TEAM_GITOPS_REPO_URL>
     path: registry/environments/<ENV_NAME>/<WORKLOAD_CLUSTER_NAME>
     targetRevision: HEAD
   destination:

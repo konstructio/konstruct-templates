@@ -11,7 +11,7 @@ spec:
   description: <WORKLOAD_CLUSTER_NAME> description
   sourceNamespaces: ["<WORKLOAD_CLUSTER_NAME>-environment"]
   sourceRepos:
-  - '<GITOPS_REPO_URL>'
+  - '<TEAM_GITOPS_REPO_URL>'
   destinations:
   - name: <WORKLOAD_CLUSTER_NAME>
     namespace: '*'
