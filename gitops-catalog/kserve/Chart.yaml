@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kserve
+description: A Helm chart for deploying KServe (CRDs + controller in RawDeployment mode) with ArgoCD. Ships two child Applications - kserve-crd at sync-wave 0 and kserve-resources at sync-wave 1 - so the CRDs land before the controller. Pulls from oci://ghcr.io/kserve/charts (KServe's only official chart registry).
+type: application
+version: 0.1.0
+appVersion: "0.17.0"

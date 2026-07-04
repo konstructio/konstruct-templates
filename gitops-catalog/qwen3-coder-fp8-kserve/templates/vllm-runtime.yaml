@@ -1,0 +1,30 @@
+{{- if eq (toString .Values.installVllmRuntime) "true" }}
+apiVersion: serving.kserve.io/v1alpha1
+kind: ClusterServingRuntime
+metadata:
+  name: {{ .Values.vllmRuntimeName }}
+spec:
+  supportedModelFormats:
+    - name: huggingface
+      version: "1"
+      autoSelect: true
+  multiModel: false
+  containers:
+    - name: kserve-container
+      image: {{ .Values.vllmRuntimeImage }}
+      command:
+        - python3
+        - -m
+        - vllm.entrypoints.openai.api_server
+      args:
+        - --model
+        - /mnt/models
+        - --port
+        - "8080"
+      ports:
+        - containerPort: 8080
+          protocol: TCP
+      env:
+        - name: HF_HOME
+          value: /tmp/hf_home
+{{- end }}

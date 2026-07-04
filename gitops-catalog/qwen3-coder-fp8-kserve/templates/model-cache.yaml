@@ -1,0 +1,14 @@
+{{- if eq (toString .Values.installModelCache) "true" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.modelCachePvcName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.modelCacheSize }}
+  storageClassName: {{ .Values.storageClassName }}
+{{- end }}

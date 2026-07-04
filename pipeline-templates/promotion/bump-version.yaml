@@ -1,0 +1,57 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract repo name
+        id: extract-repo-name
+        run: echo "repo_name=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ steps.extract-repo-name.outputs.repo_name }}
+          BUMP: ${{ github.event.inputs.bump }}
+        run: |
+          CHART_FILE="charts/$REPO_OWNER/$REPO_NAME/Chart.yaml"
+          CURRENT=$(grep "^version:" "$CHART_FILE" | awk '{print $2}' | tr -d '"')
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          sed -i "s/^version:.*/version: ${NEW_VERSION}/" "$CHART_FILE"
+
+          echo "Bumped $CURRENT → $NEW_VERSION ($BUMP)"
+
+      - name: Commit and push
+        run: |
+          git config user.name "konstruct[bot]"
+          git config user.email "konstruct[bot]@users.noreply.github.com"
+          git add charts/
+          git commit -m "chore: bump chart version (${{ github.event.inputs.bump }})"
+          git push

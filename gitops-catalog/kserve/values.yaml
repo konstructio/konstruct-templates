@@ -1,0 +1,146 @@
+# KServe Configuration
+# Deploys KServe CRDs + controller via two ArgoCD Applications. Defaults match
+# a RawDeployment-mode install (no Istio, no Knative).
+
+# @input.type: string
+# @input.description: Cluster name identifier
+# @input.required: true
+# @input.default: my-cluster
+clusterName: my-cluster
+
+# @input.type: string
+# @input.description: Target cluster destination for ArgoCD
+# @input.required: true
+# @input.default: in-cluster
+clusterDestination: in-cluster
+
+# @input.type: string
+# @input.description: ArgoCD project name
+# @input.required: true
+# @input.default: default
+project: default
+
+# @input.type: string
+# @input.description: Namespace for the KServe controller and CRDs
+# @input.required: true
+# @input.default: kserve
+namespace: kserve
+
+# @input.type: string
+# @input.description: KServe Helm chart version (applies to both kserve-crd and kserve-resources charts on oci://ghcr.io/kserve/charts)
+# @input.required: true
+# @input.default: v0.17.0
+chartVersion: v0.17.0
+
+# =============================================================================
+# CONTROLLER CONFIGURATION
+# =============================================================================
+
+# @input.type: enum
+# @input.description: KServe deployment mode. "Standard" (v0.17+ name for the former "RawDeployment") uses plain Kubernetes Deployments/Services with no Knative/Istio dependency
+# @input.options: Standard,Serverless,ModelMesh
+# @input.required: true
+# @input.default: Standard
+deploymentMode: Standard
+
+# @input.type: enum
+# @input.description: Disable Istio VirtualHost generation (set true when not using Istio)
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+disableIstioVirtualHost: true
+
+# @input.type: enum
+# @input.description: Create the cluster-wide Istio Gateway resource (set false when not using Istio)
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+createIngressGateway: false
+
+# @input.type: enum
+# @input.description: Stop KServe from auto-creating an Ingress resource per InferenceService (set true when you're exposing the predictor via a LoadBalancer Service or your own ingress/gateway instead)
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+disableIngressCreation: true
+
+# @input.type: enum
+# @input.description: Configure KServe to route through a Gateway API Gateway instead of Ingress (requires Gateway API CRDs + a GatewayClass already installed)
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+enableGatewayApi: false
+
+# @input.description: Reference to the Gateway resource KServe should attach HTTPRoutes to, in the form "<namespace>/<gateway-name>". Only used when enableGatewayApi is true
+# @input.type: string
+# @input.required: false
+# @input.default: ""
+kserveGateway: ""
+
+# =============================================================================
+# SERVING RUNTIMES
+# Default to all disabled except huggingfaceserver (vLLM under the hood).
+# =============================================================================
+
+# @input.type: enum
+# @input.description: Enable the huggingfaceserver runtime (vLLM-backed)
+# @input.options: true,false
+# @input.required: true
+# @input.default: true
+huggingfaceserverEnabled: true
+
+# @input.type: enum
+# @input.description: Enable the Triton serving runtime
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+tritonEnabled: false
+
+# @input.type: enum
+# @input.description: Enable the TensorFlow serving runtime
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+tensorflowEnabled: false
+
+# @input.type: enum
+# @input.description: Enable the MLServer runtime
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+mlserverEnabled: false
+
+# @input.type: enum
+# @input.description: Enable the scikit-learn serving runtime
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+sklearnserverEnabled: false
+
+# @input.type: enum
+# @input.description: Enable the XGBoost serving runtime
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+xgbserverEnabled: false
+
+# @input.type: enum
+# @input.description: Enable the LightGBM serving runtime
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+lgbserverEnabled: false
+
+# @input.type: enum
+# @input.description: Enable the PMML serving runtime
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+pmmlserverEnabled: false
+
+# @input.type: enum
+# @input.description: Enable the PaddlePaddle serving runtime
+# @input.options: true,false
+# @input.required: true
+# @input.default: false
+paddleserverEnabled: false

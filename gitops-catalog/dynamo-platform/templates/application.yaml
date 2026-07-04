@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-dynamo-platform
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: dynamo-platform
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: dynamo-platform
+    repoURL: helm.ngc.nvidia.com/nvidia/ai-dynamo/charts
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: dynamo-platform
+      values: |
+        global:
+          nats:
+            install: {{ .Values.natsInstall }}
+          etcd:
+            install: {{ .Values.etcdInstall }}
+          grove:
+            install: {{ .Values.groveInstall }}
+          kai-scheduler:
+            install: {{ .Values.kaiSchedulerInstall }}
+        dynamo-operator:
+          enabled: {{ .Values.dynamoOperatorEnabled }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - Replace=false
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

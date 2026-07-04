@@ -1,0 +1,192 @@
+name: Release Prod
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  AWS_REGION: <AWS_REGION>
+  ASSUME_ROLE_ARN: <ROLE_ARN>
+  GITOPS_OWNER: <ORG_NAME>
+  GITOPS_REPO: <GITOPS_REPO_NAME>
+  APP_NAME: <APP_NAME>
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout app repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ env.GITOPS_OWNER }}
+          repositories: ${{ env.GITOPS_REPO }}
+
+      - name: Checkout gitops repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITOPS_OWNER }}/${{ env.GITOPS_REPO }}
+          token: ${{ steps.app-token.outputs.token }}
+          path: gitops
+
+      - name: Read version from stage
+        id: source-version
+        run: |
+          MANIFEST=$(find "gitops/registry/environments/stage" -name "${{ env.APP_NAME }}.yaml" | head -1)
+
+          if [ -z "$MANIFEST" ]; then
+            echo "::error::No ${{ env.APP_NAME }}.yaml found in environments/stage"
+            exit 1
+          fi
+
+          VERSION=$(grep 'targetRevision:' "$MANIFEST" | awk '{print $2}' | tr -d '"')
+
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not read targetRevision from $MANIFEST"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Releasing $VERSION from stage to prod"
+
+      - name: Extract repo name
+        id: extract-repo-name
+        run: echo "repo_name=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
+
+      - name: Install Helm
+        run: |
+          wget -q https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz
+          tar xf helm-v3.16.2-linux-amd64.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
+        with:
+          role-to-assume: ${{ env.ASSUME_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Re-tag RC chart as release
+        id: release-chart
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ steps.extract-repo-name.outputs.repo_name }}
+          RC_VERSION: ${{ steps.source-version.outputs.version }}
+        run: |
+          CHART_NAME=$(grep "^name:" "charts/$REPO_OWNER/$REPO_NAME/Chart.yaml" | awk '{print $2}' | tr -d '"')
+          CHART_VERSION=$(grep "^version:" "charts/$REPO_OWNER/$REPO_NAME/Chart.yaml" | awk '{print $2}' | tr -d '"')
+          OCI_REPO="oci://$ECR_REGISTRY/$REPO_OWNER/charts"
+
+          # Pull the exact RC chart that was validated in stage
+          helm pull "$OCI_REPO/$CHART_NAME" --version "$RC_VERSION"
+
+          # Extract, re-version, and push as clean semver
+          mkdir -p repackage
+          tar xzf "${CHART_NAME}-${RC_VERSION}.tgz" -C repackage
+          helm package repackage/$CHART_NAME --version "$CHART_VERSION"
+          helm push "${CHART_NAME}-${CHART_VERSION}.tgz" "$OCI_REPO"
+
+          echo "chart_version=$CHART_VERSION" >> $GITHUB_OUTPUT
+          echo "chart_name=$CHART_NAME" >> $GITHUB_OUTPUT
+          echo "Re-tagged $CHART_NAME:$RC_VERSION as $CHART_VERSION"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.release-chart.outputs.chart_version }}
+        run: |
+          gh release create "$TAG" \
+            --target "${{ github.sha }}" \
+            --title "$TAG" \
+            --generate-notes
+
+      - name: Deploy to prod
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: '${{ env.GITOPS_OWNER }}',
+              repo: '${{ env.GITOPS_REPO }}',
+              workflow_id: 'update-environment.yaml',
+              ref: 'main',
+              inputs: {
+                environment: 'prod',
+                app_version: '${{ steps.release-chart.outputs.chart_version }}',
+                app_name: '${{ env.APP_NAME }}',
+                triggered_by: '${{ github.actor }}',
+                source_run_id: '${{ github.run_id }}'
+              }
+            });
+            console.log('Released ${{ steps.release-chart.outputs.chart_version }} to prod');
+
+      - name: Generate app token for self
+        id: app-token-self
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Bump chart version on main
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          REPO_OWNER="${{ github.repository_owner }}"
+          CHART_PATH="charts/$REPO_OWNER/$REPO_NAME/Chart.yaml"
+
+          git remote set-url origin "https://x-access-token:${{ steps.app-token-self.outputs.token }}@github.com/${{ github.repository }}.git"
+          git checkout main
+          git pull origin main
+
+          CURRENT_VERSION=$(grep "^version:" "$CHART_PATH" | awk '{print $2}' | tr -d '"')
+          MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+          MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+          PATCH=$(echo "$CURRENT_VERSION" | cut -d. -f3)
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}"
+
+          sed -i "s/^version:.*/version: $NEXT_VERSION/" "$CHART_PATH"
+
+          git config user.name "konstruct[bot]"
+          git config user.email "konstruct[bot]@users.noreply.github.com"
+          git add "$CHART_PATH"
+          git commit -m "chore: bump chart version to $NEXT_VERSION after release"
+          git pull --rebase origin main
+          git push origin main
+
+          echo "Released v${CURRENT_VERSION}, bumped main to ${NEXT_VERSION}"
+
+      - name: Trigger publish for bumped version
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token-self.outputs.token }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'publish-dev.yaml',
+              ref: 'main'
+            });
+            console.log('Triggered publish for bumped version');
+
+      - name: Summary
+        run: |
+          echo "### Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Chart**: \`${{ steps.release-chart.outputs.chart_name }}:${{ steps.release-chart.outputs.chart_version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Release**: \`v${{ steps.release-chart.outputs.chart_version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Source**: stage" >> $GITHUB_STEP_SUMMARY

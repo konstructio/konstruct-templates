@@ -6,11 +6,14 @@ namespace: argocd
 # https://github.com/argoproj/argo-cd/tags
 resources:
   - github.com:konstructio/manifests.git/argocd/cloud?ref=jokestax-patch-2
-  - argocd-ui-ingress.yaml
+  - argocd-ui-httproute.yaml
 
 patchesStrategicMerge:
   - argocd-cm.yaml
   - argocd-cmd-params-cm.yaml
-  
+  - argocd-application-controller-sa.yaml
+  - argocd-applicationset-controller-sa.yaml
+  - argocd-server-sa.yaml
+
 generatorOptions:
   disableNameSuffixHash: true

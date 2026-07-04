@@ -11,13 +11,22 @@ spec:
   project: default
   source:
     repoURL: https://charts.jetstack.io
-    targetRevision: v1.14.4
+    targetRevision: {{ default "v1.20.1" .Values.versions.certManager | quote }}
     helm:
       values: |-
         serviceAccount:
           create: true
           name: cert-manager
+{{- if eq .Values.cloudProvider "aws" }}
+          annotations:
+            eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.aws.accountId }}:role/konstruct-cert-manager-{{ .Values.clusterName }}'
+{{- end }}
         installCRDs: true
+        # Required for the gatewayHTTPRoute solver on the cluster issuers.
+        # Without this, cert-manager skips Certificate resources backed by
+        # the Gateway API and HTTPS listeners stay InvalidCertificateRef.
+        extraArgs:
+          - --enable-gateway-api
     chart: cert-manager
   destination:
     name: in-cluster

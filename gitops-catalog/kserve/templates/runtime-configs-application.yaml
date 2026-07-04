@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-kserve-runtime-configs
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    kubefirst.konstruct.io/application-name: kserve-runtime-configs
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: kserve-runtime-configs
+    repoURL: ghcr.io/kserve/charts
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: kserve-runtime-configs
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

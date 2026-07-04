@@ -1,0 +1,68 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-kserve
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    kubefirst.konstruct.io/application-name: kserve
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: kserve-resources
+    repoURL: ghcr.io/kserve/charts
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: kserve
+      values: |
+        kserve:
+          controller:
+            deploymentMode: {{ .Values.deploymentMode | quote }}
+            gateway:
+              disableIstioVirtualHost: {{ eq (toString .Values.disableIstioVirtualHost) "true" }}
+              disableIngressCreation: {{ eq (toString .Values.disableIngressCreation) "true" }}
+              ingressGateway:
+                createGateway: {{ eq (toString .Values.createIngressGateway) "true" }}
+                enableGatewayApi: {{ eq (toString .Values.enableGatewayApi) "true" }}
+                {{- $gw := .Values.kserveGateway | toString }}
+                {{- if and (eq (toString .Values.enableGatewayApi) "true") $gw (ne $gw "\"\"") (ne $gw "''") }}
+                kserveGateway: {{ $gw }}
+                {{- end }}
+          servingruntime:
+            tensorflow:
+              disabled: {{ ne (toString .Values.tensorflowEnabled) "true" }}
+            triton:
+              disabled: {{ ne (toString .Values.tritonEnabled) "true" }}
+            mlserver:
+              disabled: {{ ne (toString .Values.mlserverEnabled) "true" }}
+            sklearnserver:
+              disabled: {{ ne (toString .Values.sklearnserverEnabled) "true" }}
+            xgbserver:
+              disabled: {{ ne (toString .Values.xgbserverEnabled) "true" }}
+            lgbserver:
+              disabled: {{ ne (toString .Values.lgbserverEnabled) "true" }}
+            pmmlserver:
+              disabled: {{ ne (toString .Values.pmmlserverEnabled) "true" }}
+            paddleserver:
+              disabled: {{ ne (toString .Values.paddleserverEnabled) "true" }}
+            huggingfaceserver:
+              disabled: {{ ne (toString .Values.huggingfaceserverEnabled) "true" }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

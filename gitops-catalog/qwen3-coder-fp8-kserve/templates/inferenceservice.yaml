@@ -1,0 +1,38 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: {{ .Values.inferenceServiceName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  predictor:
+    minReplicas: {{ .Values.minReplicas }}
+    maxReplicas: {{ .Values.maxReplicas }}
+    model:
+      modelFormat:
+        name: huggingface
+      {{- if eq (toString .Values.installVllmRuntime) "true" }}
+      runtime: {{ .Values.vllmRuntimeName }}
+      {{- end }}
+      args:
+        - --tensor-parallel-size={{ .Values.tensorParallelSize }}
+        - --gpu-memory-utilization={{ .Values.gpuMemoryUtilization }}
+        - --served-model-name={{ .Values.modelName }}
+        {{- if eq (toString .Values.enableAutoToolChoice) "true" }}
+        - --enable-auto-tool-choice
+        - --tool-call-parser={{ .Values.toolCallParser }}
+        {{- end }}
+        - --max-model-len={{ .Values.maxModelLen }}
+      {{- if eq (toString .Values.installModelCache) "true" }}
+      storageUri: "pvc://{{ .Values.modelCachePvcName }}/model"
+      {{- else }}
+      storageUri: {{ .Values.storageUri | quote }}
+      {{- end }}
+      resources:
+        limits:
+          nvidia.com/gpu: {{ .Values.gpuCount | quote }}
+          memory: {{ .Values.memoryLimit }}
+          cpu: {{ .Values.cpuLimit | quote }}
+        requests:
+          nvidia.com/gpu: {{ .Values.gpuCount | quote }}
+          memory: {{ .Values.memoryRequest }}
+          cpu: {{ .Values.cpuRequest | quote }}

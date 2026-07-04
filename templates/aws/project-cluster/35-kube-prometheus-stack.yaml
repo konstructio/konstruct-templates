@@ -1,0 +1,83 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack-<WORKLOAD_CLUSTER_NAME>
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '35'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: <WORKLOAD_CLUSTER_NAME>
+  destination:
+    namespace: observability
+    name: <WORKLOAD_CLUSTER_NAME>
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 68.3.0
+    helm:
+      releaseName: kube-prometheus-stack
+      values: |
+        # Disable Grafana (metrics forwarded to cluster A)
+        grafana:
+          enabled: false
+
+        # Disable AlertManager (cluster A handles alerting)
+        alertmanager:
+          enabled: false
+
+        # Enable Prometheus with remote write to cluster A
+        prometheus:
+          enabled: true
+          prometheusSpec:
+            scrapeInterval: 5s
+            retention: 2h
+            externalLabels:
+              cluster: <WORKLOAD_CLUSTER_NAME>
+            remoteWrite:
+              - url: "https://prometheus-remote-write.<DOMAIN_NAME>/api/v1/write"
+            # Pick up all ServiceMonitors in cluster
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            storageSpec: {}
+
+        # Enable Prometheus Operator (required for ServiceMonitor CRDs)
+        prometheusOperator:
+          enabled: true
+
+        # Disable default rules (not needed for custom operator metrics)
+        defaultRules:
+          create: false
+
+        # Disable kube-state-metrics
+        kubeStateMetrics:
+          enabled: false
+
+        # Disable node-exporter
+        nodeExporter:
+          enabled: false
+
+        # Disable all Kubernetes component scrapers
+        kubeApiServer:
+          enabled: false
+        kubelet:
+          enabled: false
+        kubeControllerManager:
+          enabled: false
+        coreDns:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeProxy:
+          enabled: false
+        kubeEtcd:
+          enabled: false
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

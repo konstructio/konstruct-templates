@@ -1,0 +1,6 @@
+apiVersion: v2
+name: qwen3-coder-fp8
+description: Deploys the Qwen3-Coder-30B FP8 model on the NVIDIA AI Dynamo Platform (DynamoGraphDeployment + vLLM worker + frontend LoadBalancer + HuggingFace model cache and download Job). Requires the dynamo-platform catalog item to be installed first (provides the DynamoGraphDeployment CRD).
+type: application
+version: 0.1.0
+appVersion: "1.1.1"

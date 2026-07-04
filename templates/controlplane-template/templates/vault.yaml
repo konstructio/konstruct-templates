@@ -1,0 +1,26 @@
+{{- if eq .Values.cloudProvider "civo" }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-components
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+spec:
+  project: {{ .Values.project }}
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl }}
+    path: registry/clusters/{{ .Values.clusterName }}/components/vault
+    targetRevision: HEAD
+  destination:
+    name: {{ .Values.clusterDestination }}
+    namespace: vault
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}

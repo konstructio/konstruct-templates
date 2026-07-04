@@ -6,6 +6,40 @@ metadata:
     app.kubernetes.io/name: argocd-cmd-params-cm
     app.kubernetes.io/part-of: argocd
 data:
-  # ssl terminated at ingress-nginx and forwarded
-  # to allow for cloudflare origin issuer certificates
+  # TLS terminates at the Envoy gateway; argocd-server runs http internally.
   server.insecure: 'true'
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: argocd-application-controller
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: argocd-application-controller
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-repo-server
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: argocd-repo-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-server
+spec:
+  replicas: 3
+  template:
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: argocd-server

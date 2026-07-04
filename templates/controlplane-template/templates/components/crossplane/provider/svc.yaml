@@ -11,34 +11,26 @@ spec:
     protocol: TCP
     name: http
   selector:
-    pkg.crossplane.io/provider: provider-terraform 
-    pkg.crossplane.io/revision: crossplane-provider-terraform-6fe8d52ff0a1 
+    pkg.crossplane.io/provider: provider-terraform
+    pkg.crossplane.io/revision: crossplane-provider-terraform-6fe8d52ff0a1
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/proxy-buffering: 'off'
-    nginx.ingress.kubernetes.io/proxy-cache-bypass: '1'
-    nginx.ingress.kubernetes.io/proxy-read-timeout: '3600'
-    nginx.ingress.kubernetes.io/proxy-send-timeout: '3600'
-  name: log-streamer-ingress
+  name: log-streamer
   namespace: crossplane-system
 spec:
-  ingressClassName: nginx
+  parentRefs:
+    - name: {{ default "eg" .Values.gateway.name }}
+      namespace: {{ default "envoy-gateway-system" .Values.gateway.namespace }}
+      sectionName: {{ default "https-logs" .Values.gateway.logsSectionName }}
+  hostnames:
+    - logs.{{ .Values.domainName }}
   rules:
-    - host: logs-{{ .Values.clusterName }}.{{ .Values.domainName }}
-      http:
-        paths:
-          - backend:
-              service:
-                name: log-streamer-service
-                port:
-                  number: 9090
-            path: /
-            pathType: Prefix
-  tls:
-    - hosts:
-        - logs-{{ .Values.clusterName }}.{{ .Values.domainName }}
-      secretName: logs-{{ .Values.clusterName }}-cluster
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: log-streamer-service
+          port: 9090

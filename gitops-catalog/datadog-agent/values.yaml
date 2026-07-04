@@ -91,30 +91,40 @@ processAgentEnabled: false
 # @input.default: false
 apmServiceEnabled: false
 
-# @input.type: string
-# @input.description: Vault path for Datadog API key secret
-# @input.required: true
-# @input.default: /datadog-agent
-secretVaultPath: /datadog-agent
+# =============================================================================
+# SECRET CONFIGURATION
+# =============================================================================
 
-# =============================================================================
-# SECRET FIELDS - These will be stored in secret backend
-# =============================================================================
+# @input.type: string
+# @input.description: Name of the ClusterSecretStore to use for ExternalSecret
+# @input.required: true
+# @input.default: cluster-secret-store
+secretStoreName: cluster-secret-store
+
+# @input.type: string
+# @input.description: Key path in the secret store for Datadog credentials
+# @input.required: true
+# @input.default: konstruct/shared/datadog
+secretPath: konstruct/shared/datadog
+
+# IMPORTANT: Secret field defaults MUST use <TOKEN> placeholder format (e.g. <DATADOG_API_KEY>).
+# The operator matches these tokens to yamlValues in the CatalogDeployment CR.
+# Using "" or literal values will cause the operator to skip secret provisioning.
 
 # @input.type: secret
 # @input.description: Datadog API key for authentication
 # @input.required: true
 # @input.secretKey: api-key
 # @input.secretEnv: DATADOG_API_KEY
-# @input.secretBackend: vault
-# @input.secretPath: /datadog-agent
-datadogApiKey: ""
+# @input.secretBackend: aws-secrets-store
+# @input.secretPath: konstruct/shared/datadog
+datadogApiKey: <DATADOG_API_KEY>
 
 # @input.type: secret
 # @input.description: Datadog application key for API access
 # @input.required: true
 # @input.secretKey: app-key
 # @input.secretEnv: DATADOG_APP_KEY
-# @input.secretBackend: vault
-# @input.secretPath: /datadog-agent
-datadogAppKey: ""
+# @input.secretBackend: aws-secrets-store
+# @input.secretPath: konstruct/shared/datadog
+datadogAppKey: <DATADOG_APP_KEY>

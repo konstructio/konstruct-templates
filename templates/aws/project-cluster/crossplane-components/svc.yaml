@@ -10,6 +10,10 @@ spec:
     targetPort: 9090
     protocol: TCP
     name: http
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: metrics
   selector:
     pkg.crossplane.io/provider: provider-terraform 
     pkg.crossplane.io/revision: crossplane-provider-terraform-6fe8d52ff0a1 

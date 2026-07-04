@@ -1,3 +1,4 @@
+{{- if eq .Values.gitProvider "github" }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -31,3 +32,4 @@ spec:
         duration: 5s
         maxDuration: 5m0s
         factor: 2
+{{- end }}

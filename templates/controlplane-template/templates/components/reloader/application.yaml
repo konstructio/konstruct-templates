@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     repoURL: 'https://stakater.github.io/stakater-charts'
-    targetRevision: v1.0.10
+    targetRevision: {{ default "v1.0.10" .Values.versions.reloader | quote }}
     chart: reloader
     helm:
       values: |-

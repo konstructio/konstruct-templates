@@ -15,23 +15,36 @@ spec:
     helm:
       releaseName: external-dns
       values: |
-        image:
-          repository: registry.k8s.io/external-dns/external-dns
-          tag: "v0.13.2"
         serviceAccount:
           create: true
           name: external-dns
+          {{- if .Values.aws.accountId }}
+          annotations:
+            eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.aws.accountId }}:role/konstruct-external-dns-{{ .Values.clusterName }}'
+          {{- end }}
         provider: {{ .Values.externalDns.providerName }}
         sources:
-        - ingress
+          - service
+          - gateway-httproute
+          - gateway-grpcroute
+          - gateway-tlsroute
+          - gateway-tcproute
+          - gateway-udproute
         domainFilters:
-        - {{ .Values.externalDns.domainName }}
+          - {{ .Values.externalDns.domainName }}
+        {{- if eq .Values.externalDns.providerName "aws" }}
+        aws:
+          region: {{ .Values.aws.region }}
+          zoneType: public
+        {{- end }}
+        {{- if eq .Values.externalDns.providerName "cloudflare" }}
         env:
-        - name: {{ .Values.externalDns.providerTokenEnvName }}
+        - name: CF_API_TOKEN
           valueFrom:
             secretKeyRef:
               name: external-dns-secrets
               key: token
+        {{- end }}
     chart: external-dns
   destination:
     name: {{ .Values.clusterDestination }}
@@ -42,3 +55,27 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+---
+# external-dns's bundled ClusterRole doesn't include Gateway API resources.
+# Add a sidecar binding so the sa can list Gateways/HTTPRoutes/etc.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: external-dns-gateway
+rules:
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["gateways", "httproutes", "grpcroutes", "tlsroutes", "tcproutes", "udproutes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: external-dns-gateway
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: external-dns-gateway
+subjects:
+  - kind: ServiceAccount
+    name: external-dns
+    namespace: external-dns
