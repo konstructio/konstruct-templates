@@ -19,20 +19,18 @@ email: alerts@konstruct.io
 # @input.required: true
 domainName: konstruct.io
 
-# External Secrets store scope for the Vault KV store and its consumers
+# External Secrets store scope for the aws-ssm ParameterStore store
+# (the Vault KV store is always a ClusterSecretStore)
 # @input.type: enum
-# @input.description: Scope of the external-secrets Vault store. ClusterSecretStore is cluster-wide; SecretStore creates a namespaced store in each namespace listed in secretStoreNamespaces (each needs the vault bootstrap token secret).
+# @input.description: Scope of the external-secrets aws-ssm store. ClusterSecretStore is cluster-wide; SecretStore creates a namespaced store in each namespace listed in awsSsmStoreNamespaces (each needs an external-secrets service account trusted by the IRSA role).
 # @input.options: ClusterSecretStore,SecretStore
 # @input.required: false
 # @input.default: ClusterSecretStore
-secretStoreKind: ClusterSecretStore
+awsSsmStoreKind: ClusterSecretStore
 
-# Namespaces that receive a namespaced Vault SecretStore when secretStoreKind is SecretStore
-secretStoreNamespaces:
-  - argocd
-  - crossplane-system
-  - github-runner
-  - atlantis
+# Namespaces that receive a namespaced aws-ssm SecretStore when awsSsmStoreKind is SecretStore
+awsSsmStoreNamespaces:
+  - external-secrets-operator
 
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
