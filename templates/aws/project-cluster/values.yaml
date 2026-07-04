@@ -19,6 +19,11 @@ email: alerts@konstruct.io
 # @input.required: true
 domainName: konstruct.io
 
+# @input.type: string
+# @input.description: Konstruct platform domain, used by the git-token-refresher to reach the GitHub token vending API (https://konstruct.<domain>)
+# @input.required: true
+domain: saas.konstruct.io
+
 # External Secrets store scope for the aws-ssm ParameterStore store
 # (the Vault KV store is always a ClusterSecretStore)
 # @input.type: enum
