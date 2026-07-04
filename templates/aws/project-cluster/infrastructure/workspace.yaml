@@ -24,4 +24,5 @@ spec:
       value: "<WORKLOAD_S3_BUCKET_NAME>"
     - key: account_id
       value: "<WORKLOAD_CLUSTER_ACCOUNT_ID>"
-
+    - key: kubefirst_mgmt_cluster_name
+      value: "<KUBEFIRST_MGMT_CLUSTER_NAME>"
