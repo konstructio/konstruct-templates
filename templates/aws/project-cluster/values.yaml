@@ -32,6 +32,11 @@ awsSsmStoreKind: ClusterSecretStore
 awsSsmStoreNamespaces:
   - external-secrets-operator
 
+# @input.type: string
+# @input.description: Atlantis org allow list (e.g. github.com/my-org/*); when empty, defaults to github.com/<orgName>/*
+# @input.required: false
+atlantisAllowList: ""
+
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
 
