@@ -18,7 +18,7 @@ spec:
         statefulSet:
           annotations:
             secret.reloader.stakater.com/reload: "atlantis-secrets,atlantis-github-token"
-        atlantisUrl: https://atlantis.{{ .Values.domainName }}
+        atlantisUrl: https://atlantis-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
         orgAllowlist: {{ .Values.atlantisAllowList | default (printf "github.com/%s/*" .Values.orgName) }}
         hidePrevPlanComments: true
         serviceAccount:
@@ -41,12 +41,12 @@ spec:
             {{ .Values.certManagerIssuerAnnotation3 }}
             {{ .Values.certManagerIssuerAnnotation4 }}
           path: /
-          host: atlantis.{{ .Values.domainName }}
+          host: atlantis-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
           ingressClassName: "nginx"
           tls:
             - secretName: atlantis-tls
               hosts:
-                - atlantis.{{ .Values.domainName }}
+                - atlantis-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
         loadEnvFromSecrets:
           - atlantis-secrets
           # ATLANTIS_GH_TOKEN, refreshed every 45m by the git-token-refresher CronJob
@@ -58,6 +58,9 @@ spec:
             workflow: default
             allowed_overrides: [apply_requirements]
             apply_requirements: [mergeable]
+            # instance-scoped repo config so this Atlantis does not contend
+            # with other instances reading the default atlantis.yaml
+            repo_config_file: atlantis-project-cluster.yaml
   destination:
     name: {{ .Values.workloadClusterName }}
     namespace: atlantis
