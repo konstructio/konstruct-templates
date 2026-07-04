@@ -1,0 +1,23 @@
+# Terraform Module Configuration
+# @input.type: string
+# @input.description: the complete URL for the Terraform module for infrastructure provisioning
+# @input.required: true
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/aws/modules/workload-downstream-vcluster?ref=main"
+
+# @input.type: string
+# @input.description: Alert email address for cert-manager notifications
+# @input.required: false
+email: alerts@konstruct.io
+
+# @input.type: string
+# @input.description: Domain name used for vcluster ingress hostnames
+# @input.required: true
+domainName: konstruct.io
+
+# @input.type: string
+# @input.description: external-dns provider name (e.g. aws, cloudflare)
+# @input.required: false
+externalDnsProviderName: aws
+
+# Wait Job Configuration
+waitJobImage: "dtzar/helm-kubectl:3.19.0"

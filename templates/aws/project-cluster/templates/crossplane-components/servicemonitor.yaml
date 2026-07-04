@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: crossplane-provider-terraform
+  namespace: crossplane-system
+  labels:
+    app: crossplane-provider-terraform
+spec:
+  namespaceSelector:
+    matchNames:
+      - crossplane-system
+  selector:
+    matchLabels:
+      app: log-streamer
+  endpoints:
+    - port: metrics
+      path: /metrics
+      scheme: http
+      interval: 15s

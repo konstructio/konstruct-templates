@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-server
+spec:
+  replicas: 3
+  template:
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+      - name: argocd-server
+        resources:
+          requests:
+            memory: 6Gi
+            cpu: 2
