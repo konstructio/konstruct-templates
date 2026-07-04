@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: atlantis-{{ .Values.workloadClusterName }}
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "50"
+spec:
+  project: {{ .Values.workloadClusterName }}
+  source:
+    repoURL: https://runatlantis.github.io/helm-charts
+    targetRevision: 6.9.3
+    chart: atlantis
+    helm:
+      values: |-
+        orgAllowlist: github.com/{{ .Values.orgName }}/*
+
+        atlantisUrl: https://atlantis.{{ .Values.domainName }}
+
+        # GitHub App credentials are provided as environment variables from the
+        # atlantis-vcs secret (see atlantis/50-atlantis-externalsecret.yaml):
+        # ATLANTIS_GH_APP_ID, ATLANTIS_GH_APP_INSTALLATION_ID,
+        # ATLANTIS_GH_APP_KEY, ATLANTIS_GH_WEBHOOK_SECRET
+        loadEnvFromSecrets:
+          - atlantis-vcs
+
+        environment:
+          ATLANTIS_WRITE_GIT_CREDS: "true"
+
+        ingress:
+          enabled: true
+          ingressClassName: nginx
+          annotations:
+            nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+            nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+            {{ .Values.certManagerIssuerAnnotation1 }}
+            {{ .Values.certManagerIssuerAnnotation2 }}
+            {{ .Values.certManagerIssuerAnnotation3 }}
+            {{ .Values.certManagerIssuerAnnotation4 }}
+          host: atlantis.{{ .Values.domainName }}
+          tls:
+            - secretName: atlantis-tls
+              hosts:
+                - atlantis.{{ .Values.domainName }}
+  destination:
+    name: {{ .Values.workloadClusterName }}
+    namespace: atlantis
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+      - PruneLast=true
+      - ServerSideApply=true
+      - ServerSideApplyForce=true
