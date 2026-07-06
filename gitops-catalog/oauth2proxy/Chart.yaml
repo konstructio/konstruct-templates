@@ -1,0 +1,6 @@
+apiVersion: v2
+name: oauth2proxy
+description: A Helm chart for deploying OAuth2 Proxy with Redis session storage via ArgoCD for OIDC-based authentication behind the Gateway API
+type: application
+version: 0.1.0
+appVersion: "7.13.0"
