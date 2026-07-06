@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-oauth2proxy-redis
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: oauth2proxy
+    kubefirst.konstruct.io/source: catalog-templates
+    argocd.argoproj.io/sync-wave: '41'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: redis
+    repoURL: https://groundhog2k.github.io/helm-charts/
+    targetRevision: {{ .Values.redisChartVersion }}
+    helm:
+      releaseName: oauth2proxy-redis
+      values: |
+        image:
+          registry: "public.ecr.aws/docker/library"
+          repository: "redis"
+          pullPolicy: IfNotPresent
+
+        env:
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: oauth2proxy-redis-secret
+                key: redis-password
+
+        args: ["--requirepass", "$(REDIS_PASSWORD)"]
+
+        useDeploymentWhenNonHA: true
+
+        haMode:
+          enabled: false
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

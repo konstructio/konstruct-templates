@@ -1,0 +1,175 @@
+# OAuth2 Proxy Configuration
+# This values file contains all configurable parameters for deploying OAuth2 Proxy with Redis session storage via ArgoCD
+
+# @input.type: string
+# @input.description: Cluster name identifier
+# @input.required: true
+# @input.default: my-cluster
+clusterName: my-cluster
+
+# @input.type: string
+# @input.description: GitOps repository URL for ArgoCD sync
+# @input.required: true
+# @input.default: https://github.com/example/gitops-repo
+gitopsRepoUrl: https://github.com/example/gitops-repo
+
+# @input.type: string
+# @input.description: Registry path in GitOps repository
+# @input.required: true
+# @input.default: registry/clusters/my-cluster
+registryPath: registry/clusters/my-cluster
+
+# @input.type: string
+# @input.description: Target cluster destination for ArgoCD
+# @input.required: true
+# @input.default: in-cluster
+clusterDestination: in-cluster
+
+# @input.type: string
+# @input.description: ArgoCD project name
+# @input.required: true
+# @input.default: default
+project: default
+
+# @input.type: string
+# @input.description: Namespace for OAuth2 Proxy deployment
+# @input.required: true
+# @input.default: oauth2proxy
+namespace: oauth2proxy
+
+# @input.type: string
+# @input.description: OAuth2 Proxy Helm chart version
+# @input.required: true
+# @input.default: 8.2.1
+chartVersion: 8.2.1
+
+# @input.type: string
+# @input.description: Redis Helm chart version (groundhog2k/redis)
+# @input.required: true
+# @input.default: 2.1.4
+redisChartVersion: 2.1.4
+
+# =============================================================================
+# ROUTING / GATEWAY CONFIGURATION
+# =============================================================================
+
+# @input.type: string
+# @input.description: Root domain used to scope session cookies and whitelist redirects across subdomains
+# @input.required: true
+# @input.default: example.com
+rootHostname: example.com
+
+# @input.type: string
+# @input.description: Hostname exposing the OAuth2 Proxy (must match the OIDC redirect callback registration)
+# @input.required: true
+# @input.default: oauth2proxy.example.com
+oauth2proxyHostname: oauth2proxy.example.com
+
+# @input.type: string
+# @input.description: Name of the shared Gateway API resource to attach routes to
+# @input.required: true
+# @input.default: gateway-shared
+gatewayName: gateway-shared
+
+# @input.type: string
+# @input.description: Namespace of the shared Gateway API resource
+# @input.required: true
+# @input.default: gateway
+gatewayNamespace: gateway
+
+# =============================================================================
+# OIDC CONFIGURATION
+# =============================================================================
+
+# @input.type: string
+# @input.description: OAuth2 Proxy provider (e.g. oidc, entra-id, google, okta)
+# @input.required: true
+# @input.default: oidc
+provider: oidc
+
+# @input.type: string
+# @input.description: OIDC issuer URL (endpoints are auto-discovered via OIDC discovery)
+# @input.required: true
+# @input.default: https://login.example.com
+oidcIssuerUrl: https://login.example.com
+
+# @input.type: string
+# @input.description: OAuth scopes requested from the identity provider
+# @input.required: true
+# @input.default: openid email profile
+oidcScope: openid email profile
+
+# @input.type: enum
+# @input.description: Accept JWT bearer tokens as an alternative to session cookies
+# @input.options: true,false
+# @input.required: false
+# @input.default: false
+skipJwtBearerTokens: false
+
+# @input.type: string
+# @input.description: Additional JWT issuers as comma-separated issuer=audience pairs (leave empty to disable)
+# @input.required: false
+# @input.default:
+extraJwtIssuers: ""
+
+# @input.type: number
+# @input.description: Number of OAuth2 Proxy replicas
+# @input.required: true
+# @input.default: 1
+replicaCount: 1
+
+# =============================================================================
+# SECRET CONFIGURATION
+# =============================================================================
+
+# @input.type: string
+# @input.description: Name of the ClusterSecretStore to use for ExternalSecret
+# @input.required: true
+# @input.default: cluster-secret-store
+secretStoreName: cluster-secret-store
+
+# @input.type: string
+# @input.description: Key path in the secret store for OAuth2 Proxy credentials
+# @input.required: true
+# @input.default: konstruct/shared/oauth2proxy
+secretPath: konstruct/shared/oauth2proxy
+
+# IMPORTANT: Secret field defaults MUST use <TOKEN> placeholder format (e.g. <OAUTH2PROXY_CLIENT_ID>).
+# The operator matches these tokens to yamlValues in the CatalogDeployment CR.
+# Using "" or literal values will cause the operator to skip secret provisioning.
+
+# @input.type: secret
+# @input.description: OIDC client ID registered with the identity provider
+# @input.required: true
+# @input.secretKey: client-id
+# @input.secretEnv: OAUTH2PROXY_CLIENT_ID
+# @input.secretBackend: aws-secrets-store
+# @input.secretPath: konstruct/shared/oauth2proxy
+oauth2ClientId: <OAUTH2PROXY_CLIENT_ID>
+
+# @input.type: secret
+# @input.description: OIDC client secret registered with the identity provider
+# @input.required: true
+# @input.secretKey: client-secret
+# @input.secretEnv: OAUTH2PROXY_CLIENT_SECRET
+# @input.secretBackend: aws-secrets-store
+# @input.secretPath: konstruct/shared/oauth2proxy
+oauth2ClientSecret: <OAUTH2PROXY_CLIENT_SECRET>
+
+# @input.type: secret
+# @input.description: Random 16, 24, or 32-byte base64-encoded string used to encrypt session cookies
+# @input.required: true
+# @input.secretKey: cookie-secret
+# @input.secretEnv: OAUTH2PROXY_COOKIE_SECRET
+# @input.secretBackend: aws-secrets-store
+# @input.secretPath: konstruct/shared/oauth2proxy
+cookieSecret: <OAUTH2PROXY_COOKIE_SECRET>
+
+# @input.type: secret
+# @input.description: Password for the Redis session store
+# @input.required: true
+# @input.secretKey: redis-password
+# @input.secretEnv: OAUTH2PROXY_REDIS_PASSWORD
+# @input.secretBackend: aws-secrets-store
+# @input.secretPath: konstruct/shared/oauth2proxy
+redisPassword: <OAUTH2PROXY_REDIS_PASSWORD>

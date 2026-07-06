@@ -1,0 +1,128 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-oauth2proxy
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: oauth2proxy
+    kubefirst.konstruct.io/source: catalog-templates
+    argocd.argoproj.io/sync-wave: '42'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: oauth2-proxy
+    repoURL: https://oauth2-proxy.github.io/manifests
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: oauth2proxy
+      values: |
+        config:
+          existingSecret: oauth2proxy-oauth2-proxy
+          configFile: |-
+            email_domains = [ "*" ]
+            upstreams = [ "static://200" ]
+
+        extraArgs:
+          provider: "{{ .Values.provider }}"
+          scope: "{{ .Values.oidcScope }}"
+          oidc-issuer-url: "{{ .Values.oidcIssuerUrl }}"
+          pass-access-token: true
+          pass-authorization-header: true
+          set-xauthrequest: true
+          set-authorization-header: true
+          skip-auth-regex: ^/oauth2/.*
+          skip-provider-button: true
+          {{- if .Values.skipJwtBearerTokens }}
+          skip-jwt-bearer-tokens: "true"
+          {{- end }}
+          {{- if .Values.extraJwtIssuers }}
+          extra-jwt-issuers: "{{ .Values.extraJwtIssuers }}"
+          {{- end }}
+          cookie-samesite: "none"
+          cookie-secure: "true"
+          cookie-path: "/"
+          cookie-domain: ".{{ .Values.rootHostname }}"
+          whitelist-domain: ".{{ .Values.rootHostname }}"
+          redirect-url: "https://{{ .Values.oauth2proxyHostname }}/oauth2/callback"
+          reverse-proxy: "true"
+          cookie-csrf-per-request: "true"
+
+        service:
+          type: ClusterIP
+          portNumber: 4180
+          appProtocol: http
+          targetPort: "4180"
+
+        gatewayApi:
+          enabled: true
+          gatewayRef:
+            name: "{{ .Values.gatewayName }}"
+            namespace: "{{ .Values.gatewayNamespace }}"
+          rules:
+            - matches:
+                - path:
+                    type: PathPrefix
+                    value: /oauth2
+          hostnames:
+            - "{{ .Values.oauth2proxyHostname }}"
+
+        securityContext:
+          enabled: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 2000
+          runAsGroup: 2000
+          seccompProfile:
+            type: RuntimeDefault
+
+        replicaCount: {{ .Values.replicaCount }}
+
+        podDisruptionBudget:
+          enabled: true
+          maxUnavailable: null
+          minAvailable: 1
+
+        sessionStorage:
+          type: redis
+          redis:
+            existingSecret: "oauth2proxy-redis-secret"
+            clientType: "standalone"
+            standalone:
+              connectionUrl: "redis://oauth2proxy-redis.{{ .Values.namespace }}.svc.cluster.local:6379"
+
+        metrics:
+          enabled: false
+
+        extraObjects:
+          - apiVersion: gateway.networking.k8s.io/v1beta1
+            kind: ReferenceGrant
+            metadata:
+              name: allow-gateway-access
+              namespace: {{ .Values.namespace }}
+            spec:
+              from:
+                - group: gateway.envoyproxy.io
+                  kind: SecurityPolicy
+                  namespace: {{ .Values.gatewayNamespace }}
+                - group: gateway.networking.k8s.io
+                  kind: HTTPRoute
+                  namespace: {{ .Values.gatewayNamespace }}
+              to:
+                - group: ""
+                  kind: Service
+                  name: oauth2proxy-oauth2-proxy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
