@@ -1,15 +1,14 @@
-# S3 Bucket — credential now managed explicitly (fixes the ZeroMatchesError class of bug)
-
-resource "civo_object_store_credential" "backup" {
-  name   = "k1-project-${var.cluster_name}"
-  region = var.cluster_region
-}
+# S3 Bucket
 
 resource "civo_object_store" "backup" {
-  name          = "k1-project-${var.cluster_name}"
-  max_size_gb   = 500
-  region        = var.cluster_region
-  access_key_id = civo_object_store_credential.backup.access_key_id
+    name = "k1-project-${var.cluster_name}"
+    max_size_gb = 500
+    region = var.cluster_region
+}
+
+# If you create the bucket without credentials, you can read the credentials in this way
+data "civo_object_store_credential" "backup" {
+    id = civo_object_store.backup.access_key_id
 }
 
 # Project Cluster
@@ -171,8 +170,8 @@ resource "kubernetes_secret_v1" "crossplane_secrets" {
   }
 
   data = {
-    AWS_ACCESS_KEY_ID     = civo_object_store_credential.backup.access_key_id
-    AWS_SECRET_ACCESS_KEY = civo_object_store_credential.backup.secret_access_key
+    AWS_ACCESS_KEY_ID     = data.civo_object_store_credential.backup.access_key_id
+    AWS_SECRET_ACCESS_KEY = data.civo_object_store_credential.backup.secret_access_key
   }
 
   type = "Opaque"
