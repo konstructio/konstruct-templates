@@ -24,16 +24,38 @@ resource "civo_firewall" "project-cluster" {
 }
 
 resource "civo_kubernetes_cluster" "project-cluster" {
-  name                = var.cluster_name
-  network_id          = civo_network.project-cluster.id
-  firewall_id         = civo_firewall.project-cluster.id
-  write_kubeconfig    = true
-  cluster_type        = "k3s" 
-  kubernetes_version  = "1.35.0-k3s1"
+  name               = var.cluster_name
+  network_id         = civo_network.project-cluster.id
+  firewall_id        = civo_firewall.project-cluster.id
+  write_kubeconfig   = true
+  cluster_type       = "k3s"
+  kubernetes_version = "1.35.0-k3s1"
   pools {
     label      = var.cluster_name
     size       = var.node_type
     node_count = var.node_count
+  }
+}
+
+# ── Write kubeconfig to disk; providers read the FILE.
+# If the cluster/kubeconfig is unavailable, provider init fails loudly
+# instead of silently falling back to in-cluster (mgmt) credentials.
+
+resource "local_sensitive_file" "kubeconfig" {
+  content         = civo_kubernetes_cluster.project-cluster.kubeconfig
+  filename        = "${path.module}/.kube/${var.cluster_name}.config"
+  file_permission = "0600"
+}
+
+provider "kubernetes" {
+  config_path = "${path.module}/.kube/${var.cluster_name}.config"
+}
+
+provider "helm" {
+  repository_config_path = "${path.module}/.helm/repositories.yaml"
+  repository_cache       = "${path.module}/.helm"
+  kubernetes = {
+    config_path = "${path.module}/.kube/${var.cluster_name}.config"
   }
 }
 
@@ -53,29 +75,11 @@ resource "vault_generic_secret" "clusters" {
   )
 }
 
-provider "kubernetes" {
-  host                   = civo_kubernetes_cluster.project-cluster.api_endpoint
-  client_certificate     = base64decode(yamldecode(civo_kubernetes_cluster.project-cluster.kubeconfig).users[0].user.client-certificate-data)
-  client_key             = base64decode(yamldecode(civo_kubernetes_cluster.project-cluster.kubeconfig).users[0].user.client-key-data)
-  cluster_ca_certificate = base64decode(yamldecode(civo_kubernetes_cluster.project-cluster.kubeconfig).clusters[0].cluster.certificate-authority-data)
-}
-
-provider "helm" {
-  repository_config_path = "${path.module}/.helm/repositories.yaml"
-  repository_cache       = "${path.module}/.helm"
-  kubernetes = {
-    host                   = civo_kubernetes_cluster.project-cluster.api_endpoint
-    client_certificate     = base64decode(yamldecode(civo_kubernetes_cluster.project-cluster.kubeconfig).users[0].user.client-certificate-data)
-    client_key             = base64decode(yamldecode(civo_kubernetes_cluster.project-cluster.kubeconfig).users[0].user.client-key-data)
-    cluster_ca_certificate = base64decode(yamldecode(civo_kubernetes_cluster.project-cluster.kubeconfig).clusters[0].cluster.certificate-authority-data)
-  }
-}
-
 resource "kubernetes_cluster_role_v1" "argocd_manager" {
+  depends_on = [local_sensitive_file.kubeconfig]
   metadata {
     name = "argocd-manager-role"
   }
-
   rule {
     api_groups = ["*"]
     resources  = ["*"]
@@ -86,7 +90,6 @@ resource "kubernetes_cluster_role_v1" "argocd_manager" {
     verbs             = ["*"]
   }
 }
-
 
 resource "kubernetes_cluster_role_binding_v1" "argocd_manager" {
   metadata {
@@ -105,6 +108,7 @@ resource "kubernetes_cluster_role_binding_v1" "argocd_manager" {
 }
 
 resource "kubernetes_service_account_v1" "argocd_manager" {
+  depends_on = [local_sensitive_file.kubeconfig]
   metadata {
     name      = "argocd-manager"
     namespace = "kube-system"
@@ -127,6 +131,7 @@ resource "kubernetes_secret_v1" "argocd_manager" {
 }
 
 resource "kubernetes_namespace_v1" "external_dns" {
+  depends_on = [local_sensitive_file.kubeconfig]
   metadata {
     name = "external-dns"
   }
@@ -148,10 +153,11 @@ resource "kubernetes_secret_v1" "external_dns" {
 }
 
 # ──────────────────────────────────────────────
-# 1. Crossplane Secrets (extract all keys from /crossplane)
+# Crossplane Secrets
 # ──────────────────────────────────────────────
 
 resource "kubernetes_namespace_v1" "crossplane_system" {
+  depends_on = [local_sensitive_file.kubeconfig]
   metadata {
     name = "crossplane-system"
   }
@@ -184,7 +190,7 @@ resource "kubernetes_secret_v1" "preshared_token_mgmt" {
   provider = kubernetes.incluster
   metadata {
     name      = "pre-shared-token"
-    namespace = var.project_name  
+    namespace = var.project_name
   }
   data = {
     token = random_password.cluster_token.result
@@ -192,6 +198,7 @@ resource "kubernetes_secret_v1" "preshared_token_mgmt" {
 }
 
 resource "kubernetes_namespace_v1" "argocd" {
+  depends_on = [local_sensitive_file.kubeconfig]
   metadata {
     name = "argocd"
   }
