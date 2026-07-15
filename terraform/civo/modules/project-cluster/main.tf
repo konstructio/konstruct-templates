@@ -37,25 +37,26 @@ resource "civo_kubernetes_cluster" "project-cluster" {
   }
 }
 
-# ── Write kubeconfig to disk; providers read the FILE.
-# If the cluster/kubeconfig is unavailable, provider init fails loudly
-# instead of silently falling back to in-cluster (mgmt) credentials.
-
-resource "local_sensitive_file" "kubeconfig" {
-  content         = civo_kubernetes_cluster.project-cluster.kubeconfig
-  filename        = "${path.module}/.kube/${var.cluster_name}.config"
-  file_permission = "0600"
+data "civo_kubernetes_cluster" "project" {
+  name   = var.cluster_name
+  region = var.cluster_region
 }
 
 provider "kubernetes" {
-  config_path = "${path.module}/.kube/${var.cluster_name}.config"
+  host                   = yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).clusters[0].cluster.server
+  client_certificate     = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).users[0].user.client-certificate-data)
+  client_key             = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).users[0].user.client-key-data)
+  cluster_ca_certificate = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).clusters[0].cluster.certificate-authority-data)
 }
 
 provider "helm" {
   repository_config_path = "${path.module}/.helm/repositories.yaml"
   repository_cache       = "${path.module}/.helm"
   kubernetes = {
-    config_path = "${path.module}/.kube/${var.cluster_name}.config"
+    host                   = yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).clusters[0].cluster.server
+    client_certificate     = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).users[0].user.client-certificate-data)
+    client_key             = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).users[0].user.client-key-data)
+    cluster_ca_certificate = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).clusters[0].cluster.certificate-authority-data)
   }
 }
 
