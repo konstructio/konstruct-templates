@@ -38,27 +38,33 @@ resource "civo_kubernetes_cluster" "project-cluster" {
 }
 
 data "civo_kubernetes_cluster" "project" {
-  name   = var.cluster_name
+  name   = civo_kubernetes_cluster.project-cluster.name
   region = var.cluster_region
 }
 
+locals {
+  kc = yamldecode(data.civo_kubernetes_cluster.project.kubeconfig)
+}
+
 provider "kubernetes" {
-  host                   = yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).clusters[0].cluster.server
-  client_certificate     = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).users[0].user.client-certificate-data)
-  client_key             = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).users[0].user.client-key-data)
-  cluster_ca_certificate = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).clusters[0].cluster.certificate-authority-data)
+  host                   = local.kc.clusters[0].cluster.server
+  client_certificate     = base64decode(local.kc.users[0].user.client-certificate-data)
+  client_key             = base64decode(local.kc.users[0].user.client-key-data)
+  cluster_ca_certificate = base64decode(local.kc.clusters[0].cluster.certificate-authority-data)
 }
 
 provider "helm" {
   repository_config_path = "${path.module}/.helm/repositories.yaml"
   repository_cache       = "${path.module}/.helm"
   kubernetes = {
-    host                   = yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).clusters[0].cluster.server
-    client_certificate     = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).users[0].user.client-certificate-data)
-    client_key             = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).users[0].user.client-key-data)
-    cluster_ca_certificate = base64decode(yamldecode(data.civo_kubernetes_cluster.project.kubeconfig).clusters[0].cluster.certificate-authority-data)
+    host                   = local.kc.clusters[0].cluster.server
+    client_certificate     = base64decode(local.kc.users[0].user.client-certificate-data)
+    client_key             = base64decode(local.kc.users[0].user.client-key-data)
+    cluster_ca_certificate = base64decode(local.kc.clusters[0].cluster.certificate-authority-data)
   }
 }
+
+# ── Vault: hand-off point for downstream consumers (ArgoCD registration etc.)
 
 resource "vault_generic_secret" "clusters" {
   path = "secret/clusters/${var.cluster_name}"
@@ -66,9 +72,9 @@ resource "vault_generic_secret" "clusters" {
   data_json = jsonencode(
     {
       kubeconfig              = civo_kubernetes_cluster.project-cluster.kubeconfig
-      client_certificate      = base64decode(yamldecode(civo_kubernetes_cluster.project-cluster.kubeconfig).users[0].user.client-certificate-data)
-      client_key              = base64decode(yamldecode(civo_kubernetes_cluster.project-cluster.kubeconfig).users[0].user.client-key-data)
-      cluster_ca_certificate  = base64decode(yamldecode(civo_kubernetes_cluster.project-cluster.kubeconfig).clusters[0].cluster.certificate-authority-data)
+      client_certificate      = base64decode(local.kc.users[0].user.client-certificate-data)
+      client_key              = base64decode(local.kc.users[0].user.client-key-data)
+      cluster_ca_certificate  = base64decode(local.kc.clusters[0].cluster.certificate-authority-data)
       host                    = civo_kubernetes_cluster.project-cluster.api_endpoint
       cluster_name            = var.cluster_name
       argocd_manager_sa_token = kubernetes_secret_v1.argocd_manager.data.token
@@ -76,8 +82,9 @@ resource "vault_generic_secret" "clusters" {
   )
 }
 
+# ── ArgoCD manager SA on workload cluster
+
 resource "kubernetes_cluster_role_v1" "argocd_manager" {
-  depends_on = [local_sensitive_file.kubeconfig]
   metadata {
     name = "argocd-manager-role"
   }
@@ -109,7 +116,6 @@ resource "kubernetes_cluster_role_binding_v1" "argocd_manager" {
 }
 
 resource "kubernetes_service_account_v1" "argocd_manager" {
-  depends_on = [local_sensitive_file.kubeconfig]
   metadata {
     name      = "argocd-manager"
     namespace = "kube-system"
@@ -131,8 +137,9 @@ resource "kubernetes_secret_v1" "argocd_manager" {
   depends_on = [kubernetes_service_account_v1.argocd_manager]
 }
 
+# ── external-dns
+
 resource "kubernetes_namespace_v1" "external_dns" {
-  depends_on = [local_sensitive_file.kubeconfig]
   metadata {
     name = "external-dns"
   }
@@ -158,7 +165,6 @@ resource "kubernetes_secret_v1" "external_dns" {
 # ──────────────────────────────────────────────
 
 resource "kubernetes_namespace_v1" "crossplane_system" {
-  depends_on = [local_sensitive_file.kubeconfig]
   metadata {
     name = "crossplane-system"
   }
@@ -171,8 +177,8 @@ resource "kubernetes_secret_v1" "crossplane_secrets" {
   }
 
   data = {
-    AWS_ACCESS_KEY_ID     = data.civo_object_store_credential.backup.access_key_id
-    AWS_SECRET_ACCESS_KEY = data.civo_object_store_credential.backup.secret_access_key
+    AWS_ACCESS_KEY_ID     = civo_object_store_credential.backup.access_key_id
+    AWS_SECRET_ACCESS_KEY = civo_object_store_credential.backup.secret_access_key
   }
 
   type = "Opaque"
@@ -199,14 +205,12 @@ resource "kubernetes_secret_v1" "preshared_token_mgmt" {
 }
 
 resource "kubernetes_namespace_v1" "argocd" {
-  depends_on = [local_sensitive_file.kubeconfig]
   metadata {
     name = "argocd"
   }
 }
 
 resource "kubernetes_secret_v1" "preshared_token_argocd" {
-  depends_on = [civo_kubernetes_cluster.project-cluster]
   metadata {
     name      = "platform-cluster-identity"
     namespace = kubernetes_namespace_v1.argocd.metadata.0.name
@@ -218,7 +222,6 @@ resource "kubernetes_secret_v1" "preshared_token_argocd" {
 }
 
 resource "kubernetes_secret_v1" "preshared_token_crossplane" {
-  depends_on = [civo_kubernetes_cluster.project-cluster]
   metadata {
     name      = "platform-cluster-identity"
     namespace = kubernetes_namespace_v1.crossplane_system.metadata.0.name
