@@ -67,8 +67,11 @@ resources:
     memory: 512Mi
 
 # probes default to an HTTP GET on the container port.
+# Probes are OFF by default: this chart deploys arbitrary tenant apps, and
+# an HTTP probe on an assumed path ("/") kill-loops any app that 404s there.
+# Apps that expose a health endpoint can opt in via these values.
 probes:
-  enabled: true
+  enabled: false
   path: /
   initialDelaySeconds: 10
   periodSeconds: 10
