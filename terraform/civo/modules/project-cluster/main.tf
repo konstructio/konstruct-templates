@@ -177,8 +177,8 @@ resource "kubernetes_secret_v1" "crossplane_secrets" {
   }
 
   data = {
-    AWS_ACCESS_KEY_ID     = civo_object_store_credential.backup.access_key_id
-    AWS_SECRET_ACCESS_KEY = civo_object_store_credential.backup.secret_access_key
+    AWS_ACCESS_KEY_ID     = data.civo_object_store_credential.backup.access_key_id
+    AWS_SECRET_ACCESS_KEY = data.civo_object_store_credential.backup.secret_access_key
   }
 
   type = "Opaque"
