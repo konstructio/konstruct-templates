@@ -76,13 +76,27 @@ probes:
   initialDelaySeconds: 10
   periodSeconds: 10
 
-# Hardened pod/container security context (overridable but secure by default).
+# automountServiceAccountToken defaults OFF: tenant web services don't call the
+# Kubernetes API, and a mounted token is the readiest lateral-movement credential
+# if a container is compromised. Apps that need the API set this true.
+automountServiceAccountToken: false
+
+# Hardened pod/container security context — the Pod Security "restricted"
+# contract, rendered by default so a workload namespace enforcing `restricted`
+# admits these pods, and so a container escape has the smallest possible
+# starting surface (non-root, no privilege escalation, all Linux capabilities
+# dropped, and the default seccomp filter blocking exotic syscalls). Overridable
+# for apps with special needs, but every relaxation widens the escape surface.
 podSecurityContext:
   runAsNonRoot: true
   seccompProfile:
     type: RuntimeDefault
 securityContext:
   allowPrivilegeEscalation: false
+  # readOnlyRootFilesystem stays false: buildpack apps commonly write to the
+  # working dir / cache at runtime, and a read-only root breaks them without a
+  # per-language writable-mount scheme. runAsNonRoot + dropped caps already
+  # prevent tampering with system paths.
   readOnlyRootFilesystem: false
   runAsNonRoot: true
   capabilities:

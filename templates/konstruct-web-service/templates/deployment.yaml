@@ -18,6 +18,10 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      # Tenant workloads do not talk to the Kubernetes API, so never mount a
+      # ServiceAccount token into them — a stolen token is lateral movement.
+      # Apps that genuinely need the API can re-enable it via values.
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
