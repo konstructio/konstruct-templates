@@ -30,6 +30,14 @@ spec:
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- if .Values.persistence.enabled }}
+        # A fresh volume is root-owned while buildpack apps run non-root
+        # (paketo: uid 1002 / gid 1000) — without fsGroup the app's first
+        # write is EACCES. OnRootMismatch skips the recursive chown when
+        # ownership is already right, so restarts stay fast on big volumes.
+        fsGroup: {{ .Values.persistence.fsGroup }}
+        fsGroupChangePolicy: OnRootMismatch
+        {{- end }}
       containers:
         - name: app
           image: {{ include "konstruct-web-service.image" . | quote }}

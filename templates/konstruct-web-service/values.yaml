@@ -111,3 +111,6 @@ persistence:
   size: 1Gi
   mountPath: /data
   storageClass: ""
+  # Group ownership applied to the volume so the non-root buildpack user can
+  # write to it (paketo images run gid 1000).
+  fsGroup: 1000
