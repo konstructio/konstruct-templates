@@ -6,6 +6,12 @@ metadata:
     {{- include "konstruct-web-service.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  {{- if .Values.persistence.enabled }}
+  # An RWO volume deadlocks a rolling update: the incoming pod can't mount
+  # until the outgoing pod releases the volume. Recreate = stop, then start.
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       {{- include "konstruct-web-service.selectorLabels" . | nindent 6 }}
@@ -54,3 +60,14 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath }}
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "konstruct-web-service.fullname" . }}-data
+      {{- end }}

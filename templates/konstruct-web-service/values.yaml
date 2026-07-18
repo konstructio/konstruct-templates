@@ -102,3 +102,12 @@ securityContext:
   capabilities:
     drop:
       - ALL
+
+# persistence attaches ONE ReadWriteOnce volume to the app. Implies a single
+# replica (enforced upstream by the kontract operator/API) and the Recreate
+# deploy strategy. Empty storageClass uses the cluster default.
+persistence:
+  enabled: false
+  size: 1Gi
+  mountPath: /data
+  storageClass: ""
