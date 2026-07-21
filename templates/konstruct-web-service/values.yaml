@@ -114,3 +114,13 @@ persistence:
   # Group ownership applied to the volume so the non-root buildpack user can
   # write to it (paketo images run gid 1000).
   fsGroup: 1000
+
+# customDomain serves the app on a user-owned hostname. Rendered by the
+# kontract operator ONLY after TXT ownership verification. Requires the
+# cluster's GatewayClass EnvoyProxy to set mergeGateways and the named
+# ClusterIssuer to exist with an HTTP-01 gatewayHTTPRoute solver.
+customDomain:
+  enabled: false
+  host: ""
+  clusterIssuer: letsencrypt-http
+  gatewayClassName: eg
