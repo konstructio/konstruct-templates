@@ -1,0 +1,126 @@
+# Defaults for konstruct-web-service. The foreman-operator overrides image,
+# containerPort, env, replicaCount, imagePullSecrets and gateway via the ArgoCD
+# Application's helm.valuesObject.
+
+# nameOverride / fullnameOverride let the operator pin the resource name.
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  # repository is set by the operator to the digest-pinned reference.
+  repository: ""
+  # tag is optional when repository is digest-pinned.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# imagePullSecrets references the Harbor pull secret distributed by the operator.
+imagePullSecrets: []
+
+replicaCount: 1
+
+# containerPort is the port the app listens on (CNB convention; PORT is also
+# injected as an env var by the operator).
+containerPort: 8080
+
+# env is a list of {name, value} pairs.
+env: []
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+# gateway exposes the service via a Gateway API HTTPRoute attached to the
+# cluster's shared Envoy Gateway (the Foreman "public URL"). The operator sets
+# enabled + host; host must fall under the gateway's wildcard listener
+# (*.<region>.apps.<domain>). This is the path used on the workload clusters.
+gateway:
+  enabled: false
+  name: eg
+  namespace: default
+  sectionName: https-apps
+  host: ""
+
+# networkPolicy renders per-app tenant-isolation policies into the shared
+# per-environment namespace: default-deny on this app's pods, ingress only from
+# sibling pods in the same environment + the gateway's Envoy proxies (on the
+# serving port), egress only to DNS, sibling pods, and the public internet
+# (private ranges + the cloud metadata endpoint are excluded). Policies are
+# scoped to this app's selector labels so apps sharing the namespace never
+# contend over the same objects. Enforcement requires a NetworkPolicy-capable
+# CNI (Cilium/Calico); under flannel they are inert.
+networkPolicy:
+  enabled: true
+  # gatewayNamespace is where the Envoy PROXY pods run (traffic originates
+  # there) — for Envoy Gateway that is envoy-gateway-system, NOT the namespace
+  # of the Gateway resource itself (gateway.namespace above).
+  gatewayNamespace: envoy-gateway-system
+
+# resources are mandatory in multi-tenant clusters — defaults are deliberately
+# modest and always rendered.
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# probes default to an HTTP GET on the container port.
+# Probes are OFF by default: this chart deploys arbitrary tenant apps, and
+# an HTTP probe on an assumed path ("/") kill-loops any app that 404s there.
+# Apps that expose a health endpoint can opt in via these values.
+probes:
+  enabled: false
+  path: /
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+# automountServiceAccountToken defaults OFF: tenant web services don't call the
+# Kubernetes API, and a mounted token is the readiest lateral-movement credential
+# if a container is compromised. Apps that need the API set this true.
+automountServiceAccountToken: false
+
+# Hardened pod/container security context — the Pod Security "restricted"
+# contract, rendered by default so a workload namespace enforcing `restricted`
+# admits these pods, and so a container escape has the smallest possible
+# starting surface (non-root, no privilege escalation, all Linux capabilities
+# dropped, and the default seccomp filter blocking exotic syscalls). Overridable
+# for apps with special needs, but every relaxation widens the escape surface.
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  # readOnlyRootFilesystem stays false: buildpack apps commonly write to the
+  # working dir / cache at runtime, and a read-only root breaks them without a
+  # per-language writable-mount scheme. runAsNonRoot + dropped caps already
+  # prevent tampering with system paths.
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+
+# persistence attaches ONE ReadWriteOnce volume to the app. Implies a single
+# replica (enforced upstream by the kontract operator/API) and the Recreate
+# deploy strategy. Empty storageClass uses the cluster default.
+persistence:
+  enabled: false
+  size: 1Gi
+  mountPath: /data
+  storageClass: ""
+  # Group ownership applied to the volume so the non-root buildpack user can
+  # write to it (paketo images run gid 1000).
+  fsGroup: 1000
+
+# customDomain serves the app on a user-owned hostname. Rendered by the
+# kontract operator ONLY after TXT ownership verification. Requires the
+# cluster's GatewayClass EnvoyProxy to set mergeGateways and the named
+# ClusterIssuer to exist with an HTTP-01 gatewayHTTPRoute solver.
+customDomain:
+  enabled: false
+  host: ""
+  clusterIssuer: letsencrypt-http
+  gatewayClassName: eg
