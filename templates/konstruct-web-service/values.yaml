@@ -16,6 +16,13 @@ image:
 # imagePullSecrets references the Harbor pull secret distributed by the operator.
 imagePullSecrets: []
 
+# nodeSelector / tolerations pin the app pod to a dedicated node pool. The
+# kontract operator sets these from its APP_POOL_SELECTOR / APP_POOL_TAINT
+# config (mirroring the kpack build pool) to keep tenant workloads off
+# system/control-plane nodes. Empty = schedule anywhere (default).
+nodeSelector: {}
+tolerations: []
+
 replicaCount: 1
 
 # containerPort is the port the app listens on (CNB convention; PORT is also
