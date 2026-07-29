@@ -1,0 +1,6 @@
+apiVersion: v2
+name: strimzi
+description: A Helm chart for deploying the Strimzi Kafka Operator with ArgoCD to run and manage Apache Kafka clusters on Kubernetes
+type: application
+version: 0.1.0
+appVersion: "1.1.0"

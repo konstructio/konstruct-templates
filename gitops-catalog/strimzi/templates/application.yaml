@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.clusterName }}-strimzi
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: strimzi
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: {{ .Values.namespace }}
+    name: {{ .Values.clusterDestination }}
+  project: {{ .Values.project }}
+  source:
+    chart: strimzi-kafka-operator
+    repoURL: https://strimzi.io/charts/
+    targetRevision: {{ .Values.chartVersion }}
+    helm:
+      releaseName: strimzi
+      values: |
+        watchAnyNamespace: {{ .Values.watchAnyNamespace }}
+        replicas: {{ .Values.replicas }}
+        logLevel: {{ .Values.logLevel }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # Strimzi CRDs exceed the 262KB last-applied-configuration annotation limit of client-side apply
+      - ServerSideApply=true
