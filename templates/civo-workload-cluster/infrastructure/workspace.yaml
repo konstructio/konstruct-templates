@@ -3,20 +3,35 @@ kind: Workspace
 metadata:
   name: <WORKLOAD_CLUSTER_NAME>-infrastructure
 spec:
-  providerConfigRef: 
+  providerConfigRef:
     name: <WORKLOAD_CLUSTER_NAME>
   forProvider:
     source: Remote
     module: <WORKLOAD_CLUSTER_TERRAFORM_MODULE_URL>
     vars:
     - key: cluster_name
-      value: <WORKLOAD_CLUSTER_NAME>
+      value: "<WORKLOAD_CLUSTER_NAME>"
+    - key: mgmt_cluster_name
+      value: "<KUBEFIRST_MGMT_CLUSTER_NAME>"
     - key: cluster_region
-      value: <WORKLOAD_CLUSTER_REGION>
-    - key: environment
-      value: <WORKLOAD_CLUSTER_NAME>
+      value: "<WORKLOAD_CLUSTER_REGION>"
     - key: node_count
       value: "<WORKLOAD_NODE_COUNT>"
     - key: node_type
-      value: <WORKLOAD_NODE_TYPE>
-
+      value: "<WORKLOAD_NODE_TYPE>"
+    - key: ami_type
+      value: "<WORKLOAD_AMI_TYPE>"
+    - key: s3_bucket_name
+      value: "<WORKLOAD_S3_BUCKET_NAME>"
+    - key: account_id
+      value: "<WORKLOAD_CLUSTER_ACCOUNT_ID>"
+    - key: vpc_cidr
+      value: "<WORKLOAD_CIDR>"
+    - key: eks_addons_string
+      value: "<WORKLOAD_EKS_ADDONS>"
+    - key: team_name
+      value: "<TEAM_NAME>"
+    - key: ipam_pool_id
+      value: "<IPAM_POOL_ID>"
+    - key: privatelink_workload_clusters_json
+      value: "<PRIVATELINK_WORKLOAD_CLUSTERS_JSON>"
