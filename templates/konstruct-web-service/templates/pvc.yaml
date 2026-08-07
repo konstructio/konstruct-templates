@@ -1,0 +1,21 @@
+{{- if .Values.persistence.enabled }}
+# The app's single persistent volume. Named after the app (not the pod), so a
+# delete+recreate of the same app in the same namespace reattaches to the
+# existing data. Pruned with the Application — deleting the app deletes the
+# data, and the UI says so out loud.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "konstruct-web-service.fullname" . }}-data
+  labels:
+    {{- include "konstruct-web-service.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+{{- end }}
