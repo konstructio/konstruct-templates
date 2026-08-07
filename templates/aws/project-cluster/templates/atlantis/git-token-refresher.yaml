@@ -1,0 +1,181 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: git-token-refresher
+  namespace: atlantis
+spec:
+  schedule: "*/45 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: git-token-refresher
+          containers:
+          - name: refresher
+            image: {{ .Values.waitJobImage }}
+            env:
+            - name: VENDING_URL
+              value: "https://konstruct.{{ .Values.domain }}/api/v1/github-token"
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: platform-cluster-identity
+                  key: token
+            - name: ORG_ID
+              valueFrom:
+                secretKeyRef:
+                  name: platform-cluster-identity
+                  key: org_id
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              echo "=== ENV CHECK ==="
+              echo "VENDING_URL: ${VENDING_URL}"
+              echo "ORG_ID: ${ORG_ID}"
+              echo "TOKEN length: ${#TOKEN}"
+
+              echo "=== REQUESTING TOKEN ==="
+              HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
+                -X GET "${VENDING_URL}/${ORG_ID}" \
+                -H "Authorization: Bearer ${TOKEN}" \
+                -H "Content-Type: application/json")
+
+              echo "HTTP status: ${HTTP_CODE}"
+
+              if [ "$HTTP_CODE" != "200" ]; then
+                echo "Error: non-200 response from vending service"
+                exit 1
+              fi
+
+              RESPONSE=$(cat /tmp/response.txt)
+              if [ -z "$RESPONSE" ]; then
+                echo "Error: empty response body"
+                exit 1
+              fi
+
+              echo "=== PATCHING SECRET ==="
+              if kubectl get secret atlantis-github-token -n atlantis &>/dev/null; then
+                echo "Secret exists, patching..."
+                ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
+                kubectl patch secret atlantis-github-token -n atlantis \
+                  --type='json' \
+                  -p="[{\"op\": \"replace\", \"path\": \"/data/ATLANTIS_GH_TOKEN\", \"value\": \"${ENCODED}\"}]"
+              else
+                echo "Secret not found, creating..."
+                kubectl create secret generic atlantis-github-token -n atlantis \
+                  --from-literal=ATLANTIS_GH_TOKEN="${RESPONSE}"
+              fi
+
+              echo "Done."
+          restartPolicy: OnFailure
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: git-token-refresher
+  namespace: atlantis
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: git-token-refresher
+subjects:
+- kind: ServiceAccount
+  name: git-token-refresher
+  namespace: atlantis
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: git-token-refresher-init
+  namespace: atlantis
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded
+spec:
+  template:
+    spec:
+      serviceAccountName: git-token-refresher
+      containers:
+      - name: refresher
+        image: {{ .Values.waitJobImage }}
+        env:
+        - name: VENDING_URL
+          value: "https://konstruct.{{ .Values.domain }}/api/v1/github-token"
+        - name: TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: platform-cluster-identity
+              key: token
+        - name: ORG_ID
+          valueFrom:
+            secretKeyRef:
+              name: platform-cluster-identity
+              key: org_id
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+
+          echo "=== ENV CHECK ==="
+          echo "VENDING_URL: ${VENDING_URL}"
+          echo "ORG_ID: ${ORG_ID}"
+          echo "TOKEN length: ${#TOKEN}"
+
+          echo "=== REQUESTING TOKEN ==="
+          HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
+            -X GET "${VENDING_URL}/${ORG_ID}" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json")
+
+          echo "HTTP status: ${HTTP_CODE}"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Error: non-200 response from vending service"
+            exit 1
+          fi
+
+          RESPONSE=$(cat /tmp/response.txt)
+          if [ -z "$RESPONSE" ]; then
+            echo "Error: empty response body"
+            exit 1
+          fi
+
+          echo "=== PATCHING SECRET ==="
+          if kubectl get secret atlantis-github-token -n atlantis &>/dev/null; then
+            echo "Secret exists, patching..."
+            ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
+            kubectl patch secret atlantis-github-token -n atlantis \
+              --type='json' \
+              -p="[{\"op\": \"replace\", \"path\": \"/data/ATLANTIS_GH_TOKEN\", \"value\": \"${ENCODED}\"}]"
+          else
+            echo "Secret not found, creating..."
+            kubectl create secret generic atlantis-github-token -n atlantis \
+              --from-literal=ATLANTIS_GH_TOKEN="${RESPONSE}"
+          fi
+
+          echo "Done."
+      restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: git-token-refresher
+  namespace: atlantis
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: git-token-refresher
+  namespace: atlantis
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["atlantis-github-token"]
+  verbs: ["get", "patch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create"]

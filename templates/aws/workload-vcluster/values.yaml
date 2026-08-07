@@ -19,5 +19,17 @@ domainName: konstruct.io
 # @input.required: false
 externalDnsProviderName: aws
 
+# External Secrets store scope for the aws-ssm ParameterStore store
+# @input.type: enum
+# @input.description: Scope of the external-secrets aws-ssm store. ClusterSecretStore is cluster-wide; SecretStore creates a namespaced store in each namespace listed in awsSsmStoreNamespaces.
+# @input.options: ClusterSecretStore,SecretStore
+# @input.required: false
+# @input.default: ClusterSecretStore
+awsSsmStoreKind: ClusterSecretStore
+
+# Namespaces that receive a namespaced SecretStore when awsSsmStoreKind is SecretStore
+awsSsmStoreNamespaces:
+  - external-secrets-operator
+
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
