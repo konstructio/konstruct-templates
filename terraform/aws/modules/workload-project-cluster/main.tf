@@ -1,5 +1,6 @@
 data "aws_availability_zones" "available" {}
 
+
 locals {
   cluster_version = "1.32"
   vpc_cidr        = "10.0.0.0/16"
