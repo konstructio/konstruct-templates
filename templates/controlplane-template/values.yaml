@@ -1,6 +1,10 @@
 # Management Cluster Template Configuration
 # This values file contains all configurable parameters for deploying the management cluster components
 
+# Seed template: provisions the control plane cluster itself. No infrastructure
+# layer — the cluster already exists when this template is hydrated.
+clusterType: control-plane
+
 # =============================================================================
 # GLOBAL/COMMON VALUES
 # =============================================================================
