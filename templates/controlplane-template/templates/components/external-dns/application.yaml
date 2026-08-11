@@ -45,6 +45,14 @@ spec:
               name: external-dns-secrets
               key: token
         {{- end }}
+        {{- if eq .Values.externalDns.providerName "civo" }}
+        env:
+        - name: CIVO_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: external-dns-secrets
+              key: token
+        {{- end }}
     chart: external-dns
   destination:
     name: {{ .Values.clusterDestination }}
