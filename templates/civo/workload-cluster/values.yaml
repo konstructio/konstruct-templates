@@ -4,9 +4,9 @@ clusterType: physical
 # @input.type: string
 # @input.description: the complete URL for the Terraform module for infrastructure provisioning
 # @input.required: true
-workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//civo-github/terraform/civo/modules/workload-cluster?ref=main"
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/workload-cluster?ref=main"
 
-workloadClusterBootstrapTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//civo-github/terraform/civo/modules/workload-cluster-bootstrap?ref=main"
+workloadClusterBootstrapTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/workload-cluster-bootstrap?ref=main"
 
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
