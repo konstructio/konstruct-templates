@@ -6,6 +6,7 @@ metadata:
   annotations:
     kubefirst.konstruct.io/application-name: groundcover
     kubefirst.konstruct.io/source: catalog-templates
+    argocd.argoproj.io/sync-wave: '10'
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -15,43 +16,53 @@ spec:
   project: {{ .Values.project }}
   source:
     chart: groundcover
-    repoURL: https://helm.groundcover.com/
+    repoURL: https://helm.groundcover.com
     targetRevision: {{ .Values.chartVersion }}
     helm:
       releaseName: groundcover
-      values: |
+      valuesObject:
+        victoria-metrics-operator:
+          enabled: true
+          builtinVMAgent:
+            enabled: true
+            spec:
+              remoteWrite:
+                - url: https://{{ .Values.ingestEndpoint }}/api/v1/write
+                  headers:
+                    - "apikey:%{API_KEY}"
         global:
-          groundcover_token: {{ .Values.apiKey }}
-          cluster:
-            name: {{ .Values.clusterDisplayName }}
-        agent:
+          groundcoverPredefinedTokenSecret:
+            secretName: groundcover-token
+            secretKey: ingestion-key
+          datadogapm:
+            overrideUrl: https://{{ .Values.ingestEndpoint }}
+          ingress:
+            site: {{ .Values.ingestEndpoint }}
           logs:
-            enabled: {{ .Values.logsEnabled }}
-          traces:
-            enabled: {{ .Values.tracesEnabled }}
-          rbac:
-            pspEnabled: {{ .Values.pspEnabled }}
-        groundcover:
-          rbac:
-            pspEnabled: {{ .Values.pspEnabled }}
-        victoria-metrics-single:
-          rbac:
-            pspEnabled: {{ .Values.pspEnabled }}
-        victoria-metrics-agent:
-          rbac:
-            pspEnabled: {{ .Values.pspEnabled }}
-        loki:
-          rbac:
-            pspEnabled: {{ .Values.pspEnabled }}
-        promscale:
-          rbac:
-            pspEnabled: {{ .Values.pspEnabled }}
-        timescaledb-single:
-          rbac:
-            pspEnabled: {{ .Values.pspEnabled }}
+            overrideUrl: https://{{ .Values.ingestEndpoint }}/loki/api/v1/push
+          backend:
+            enabled: false
+          telemetry:
+            enabled: false
+          metrics:
+            overrideUrl: https://{{ .Values.ingestEndpoint }}
+          vector:
+            logs:
+              otlp:
+                overrideHttpURL: https://{{ .Values.ingestEndpoint }}
+        clusterId: {{ .Values.clusterDisplayName }}
+        custom-metrics:
+          extraArgs:
+            remoteWrite.url: https://{{ .Values.ingestEndpoint }}/api/v1/write
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m
