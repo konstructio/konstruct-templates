@@ -28,7 +28,7 @@ spec:
         domainFilters:
         - {{ .Values.domainName }}
         env:
-        - name: {{ .Values.externalDnsProviderTokenEnvName }}
+        - name: {{ if eq .Values.externalDnsProviderName "civo" }}CIVO_TOKEN{{ else }}{{ .Values.externalDnsProviderTokenEnvName }}{{ end }}
           valueFrom:
             secretKeyRef:
               name: external-dns-secrets
