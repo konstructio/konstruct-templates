@@ -51,6 +51,14 @@ spec:
               otlp:
                 overrideHttpURL: https://{{ .Values.ingestEndpoint }}
         clusterId: {{ .Values.clusterDisplayName }}
+        vector:
+          replicas: {{ .Values.vectorReplicas }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: {{ .Values.vectorMemoryRequest }}
+            limits:
+              memory: {{ .Values.vectorMemoryLimit }}
         custom-metrics:
           extraArgs:
             remoteWrite.url: https://{{ .Values.ingestEndpoint }}/api/v1/write
