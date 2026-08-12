@@ -84,3 +84,21 @@ secretPath: konstruct/shared/groundcover
 # @input.secretBackend: aws-secrets-store
 # @input.secretPath: konstruct/shared/groundcover
 groundcoverApiKey: <GROUNDCOVER_API_KEY>
+
+# @input.type: string
+# @input.description: Number of vector (logs pipeline) replicas — 1 fits small clusters
+# @input.required: false
+# @input.default: 1
+vectorReplicas: 1
+
+# @input.type: string
+# @input.description: Memory request for each vector replica (chart default 2048Mi is sized for large nodes)
+# @input.required: false
+# @input.default: 512Mi
+vectorMemoryRequest: 512Mi
+
+# @input.type: string
+# @input.description: Memory limit for each vector replica
+# @input.required: false
+# @input.default: 2048Mi
+vectorMemoryLimit: 2048Mi
