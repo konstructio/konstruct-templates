@@ -22,9 +22,10 @@ spec:
         sources:
           - service
           - gateway-httproute
-          - gateway-tlsroute
-          - gateway-tcproute
-          - gateway-udproute
+          - gateway-grpcroute
+        # tls/tcp/udp route sources removed: gateway-api v1.4 serves TLSRoute
+        # only at v1, external-dns 1.20 informers want v1alpha2 and crash.
+        # Nothing on child clusters publishes those route kinds.
         domainFilters:
         - {{ .Values.domainName }}
         env:
