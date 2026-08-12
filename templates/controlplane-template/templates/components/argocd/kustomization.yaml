@@ -9,6 +9,7 @@ resources:
   - argocd-ui-httproute.yaml
 
 patchesStrategicMerge:
+  - argocd-server-reloader.yaml
   - argocd-cm.yaml
   - argocd-cmd-params-cm.yaml
   - argocd-application-controller-sa.yaml

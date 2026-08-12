@@ -1,0 +1,11 @@
+# Reloader restarts argocd-server whenever its ConfigMaps change — without
+# this, config landing via gitops after the bootstrap install (notably
+# server.insecure in argocd-cmd-params-cm) never takes effect until a manual
+# restart, leaving the UI in an https redirect loop behind the gateway.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-server
+  namespace: argocd
+  annotations:
+    reloader.stakater.com/auto: "true"
