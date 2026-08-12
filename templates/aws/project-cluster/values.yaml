@@ -1,3 +1,5 @@
+clusterType: management
+
 # Terraform Module Configuration
 # @input.type: string
 # @input.description: the complete URL for the Terraform module for infrastructure provisioning

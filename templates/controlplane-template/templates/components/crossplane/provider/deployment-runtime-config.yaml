@@ -6,7 +6,12 @@ metadata:
   labels:
     app: crossplane-provider-terraform
   annotations:
-    argocd.argoproj.io/sync-wave: '5'
+    # WaitForFirstConsumer storage: the PVC only binds once the provider
+    # pod mounts it, and that pod is created by the package manager after
+    # the Provider (wave 20) installs. Apply the PVC LAST so the wave gate
+    # never waits on a consumer that can't exist yet.
+    argocd.argoproj.io/sync-wave: '30'
+    argocd.argoproj.io/ignore-healthcheck: 'true'
 spec:
   accessModes:
     - ReadWriteOnce
