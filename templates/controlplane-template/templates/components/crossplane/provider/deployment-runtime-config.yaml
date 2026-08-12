@@ -7,6 +7,10 @@ metadata:
     app: crossplane-provider-terraform
   annotations:
     argocd.argoproj.io/sync-wave: '5'
+    # civo-volume binds WaitForFirstConsumer: the PVC stays Pending until
+    # the provider pod (a later wave) mounts it. Exclude it from health
+    # assessment or the wave deadlocks waiting on its own consumer.
+    argocd.argoproj.io/ignore-healthcheck: 'true'
 spec:
   accessModes:
     - ReadWriteOnce
