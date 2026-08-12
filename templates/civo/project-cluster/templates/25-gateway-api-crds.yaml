@@ -11,8 +11,11 @@ spec:
   project: {{ .Values.workloadClusterName }}
   source:
     repoURL: https://github.com/kubernetes-sigs/gateway-api
-    targetRevision: v1.2.1
-    path: config/crd/standard
+    # Must match the gateway-api bundle the envoy-gateway chart ships
+    # (v1.7.0 bundles v1.4.1 experimental) — mismatched channels flip-flop
+    # the shared CRDs between the two owners forever.
+    targetRevision: v1.4.1
+    path: config/crd/experimental
     directory:
       recurse: true
   destination:
