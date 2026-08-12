@@ -8,38 +8,26 @@
 clusterName: my-cluster
 
 # @input.type: string
-# @input.description: GitOps repository URL for ArgoCD sync
-# @input.required: true
-# @input.default: https://github.com/example/gitops-repo
-gitopsRepoUrl: https://github.com/example/gitops-repo
-
-# @input.type: string
-# @input.description: Registry path in GitOps repository
-# @input.required: true
-# @input.default: registry/clusters/my-cluster
-registryPath: registry/clusters/my-cluster
-
-# @input.type: string
-# @input.description: Target cluster destination for ArgoCD
-# @input.required: true
-# @input.default: in-cluster
-clusterDestination: in-cluster
+# @input.description: ArgoCD destination cluster (defaults to clusterName)
+# @input.required: false
+# @input.default: ""
+clusterDestination: ""
 
 # @input.type: string
 # @input.description: ArgoCD project name
-# @input.required: true
+# @input.required: false
 # @input.default: default
 project: default
 
 # @input.type: string
 # @input.description: Namespace for External Secrets Operator deployment
-# @input.required: true
+# @input.required: false
 # @input.default: external-secrets
 namespace: external-secrets
 
 # @input.type: string
 # @input.description: External Secrets Operator Helm chart version
-# @input.required: true
+# @input.required: false
 # @input.default: 0.19.2
 chartVersion: 0.19.2
 
@@ -50,33 +38,33 @@ chartVersion: 0.19.2
 # @input.type: enum
 # @input.description: Install External Secrets CRDs
 # @input.options: true,false
-# @input.required: true
+# @input.required: false
 # @input.default: true
 installCRDs: true
 
 # @input.type: number
 # @input.description: Number of operator replicas
-# @input.required: true
+# @input.required: false
 # @input.default: 1
 replicas: 1
 
 # @input.type: enum
 # @input.description: Enable the webhook for validating ExternalSecret resources
 # @input.options: true,false
-# @input.required: true
+# @input.required: false
 # @input.default: true
 webhookEnabled: true
 
 # @input.type: enum
 # @input.description: Enable the cert-controller for managing webhook certificates
 # @input.options: true,false
-# @input.required: true
+# @input.required: false
 # @input.default: true
 certControllerEnabled: true
 
 # @input.type: enum
 # @input.description: Enable ServiceMonitor for Prometheus metrics collection
 # @input.options: true,false
-# @input.required: true
+# @input.required: false
 # @input.default: false
 serviceMonitorEnabled: false

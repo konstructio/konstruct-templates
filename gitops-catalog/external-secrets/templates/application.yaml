@@ -11,7 +11,7 @@ metadata:
 spec:
   destination:
     namespace: {{ .Values.namespace }}
-    name: {{ .Values.clusterDestination }}
+    name: {{ .Values.clusterDestination | default .Values.clusterName }}
   project: {{ .Values.project }}
   source:
     chart: external-secrets
