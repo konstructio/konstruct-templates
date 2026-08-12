@@ -40,8 +40,8 @@ namespace: external-secrets
 # @input.type: string
 # @input.description: External Secrets Operator Helm chart version
 # @input.required: true
-# @input.default: 0.14.3
-chartVersion: 0.14.3
+# @input.default: 0.19.2
+chartVersion: 0.19.2
 
 # =============================================================================
 # EXTERNAL SECRETS CONFIGURATION
