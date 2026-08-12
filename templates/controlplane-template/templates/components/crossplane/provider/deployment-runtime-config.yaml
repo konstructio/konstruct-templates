@@ -7,9 +7,6 @@ metadata:
     app: crossplane-provider-terraform
   annotations:
     argocd.argoproj.io/sync-wave: '5'
-    # The app syncs with Replace=true, but PVC spec is immutable once the
-    # cluster default StorageClass is bound — apply this resource instead.
-    argocd.argoproj.io/sync-options: Replace=false
 spec:
   accessModes:
     - ReadWriteOnce
