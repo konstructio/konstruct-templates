@@ -97,16 +97,19 @@ spec:
               fi
 
               echo "=== PATCHING SECRET ==="
-              GITHUB_REPO_URL="https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}/${REPO_NAME}.git"
+              # Group-prefix creds: workload registries live in the PLATFORM repo while
+              # the org repo holds env content — a repo-scoped secret only matched one.
+              GITHUB_REPO_URL="https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}"
               ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
 
               if kubectl get secret github-repo-creds -n argocd &>/dev/null; then
                 echo "Secret exists, patching password..."
-                kubectl patch secret github-repo-creds -n argocd \
+                URLENC=$(echo -n "$GITHUB_REPO_URL" | base64 | tr -d '\n')
+              kubectl patch secret github-repo-creds -n argocd \
                   --type='json' \
-                  -p="[{\"op\": \"replace\", \"path\": \"/data/password\", \"value\": \"${ENCODED}\"}]"
+                  -p="[{\"op\": \"replace\", \"path\": \"/data/password\", \"value\": \"${ENCODED}\"},{\"op\": \"replace\", \"path\": \"/data/url\", \"value\": \"${URLENC}\"}]"
                 kubectl label secret github-repo-creds -n argocd \
-                  argocd.argoproj.io/secret-type=repository --overwrite
+                  argocd.argoproj.io/secret-type=repo-creds --overwrite
                 echo "Secret patched successfully."
               else
                 echo "Secret not found, creating..."
@@ -116,7 +119,7 @@ spec:
                   --from-literal=username=x-access-token \
                   --from-literal=password="${RESPONSE}"
                 kubectl label secret github-repo-creds -n argocd \
-                  argocd.argoproj.io/secret-type=repository
+                  argocd.argoproj.io/secret-type=repo-creds
                 echo "Secret created successfully."
               fi
 
@@ -191,16 +194,19 @@ spec:
           fi
 
           echo "=== PATCHING SECRET ==="
-          GITHUB_REPO_URL="https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}/${REPO_NAME}.git"
+          # Group-prefix creds: workload registries live in the PLATFORM repo while
+              # the org repo holds env content — a repo-scoped secret only matched one.
+              GITHUB_REPO_URL="https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}"
           ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
 
           if kubectl get secret github-repo-creds -n argocd &>/dev/null; then
             echo "Secret exists, patching password..."
-            kubectl patch secret github-repo-creds -n argocd \
+            URLENC=$(echo -n "$GITHUB_REPO_URL" | base64 | tr -d '\n')
+              kubectl patch secret github-repo-creds -n argocd \
               --type='json' \
-              -p="[{\"op\": \"replace\", \"path\": \"/data/password\", \"value\": \"${ENCODED}\"}]"
+              -p="[{\"op\": \"replace\", \"path\": \"/data/password\", \"value\": \"${ENCODED}\"},{\"op\": \"replace\", \"path\": \"/data/url\", \"value\": \"${URLENC}\"}]"
             kubectl label secret github-repo-creds -n argocd \
-              argocd.argoproj.io/secret-type=repository --overwrite
+              argocd.argoproj.io/secret-type=repo-creds --overwrite
             echo "Secret patched successfully."
           else
             echo "Secret not found, creating..."
@@ -210,7 +216,7 @@ spec:
               --from-literal=username=x-access-token \
               --from-literal=password="${RESPONSE}"
             kubectl label secret github-repo-creds -n argocd \
-              argocd.argoproj.io/secret-type=repository
+              argocd.argoproj.io/secret-type=repo-creds
             echo "Secret created successfully."
           fi
 
