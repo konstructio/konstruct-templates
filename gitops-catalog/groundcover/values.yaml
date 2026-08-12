@@ -2,83 +2,69 @@
 # Deploys the groundcover SENSOR ONLY (backend.enabled=false) against a
 # self-hosted or SaaS groundcover backend. Ingestion key is delivered via
 # ExternalSecret from the cluster's ClusterSecretStore — never inline.
+#
+# Only clusterName is required. Everything else has working defaults,
+# assuming the cluster's ClusterSecretStore follows the standard name
+# ("cluster-secret-store") and the shared ingestion key is seeded at
+# konstruct/shared/groundcover.
 
 # @input.type: string
-# @input.description: Cluster name identifier
+# @input.description: Cluster to deploy the sensor to (also used as clusterId in groundcover)
 # @input.required: true
 # @input.default: my-cluster
 clusterName: my-cluster
 
 # @input.type: string
-# @input.description: GitOps repository URL for ArgoCD sync
-# @input.required: true
-# @input.default: https://github.com/example/gitops-repo
-gitopsRepoUrl: https://github.com/example/gitops-repo
+# @input.description: ArgoCD destination cluster (defaults to clusterName)
+# @input.required: false
+# @input.default: ""
+clusterDestination: ""
 
 # @input.type: string
-# @input.description: Registry path in GitOps repository
-# @input.required: true
-# @input.default: registry/clusters/my-cluster
-registryPath: registry/clusters/my-cluster
-
-# @input.type: string
-# @input.description: Target cluster destination for ArgoCD
-# @input.required: true
-# @input.default: in-cluster
-clusterDestination: in-cluster
+# @input.description: Display name / clusterId in groundcover (defaults to clusterName)
+# @input.required: false
+# @input.default: ""
+clusterDisplayName: ""
 
 # @input.type: string
 # @input.description: ArgoCD project name
-# @input.required: true
+# @input.required: false
 # @input.default: default
 project: default
 
 # @input.type: string
 # @input.description: Namespace for the groundcover sensor
-# @input.required: true
+# @input.required: false
 # @input.default: groundcover
 namespace: groundcover
 
 # @input.type: string
 # @input.description: groundcover Helm chart version (helm.groundcover.com)
-# @input.required: true
+# @input.required: false
 # @input.default: 1.11.832
 chartVersion: 1.11.832
 
 # @input.type: string
-# @input.description: Cluster display name (clusterId) shown in the groundcover UI
-# @input.required: true
-# @input.default: my-cluster
-clusterDisplayName: my-cluster
-
-# @input.type: string
-# @input.description: groundcover ingestion endpoint hostname (self-hosted backend or SaaS site)
-# @input.required: true
+# @input.description: groundcover ingestion endpoint hostname
+# @input.required: false
 # @input.default: ingest.groundcover.civo.io
 ingestEndpoint: ingest.groundcover.civo.io
 
-# =============================================================================
-# SECRET CONFIGURATION
-# =============================================================================
-
 # @input.type: string
-# @input.description: Name of the ClusterSecretStore to use for the ExternalSecret
-# @input.required: true
+# @input.description: ClusterSecretStore holding the ingestion key
+# @input.required: false
 # @input.default: cluster-secret-store
 secretStoreName: cluster-secret-store
 
 # @input.type: string
-# @input.description: Key path in the secret store for the groundcover ingestion key
-# @input.required: true
+# @input.description: Secret-store path for the groundcover ingestion key
+# @input.required: false
 # @input.default: konstruct/shared/groundcover
 secretPath: konstruct/shared/groundcover
 
-# IMPORTANT: Secret field defaults MUST use <TOKEN> placeholder format.
-# The operator matches these tokens to yamlValues in the CatalogDeployment CR.
-
 # @input.type: secret
-# @input.description: groundcover ingestion API key
-# @input.required: true
+# @input.description: groundcover ingestion API key (leave blank when the key is already in the secret store)
+# @input.required: false
 # @input.secretKey: ingestion-key
 # @input.secretEnv: GROUNDCOVER_API_KEY
 # @input.secretBackend: aws-secrets-store
@@ -92,7 +78,7 @@ groundcoverApiKey: <GROUNDCOVER_API_KEY>
 vectorReplicas: 1
 
 # @input.type: string
-# @input.description: Memory request for each vector replica (chart default 2048Mi is sized for large nodes)
+# @input.description: Memory request for each vector replica
 # @input.required: false
 # @input.default: 512Mi
 vectorMemoryRequest: 512Mi

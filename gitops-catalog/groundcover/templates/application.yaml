@@ -12,7 +12,7 @@ metadata:
 spec:
   destination:
     namespace: {{ .Values.namespace }}
-    name: {{ .Values.clusterDestination }}
+    name: {{ .Values.clusterDestination | default .Values.clusterName }}
   project: {{ .Values.project }}
   source:
     chart: groundcover
@@ -50,7 +50,7 @@ spec:
             logs:
               otlp:
                 overrideHttpURL: https://{{ .Values.ingestEndpoint }}
-        clusterId: {{ .Values.clusterDisplayName }}
+        clusterId: {{ .Values.clusterDisplayName | default .Values.clusterName }}
         vector:
           replicas: {{ .Values.vectorReplicas }}
           resources:
