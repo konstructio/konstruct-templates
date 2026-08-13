@@ -13,3 +13,9 @@ variable "node_count" {
 variable "node_type" {
   type = string
 }
+
+variable "environment" {
+  description = "Environment name for the workload cluster (passed by the Konstruct workload-cluster template; unused placeholder to accept the standard var set)"
+  type        = string
+  default     = ""
+}
