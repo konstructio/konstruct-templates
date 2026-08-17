@@ -1,3 +1,4 @@
+{{- if eq .Values.gitProvider "github" }}
 apiVersion: actions.summerwind.dev/v1alpha1
 kind: RunnerDeployment
 metadata:
@@ -18,3 +19,4 @@ spec:
       securityContext:
         fsGroup: 1000
         runAsUser: 1000
+{{- end }}

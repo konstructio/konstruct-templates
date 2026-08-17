@@ -14,7 +14,10 @@ kind: StatefulSet
 metadata:
   name: argocd-application-controller
 spec:
-  replicas: 3
+  # Must stay 1 unless ARGOCD_CONTROLLER_REPLICAS is raised to match —
+  # mismatched shard count makes the controllers stomp each other
+  # (wedged syncs, phantom hooks).
+  replicas: 1
   template:
     spec:
       containers:

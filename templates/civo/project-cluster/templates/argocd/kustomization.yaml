@@ -12,6 +12,7 @@ resources:
   - git-token-refresher.yaml
   
 patchesStrategicMerge:
+  - argocd-cm.yaml
   - argocd-cmd-params-cm.yaml
   - argocd-server-sa.yaml
   - argocd-application-controller-sa.yaml

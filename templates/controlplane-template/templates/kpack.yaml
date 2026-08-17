@@ -1,0 +1,32 @@
+{{- if ne (((.Values.buildPlane | default dict).kpack | default dict).enabled) false }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kpack-components
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  namespace: argocd
+  annotations:
+    # Build plane: install kpack before the konstruct umbrella (wave 0) so the
+    # kontract-operator's images.kpack.io watch has its CRD. The operator also
+    # tolerates a missing CRD, so this ordering is best-effort, not required.
+    argocd.argoproj.io/sync-wave: '5'
+spec:
+  project: {{ .Values.project }}
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl }}
+    path: registry/clusters/{{ .Values.clusterName }}/components/kpack
+    targetRevision: HEAD
+  destination:
+    name: {{ .Values.clusterDestination }}
+    namespace: kpack
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # kpack CRDs are large; server-side apply avoids the client-side
+      # last-applied-configuration annotation size limit.
+      - ServerSideApply=true
+{{- end }}

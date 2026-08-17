@@ -1,0 +1,75 @@
+{{- if ne (((.Values.buildPlane | default dict).kpack | default dict).enabled) false }}
+# kpack default ClusterBuilder for the Kontract build plane. The operator points
+# every KontractApp/theme kpack Image at ClusterBuilder "default". The builder
+# image is pushed to this cluster's Harbor; the harbor-push secret (admin
+# dockerconfigjson) is provisioned alongside Harbor in the kpack namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kpack-builder-sa
+  namespace: kpack
+secrets:
+  - name: harbor-push
+imagePullSecrets:
+  - name: harbor-push
+---
+apiVersion: kpack.io/v1alpha2
+kind: ClusterStack
+metadata:
+  name: base
+spec:
+  id: io.buildpacks.stacks.jammy
+  buildImage:
+    image: paketobuildpacks/build-jammy-full
+  runImage:
+    # Static sites (served by nginx via the web-servers buildpack) and most apps
+    # run fine on the stock paketo full run image. Node *server* apps that need
+    # extra shared libs (e.g. libatomic) can override buildPlane.kpack.runImage
+    # with a custom run image (as the internal control plane does).
+    image: {{ (((.Values.buildPlane | default dict).kpack | default dict).runImage) | default "paketobuildpacks/run-jammy-full" }}
+---
+apiVersion: kpack.io/v1alpha2
+kind: ClusterStore
+metadata:
+  name: default
+spec:
+  sources:
+    - image: docker.io/paketobuildpacks/nodejs
+    - image: docker.io/paketobuildpacks/java
+    - image: docker.io/paketobuildpacks/go
+    - image: docker.io/paketobuildpacks/python
+    - image: docker.io/paketobuildpacks/web-servers
+---
+apiVersion: kpack.io/v1alpha2
+kind: ClusterBuilder
+metadata:
+  name: default
+spec:
+  tag: harbor.{{ .Values.domainName }}/kpack/builder
+  stack:
+    name: base
+    kind: ClusterStack
+  store:
+    name: default
+    kind: ClusterStore
+  # web-servers MUST be first: it only detects when BP_WEB_SERVER is set (static
+  # sites), so normal node/java/go/python apps fall through to their own group.
+  # With nodejs first, any app with a package.json matched nodejs and web-servers
+  # never ran, so BP_WEB_SERVER=nginx was silently ignored and static sites
+  # launched the dev server (e.g. `docusaurus start`) -> crash on the read-only
+  # rootfs. Order here is the fix.
+  order:
+    - group:
+        - id: paketo-buildpacks/web-servers
+    - group:
+        - id: paketo-buildpacks/nodejs
+    - group:
+        - id: paketo-buildpacks/java
+    - group:
+        - id: paketo-buildpacks/go
+    - group:
+        - id: paketo-buildpacks/python
+  serviceAccountRef:
+    name: kpack-builder-sa
+    namespace: kpack
+{{- end }}

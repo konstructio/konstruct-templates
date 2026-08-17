@@ -48,6 +48,6 @@ spec:
   timeout:
     http:
       requestTimeout: "3600s"
-      idleTimeout: "3600s"
+      connectionIdleTimeout: "3600s"
     tcp:
       connectTimeout: "30s"

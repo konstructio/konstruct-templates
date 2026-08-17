@@ -1,7 +1,8 @@
+{{- if eq .Values.gitProvider "github" }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: actions-runner-contoller
+  name: actions-runner-controller
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   namespace: argocd
@@ -39,3 +40,4 @@ spec:
       - ApplyOutOfSyncOnly=true
       - Replace=true
       - PruneLast=true
+{{- end }}
