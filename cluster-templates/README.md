@@ -18,7 +18,8 @@ cluster-templates/
 │   ├── project-cluster/
 │   └── workload-cluster/
 ├── control-plane/              # v2 Helm chart — seed for the Konstruct control plane
-├── google-workload-cluster/    # v1 token-based, GCP
+├── google/                     # v2 Helm charts, Google Cloud
+│   └── workload-cluster/
 ├── mgmt/                       # management-cluster gitops scaffolding (not a chart)
 └── shared/                     # token snippets the operators fetch at runtime
 ```
@@ -36,14 +37,14 @@ reads that key to decide how to treat the template:
 |---|---|---|
 | `control-plane` | `control-plane` | Seed template for the Konstruct control plane itself. **No infrastructure layer** — the cluster already exists when this is hydrated during bootstrap, so the chart ships no Crossplane `Workspace`. Only the bootstrap flow consumes it. |
 | `aws/project-cluster`, `civo/project-cluster` | `management` | A management cluster: runs the org's ArgoCD root and provisions workload clusters below it. |
-| `aws/workload-cluster`, `civo/workload-cluster`, `*/kontract-cluster` | `physical` | A workload cluster with dedicated infrastructure. |
+| `aws/workload-cluster`, `civo/workload-cluster`, `google/workload-cluster`, `*/kontract-cluster` | `physical` | A workload cluster with dedicated infrastructure. |
 | `aws/workload-vcluster` | `virtual` | A virtual cluster (vcluster) running inside a host cluster. |
 
-## Template engines
+## Declaring inputs
 
-**v2 (Helm-based)** — the default for everything new. A Helm chart whose
-`values.yaml` declares `clusterType` at the top level and exposes form inputs
-via `@input.*` comment annotations directly above the key they describe:
+Every cluster template is a Helm chart whose `values.yaml` declares `clusterType`
+at the top level and exposes form inputs via `@input.*` comment annotations
+directly above the key they describe:
 
 ```yaml
 clusterType: physical
@@ -57,9 +58,14 @@ workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruc
 Konstruct parses those annotations to build the cluster-creation form, then
 renders the chart with the submitted values. There is no token replacement.
 
-**v1 (token-based)** — legacy, `google-workload-cluster` only. A `kubefirst.yaml`
-at the template root declares the cluster type and `<TOKEN_NAME>` inputs, which
-Konstruct substitutes at hydration time. Do not add new v1 templates.
+Values the platform supplies itself — `workloadClusterName`, `gitopsRepoUrl`,
+`teamGitopsRepoUrl`, `projectClusterName`, `projectRegion`, `cloudAccountName`,
+`envName` and friends — are referenced in templates but deliberately **not**
+declared in `values.yaml`, so they do not show up as form fields. Only declare a
+key when the user has to provide it or when it needs a default.
+
+The older token-based (`kubefirst.yaml`) engine is gone from this directory; do
+not reintroduce it for cluster templates.
 
 ## Non-chart directories
 

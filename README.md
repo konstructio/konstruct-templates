@@ -17,7 +17,7 @@ konstruct-templates/
 │   ├── aws/                    #   kontract-cluster, project-cluster, workload-cluster, workload-vcluster
 │   ├── civo/                   #   kontract-cluster, project-cluster, workload-cluster
 │   ├── control-plane/          #   seed template for the Konstruct control plane itself
-│   ├── google-workload-cluster/#   GCP workload cluster (v1, token-based)
+│   ├── google/                 #   workload-cluster
 │   ├── mgmt/                   #   management-cluster gitops scaffolding
 │   └── shared/                 #   token snippets the operators fetch at runtime
 ├── helm-templates/

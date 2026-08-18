@@ -16,7 +16,7 @@ The repository root holds one directory per template kind:
    - **`aws/`** - `kontract-cluster`, `project-cluster`, `workload-cluster`, `workload-vcluster` (v2 Helm charts)
    - **`civo/`** - `kontract-cluster`, `project-cluster`, `workload-cluster` (v2 Helm charts)
    - **`control-plane/`** - Seed template for the Konstruct control plane itself (v2 Helm chart)
-   - **`google-workload-cluster/`** - GCP workload cluster (v1 token-based)
+   - **`google/`** - `workload-cluster` (v2 Helm chart)
    - **`mgmt/`** - Management cluster gitops scaffolding (ArgoCD app projects, cluster registry)
    - **`shared/`** - Token-based snippets fetched at runtime by the operators rather than
      hydrated as part of a template tree (currently `45-environment.yaml`)

@@ -1,0 +1,16 @@
+clusterType: physical
+
+# Terraform Module Configuration
+# @input.type: string
+# @input.description: the complete URL for the Terraform module for infrastructure provisioning
+# @input.required: true
+workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/gcp/modules/workload-cluster?ref=main"
+
+# Google Cloud Configuration
+# @input.type: string
+# @input.description: the Google Cloud project ID the cluster is provisioned into
+# @input.required: true
+googleProject: ""
+
+# Wait Job Configuration
+waitJobImage: "dtzar/helm-kubectl:3.19.0"
