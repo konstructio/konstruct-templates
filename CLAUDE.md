@@ -109,5 +109,5 @@ kubectl apply --dry-run=client -f cluster-templates/mgmt/registry.yaml
 When modifying templates:
 1. Maintain consistent token naming conventions
 2. Respect sync wave ordering for dependencies
-3. Ensure all placeholders are documented in kubefirst.yaml files
+3. Ensure every input a user must supply is annotated with `@input.*` in the chart's `values.yaml`
 4. Test YAML validity before committing changes
