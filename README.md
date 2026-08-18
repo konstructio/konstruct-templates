@@ -4,27 +4,53 @@ This repository contains custom cluster templates for [Konstruct](https://konstr
 
 ## Overview
 
-These templates serve as the starting point foundation for each of three types of workload clusters in Konstruct:
+These templates are the starting-point foundation Konstruct hydrates from when it
+provisions a cluster, registers an application, or bootstraps a control plane.
 
-1. **Workload Downstream Cluster** - Physical EKS clusters with dedicated infrastructure
-2. **Workload Downstream Host vCluster** - Virtual clusters running inside host clusters for lightweight, multi-tenant environments
-3. **Workload Project Cluster** - Full-featured clusters with ArgoCD and Crossplane for managing project-specific infrastructure
+## Repository Layout
+
+The root is organised by template kind:
+
+```
+konstruct-templates/
+├── cluster-templates/          # templates that provision a cluster, grouped by cloud
+│   ├── aws/                    #   kontract-cluster, project-cluster, workload-cluster, workload-vcluster
+│   ├── civo/                   #   kontract-cluster, project-cluster, workload-cluster
+│   ├── control-plane/          #   seed template for the Konstruct control plane itself
+│   ├── google/                 #   workload-cluster
+│   ├── mgmt/                   #   management-cluster gitops scaffolding
+│   └── shared/                 #   token snippets the operators fetch at runtime
+├── helm-templates/
+│   └── charts/                 # generic web-service chart used to deploy registered apps
+├── pipeline-templates/
+│   ├── workflows/              # default CI workflows for app registration (GitHub Actions + GitLab CI)
+│   └── promotion/              # environment promotion and release workflows
+├── gitops-catalog/             # installable platform applications
+└── terraform/                  # infrastructure modules per cloud (aws, civo, gcp)
+```
+
+Each template directory documents itself in detail:
+
+| Directory | README |
+|---|---|
+| `cluster-templates/` | [cluster types, engines, consumers, adding a template](cluster-templates/README.md) |
+| `helm-templates/` | [the app chart and the `<REPO_NAME>` token](helm-templates/README.md) |
+| `pipeline-templates/` | [workflow set, promotion set, tokens](pipeline-templates/README.md) |
 
 ## Template Structure
 
-Each template type includes:
+Each cluster template includes:
 
-- **`kubefirst.yaml`** - Defines the cluster type and configurable input variables
+- **`values.yaml`** - Declares the cluster type and configurable input variables
 - **ArgoCD Applications** - GitOps configurations for deploying platform components
-- **Terraform Modules** - Infrastructure provisioning code for AWS EKS clusters
+- **Terraform Modules** - Infrastructure provisioning code, referenced from `terraform/`
 - **Helm Chart Templates** - Standard application deployment templates
 
-## Template Engines and Cluster Types
+## Cluster Types
 
-Templates come in two engine versions:
-
-- **v1 (token-based)**: a `kubefirst.yaml` at the template root declares `clusterType` and input tokens (`<TOKEN_NAME>`), which Konstruct replaces at hydration time.
-- **v2 (Helm-based)**: a Helm chart whose `values.yaml` declares a top-level `clusterType:` key and form inputs via `@input.*` comment annotations. Helm renders the manifests; no token replacement.
+A cluster template is a Helm chart whose `values.yaml` declares a top-level
+`clusterType:` key and form inputs via `@input.*` comment annotations. Helm
+renders the manifests — there is no token replacement in cluster templates.
 
 Valid `clusterType` values and what they mean to Konstruct:
 
@@ -57,19 +83,21 @@ cd konstruct-templates
 
 #### Configure Input Variables
 
-Edit the `kubefirst.yaml` file in your chosen template directory to define custom input variables:
+Annotate the keys in your chosen template's `values.yaml` to define the inputs
+Konstruct prompts for. Each `@input.*` block describes the key directly beneath it:
 
 ```yaml
-clusterType: "physical"  # Options: physical, virtual, gpu
-inputs:
-  - name: "node-count"
-    token: "<WORKLOAD_NODE_COUNT>"
-    prompt: "Enter the desired number of worker nodes"
-    tip: "3"
-  - name: "instance-type"
-    token: "<WORKLOAD_INSTANCE_TYPE>"
-    prompt: "Enter the EC2 instance type for worker nodes"
-    tip: "m5.large"
+clusterType: physical  # Options: control-plane, management, physical, virtual
+
+# @input.type: number
+# @input.description: the desired number of worker nodes
+# @input.required: true
+workloadNodeCount: 3
+
+# @input.type: string
+# @input.description: the instance type for worker nodes
+# @input.required: true
+workloadInstanceType: "m5.large"
 ```
 
 #### Modify Infrastructure
@@ -107,7 +135,9 @@ These built-in tokens are automatically replaced by Konstruct:
 - `<PROJECT_CLUSTER_NAME>` - Management cluster name
 - `<REPO_NAME>` - Repository name for Helm charts
 
-Plus any custom tokens you define in `kubefirst.yaml`.
+Cluster templates take their inputs from `values.yaml` rather than tokens; the
+tokens above still apply to the token-based templates under
+`pipeline-templates/` and `cluster-templates/shared/`.
 
 ## Platform Components
 

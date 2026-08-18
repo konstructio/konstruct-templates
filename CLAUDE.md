@@ -10,15 +10,29 @@ This repository contains Konstruct (formerly Kubefirst) templates for managing K
 
 ### Key Components
 
-1. **Templates** - The main template configurations organized by type:
-   - **charts/** - Helm chart templates for application deployments
-   - **mgmt/** - Management cluster configurations (ArgoCD app projects, cluster definitions)
-   - **workload-downstream-cluster/** - Templates for physical downstream workload clusters
-   - **workload-downstream-host-vcluster/** - Templates for virtual clusters (vcluster)
-   - **workload-project-cluster/** - Templates for project-specific clusters
+The repository root holds one directory per template kind:
 
-2. **Terraform Modules** - AWS infrastructure provisioning:
-   - Located in `terraform/aws/modules/`
+1. **`cluster-templates/`** - Templates that provision a cluster, grouped by cloud:
+   - **`aws/`** - `kontract-cluster`, `project-cluster`, `workload-cluster`, `workload-vcluster` (v2 Helm charts)
+   - **`civo/`** - `kontract-cluster`, `project-cluster`, `workload-cluster` (v2 Helm charts)
+   - **`control-plane/`** - Seed template for the Konstruct control plane itself (v2 Helm chart)
+   - **`google/`** - `workload-cluster` (v2 Helm chart)
+   - **`mgmt/`** - Management cluster gitops scaffolding (ArgoCD app projects, cluster registry)
+   - **`shared/`** - Token-based snippets fetched at runtime by the operators rather than
+     hydrated as part of a template tree (currently `45-environment.yaml`)
+
+2. **`helm-templates/`** - Helm chart templates for application deployments:
+   - **`charts/`** - The generic web-service chart every registered app is deployed with
+     (its `Chart.yaml` name is the `<REPO_NAME>` token, replaced at registration time)
+
+3. **`pipeline-templates/`** - CI/CD pipeline templates:
+   - **`workflows/`** - Default GitHub Actions / GitLab CI workflows for app registration
+   - **`promotion/`** - Environment promotion and release workflows
+
+4. **`gitops-catalog/`** - Installable platform applications (one directory per app)
+
+5. **`terraform/`** - Infrastructure provisioning modules, grouped by cloud
+   (`terraform/aws/modules/`, `terraform/civo/modules/`, `terraform/gcp/modules/`):
    - Includes bootstrap configurations and cluster-specific modules
    - EKS cluster version: 1.32
 
@@ -60,17 +74,17 @@ terraform init
 terraform validate
 
 # Check Helm chart syntax
-helm lint templates/charts/
+helm lint helm-templates/charts/
 ```
 
 ### Template Testing
 
 ```bash
 # Test token replacement (example)
-sed 's/<CLUSTER_NAME>/test-cluster/g' templates/mgmt/registry.yaml
+sed 's/<CLUSTER_NAME>/test-cluster/g' cluster-templates/mgmt/registry.yaml
 
 # Dry-run ArgoCD application
-kubectl apply --dry-run=client -f templates/mgmt/registry.yaml
+kubectl apply --dry-run=client -f cluster-templates/mgmt/registry.yaml
 ```
 
 ## Important Patterns
@@ -95,5 +109,5 @@ kubectl apply --dry-run=client -f templates/mgmt/registry.yaml
 When modifying templates:
 1. Maintain consistent token naming conventions
 2. Respect sync wave ordering for dependencies
-3. Ensure all placeholders are documented in kubefirst.yaml files
+3. Ensure every input a user must supply is annotated with `@input.*` in the chart's `values.yaml`
 4. Test YAML validity before committing changes
