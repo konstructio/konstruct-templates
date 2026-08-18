@@ -29,21 +29,28 @@ konstruct-templates/
 └── terraform/                  # infrastructure modules per cloud (aws, civo, gcp)
 ```
 
+Each template directory documents itself in detail:
+
+| Directory | README |
+|---|---|
+| `cluster-templates/` | [cluster types, engines, consumers, adding a template](cluster-templates/README.md) |
+| `helm-templates/` | [the app chart and the `<REPO_NAME>` token](helm-templates/README.md) |
+| `pipeline-templates/` | [workflow set, promotion set, tokens](pipeline-templates/README.md) |
+
 ## Template Structure
 
 Each cluster template includes:
 
-- **`kubefirst.yaml`** (v1) or **`values.yaml`** (v2) - Declares the cluster type and configurable input variables
+- **`values.yaml`** - Declares the cluster type and configurable input variables
 - **ArgoCD Applications** - GitOps configurations for deploying platform components
 - **Terraform Modules** - Infrastructure provisioning code, referenced from `terraform/`
 - **Helm Chart Templates** - Standard application deployment templates
 
-## Template Engines and Cluster Types
+## Cluster Types
 
-Templates come in two engine versions:
-
-- **v1 (token-based)**: a `kubefirst.yaml` at the template root declares `clusterType` and input tokens (`<TOKEN_NAME>`), which Konstruct replaces at hydration time.
-- **v2 (Helm-based)**: a Helm chart whose `values.yaml` declares a top-level `clusterType:` key and form inputs via `@input.*` comment annotations. Helm renders the manifests; no token replacement.
+A cluster template is a Helm chart whose `values.yaml` declares a top-level
+`clusterType:` key and form inputs via `@input.*` comment annotations. Helm
+renders the manifests — there is no token replacement in cluster templates.
 
 Valid `clusterType` values and what they mean to Konstruct:
 
@@ -76,19 +83,21 @@ cd konstruct-templates
 
 #### Configure Input Variables
 
-Edit the `kubefirst.yaml` file in your chosen template directory to define custom input variables:
+Annotate the keys in your chosen template's `values.yaml` to define the inputs
+Konstruct prompts for. Each `@input.*` block describes the key directly beneath it:
 
 ```yaml
-clusterType: "physical"  # Options: physical, virtual, gpu
-inputs:
-  - name: "node-count"
-    token: "<WORKLOAD_NODE_COUNT>"
-    prompt: "Enter the desired number of worker nodes"
-    tip: "3"
-  - name: "instance-type"
-    token: "<WORKLOAD_INSTANCE_TYPE>"
-    prompt: "Enter the EC2 instance type for worker nodes"
-    tip: "m5.large"
+clusterType: physical  # Options: control-plane, management, physical, virtual
+
+# @input.type: number
+# @input.description: the desired number of worker nodes
+# @input.required: true
+workloadNodeCount: 3
+
+# @input.type: string
+# @input.description: the instance type for worker nodes
+# @input.required: true
+workloadInstanceType: "m5.large"
 ```
 
 #### Modify Infrastructure
@@ -126,7 +135,9 @@ These built-in tokens are automatically replaced by Konstruct:
 - `<PROJECT_CLUSTER_NAME>` - Management cluster name
 - `<REPO_NAME>` - Repository name for Helm charts
 
-Plus any custom tokens you define in `kubefirst.yaml`.
+Cluster templates take their inputs from `values.yaml` rather than tokens; the
+tokens above still apply to the token-based templates under
+`pipeline-templates/` and `cluster-templates/shared/`.
 
 ## Platform Components
 
