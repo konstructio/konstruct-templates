@@ -4,19 +4,38 @@ This repository contains custom cluster templates for [Konstruct](https://konstr
 
 ## Overview
 
-These templates serve as the starting point foundation for each of three types of workload clusters in Konstruct:
+These templates are the starting-point foundation Konstruct hydrates from when it
+provisions a cluster, registers an application, or bootstraps a control plane.
 
-1. **Workload Downstream Cluster** - Physical EKS clusters with dedicated infrastructure
-2. **Workload Downstream Host vCluster** - Virtual clusters running inside host clusters for lightweight, multi-tenant environments
-3. **Workload Project Cluster** - Full-featured clusters with ArgoCD and Crossplane for managing project-specific infrastructure
+## Repository Layout
+
+The root is organised by template kind:
+
+```
+konstruct-templates/
+├── cluster-templates/          # templates that provision a cluster, grouped by cloud
+│   ├── aws/                    #   kontract-cluster, project-cluster, workload-cluster, workload-vcluster
+│   ├── civo/                   #   kontract-cluster, project-cluster, workload-cluster
+│   ├── control-plane/          #   seed template for the Konstruct control plane itself
+│   ├── google-workload-cluster/#   GCP workload cluster (v1, token-based)
+│   ├── mgmt/                   #   management-cluster gitops scaffolding
+│   └── shared/                 #   token snippets the operators fetch at runtime
+├── helm-templates/
+│   └── charts/                 # generic web-service chart used to deploy registered apps
+├── pipeline-templates/
+│   ├── workflows/              # default CI workflows for app registration (GitHub Actions + GitLab CI)
+│   └── promotion/              # environment promotion and release workflows
+├── gitops-catalog/             # installable platform applications
+└── terraform/                  # infrastructure modules per cloud (aws, civo, gcp)
+```
 
 ## Template Structure
 
-Each template type includes:
+Each cluster template includes:
 
-- **`kubefirst.yaml`** - Defines the cluster type and configurable input variables
+- **`kubefirst.yaml`** (v1) or **`values.yaml`** (v2) - Declares the cluster type and configurable input variables
 - **ArgoCD Applications** - GitOps configurations for deploying platform components
-- **Terraform Modules** - Infrastructure provisioning code for AWS EKS clusters
+- **Terraform Modules** - Infrastructure provisioning code, referenced from `terraform/`
 - **Helm Chart Templates** - Standard application deployment templates
 
 ## Template Engines and Cluster Types

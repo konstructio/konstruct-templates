@@ -1,5 +1,5 @@
 apiVersion: v2
-name: controlplane-template
+name: control-plane
 description: Management cluster template for Konstruct GitOps - deploys ArgoCD applications and components
 type: application
 version: 0.1.0
