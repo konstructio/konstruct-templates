@@ -1,0 +1,16 @@
+apiVersion: v2
+name: civo-kontract-cluster
+description: "Civo Kontract cluster template for Konstruct — extends the workload cluster with shared gateway networking, wildcard TLS/DNS, observability, and the Kontract app registry"
+type: application
+version: 2.0.0
+appVersion: "2.0"
+keywords:
+  - argocd
+  - kontract
+  - workload-cluster
+  - gitops
+  - crossplane
+  - terraform
+  - civo
+maintainers:
+  - name: Konstruct

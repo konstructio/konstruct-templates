@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.workloadClusterName }}-external-dns
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: '35'
+spec:
+  project: {{ .Values.workloadClusterName }}-platform
+  source:
+    repoURL: https://kubernetes-sigs.github.io/external-dns
+    targetRevision: 1.20.0
+    chart: external-dns
+    helm:
+      releaseName: external-dns
+      values: |
+        serviceAccount:
+          create: true
+          name: external-dns
+          annotations:
+            eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.kubefirstMgmtAccountId }}:role/external-dns-{{ .Values.workloadClusterName }}'
+        provider: {{ .Values.externalDnsProviderName }}
+        # service only: app URLs resolve via ONE wildcard record published
+        # from the Envoy proxy Service's hostname annotation (see
+        # networking/envoyproxy.yaml) — instant for new apps, no per-app
+        # records, tenant app names stay out of the public zone.
+        sources:
+          - service
+        # sync (not the chart-default upsert-only) so records this instance
+        # owns (txtOwnerId registry) are pruned when their source goes away.
+        # Records it doesn't own are never touched.
+        policy: sync
+        domainFilters:
+          - {{ .Values.domainName }}
+        # Distinct owner-id per cluster so multiple external-dns instances
+        # sharing the zone never delete each other's records.
+        txtOwnerId: {{ .Values.workloadClusterName }}
+  destination:
+    name: {{ .Values.workloadClusterName }}
+    namespace: external-dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
