@@ -1,0 +1,21 @@
+# HTTP-01 issuer for tenant CUSTOM DOMAINS (the wildcard platform cert uses
+# the DNS-01 issuer next door). The ACME challenge arrives through the
+# tenant's CNAME at the shared gateway's :80 listener, so certificates issue
+# for domains whose DNS we don't control — exactly the custom-domain flow.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-http
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: {{ .Values.email }}
+    privateKeySecretRef:
+      name: letsencrypt-http
+    solvers:
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: eg
+                namespace: default
+                kind: Gateway

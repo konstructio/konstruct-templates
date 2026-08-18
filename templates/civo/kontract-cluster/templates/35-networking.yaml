@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.workloadClusterName }}-networking
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: '35'
+spec:
+  project: {{ .Values.workloadClusterName }}-platform
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl }}
+    path: registry/clusters/{{ .Values.workloadClusterName }}/networking
+    targetRevision: HEAD
+    directory:
+      recurse: true
+  destination:
+    name: {{ .Values.workloadClusterName }}
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

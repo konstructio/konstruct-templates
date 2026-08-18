@@ -1,0 +1,15 @@
+# Per-cluster wildcard cert. Issued once via DNS-01; every
+# <app>.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }} is then HTTPS instantly (no per-app ACME).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: apps-wildcard
+  namespace: default
+spec:
+  secretName: apps-wildcard-tls
+  issuerRef:
+    name: letsencrypt-prod-dns
+    kind: ClusterIssuer
+  commonName: "*.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }}"
+  dnsNames:
+    - "*.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }}"
