@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: <WORKLOAD_CLUSTER_NAME>-infrastructure
+  name: {{ .Values.workloadClusterName }}-infrastructure
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,12 +10,12 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: <GITOPS_REPO_URL>
-    path: registry/clusters/<WORKLOAD_CLUSTER_NAME>/infrastructure
+    repoURL: {{ .Values.gitopsRepoUrl }}
+    path: registry/clusters/{{ .Values.workloadClusterName }}/infrastructure
     targetRevision: HEAD
   destination:
     name: in-cluster
-    namespace: <WORKLOAD_CLUSTER_NAME>
+    namespace: {{ .Values.workloadClusterName }}
   syncPolicy:
     automated:
       prune: true
