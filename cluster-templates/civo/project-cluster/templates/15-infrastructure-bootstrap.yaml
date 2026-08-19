@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: {{ .Values.workloadClusterName }}-infrastructure-bootstrap
+  name: {{ .Values.workloadClusterName }}-bootstrap
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
