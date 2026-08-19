@@ -13,8 +13,8 @@ This repository contains Konstruct (formerly Kubefirst) templates for managing K
 The repository root holds one directory per template kind:
 
 1. **`cluster-templates/`** - Templates that provision a cluster, grouped by cloud:
-   - **`aws/`** - `kontract-cluster`, `project-cluster`, `workload-cluster`, `workload-vcluster` (v2 Helm charts)
-   - **`civo/`** - `kontract-cluster`, `project-cluster`, `workload-cluster` (v2 Helm charts)
+   - **`aws/`** - `theme-cluster`, `project-cluster`, `workload-cluster`, `workload-vcluster` (v2 Helm charts)
+   - **`civo/`** - `theme-cluster`, `project-cluster`, `workload-cluster` (v2 Helm charts)
    - **`control-plane/`** - Seed template for the Konstruct control plane itself (v2 Helm chart)
    - **`google/`** - `workload-cluster` (v2 Helm chart)
    - **`mgmt/`** - Management cluster gitops scaffolding (ArgoCD app projects, cluster registry)

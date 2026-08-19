@@ -1,4 +1,0 @@
-# Keeps the kontract directory present in the gitops repo so the
-# <cluster>-kontract Application has a valid path before the first Kontract
-# app is deployed. Kontract app Applications are written into
-# kontract/<org-id>/<app-name>/application.yaml at deploy time.

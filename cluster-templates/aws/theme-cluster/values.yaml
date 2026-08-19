@@ -17,7 +17,7 @@ workloadClusterBootstrapTerraformModuleUrl: "git::https://github.com/konstructio
 email: alerts@konstruct.io
 
 # @input.type: string
-# @input.description: DNS zone Kontract apps are served under — apps resolve at <app>.<cluster>.apps.<domainName>
+# @input.description: DNS zone Theme apps are served under — apps resolve at <app>.<cluster>.apps.<domainName>
 # @input.required: true
 domainName: konstruct.io
 
