@@ -1,7 +1,7 @@
 apiVersion: tf.upbound.io/v1beta1
 kind: Workspace
 metadata:
-  name: {{ .Values.workloadClusterName }}-infrastructure-bootstrap
+  name: {{ .Values.workloadClusterName }}-bootstrap
 spec:
   providerConfigRef:
     name: {{ .Values.workloadClusterName }}
