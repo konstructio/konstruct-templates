@@ -1,3 +1,4 @@
+{{- if not .Values.saas }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -57,3 +58,4 @@ spec:
           name: wait
       restartPolicy: OnFailure
       serviceAccountName: k8s-toolkit-envoy-gateway
+{{- end }}

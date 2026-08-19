@@ -1,3 +1,4 @@
+{{- if not .Values.saas }}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
@@ -31,3 +32,4 @@ spec:
   shutdown:
     drainTimeout: 30s
     minDrainDuration: 5s
+{{- end }}
