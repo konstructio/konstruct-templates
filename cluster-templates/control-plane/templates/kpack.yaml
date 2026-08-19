@@ -8,7 +8,7 @@ metadata:
   namespace: argocd
   annotations:
     # Build plane: install kpack before the konstruct umbrella (wave 0) so the
-    # kontract-operator's images.kpack.io watch has its CRD. The operator also
+    # theme-operator's images.kpack.io watch has its CRD. The operator also
     # tolerates a missing CRD, so this ordering is best-effort, not required.
     argocd.argoproj.io/sync-wave: '5'
 spec:

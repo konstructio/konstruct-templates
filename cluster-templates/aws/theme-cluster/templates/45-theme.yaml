@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: {{ .Values.workloadClusterName }}-kontract
+  name: {{ .Values.workloadClusterName }}-theme
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -11,13 +11,13 @@ spec:
   project: default
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
-    path: registry/clusters/{{ .Values.workloadClusterName }}/kontract
+    path: registry/clusters/{{ .Values.workloadClusterName }}/theme
     targetRevision: HEAD
     directory:
       recurse: true
   destination:
     name: in-cluster
-    namespace: kontract
+    namespace: theme
   syncPolicy:
     automated:
       prune: true

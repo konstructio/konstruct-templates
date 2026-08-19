@@ -17,7 +17,7 @@ waitJobImage: "dtzar/helm-kubectl:3.19.0"
 email: alerts@konstruct.io
 
 # @input.type: string
-# @input.description: DNS zone Kontract apps are served under — apps resolve at <app>.<cluster>.apps.<domainName>
+# @input.description: DNS zone Theme apps are served under — apps resolve at <app>.<cluster>.apps.<domainName>
 # @input.required: true
 domainName: konstruct.io
 

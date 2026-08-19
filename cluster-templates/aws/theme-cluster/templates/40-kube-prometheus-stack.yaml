@@ -20,7 +20,7 @@ spec:
       releaseName: kube-prometheus-stack
       values: |
         # Grafana + Alertmanager live on the control-plane cluster; this
-        # Kontract cluster only scrapes and remote_writes.
+        # Theme cluster only scrapes and remote_writes.
         grafana:
           enabled: false
         alertmanager:
@@ -51,7 +51,7 @@ spec:
                     name: vm-remote-write-auth
                     key: token
             # Discover ServiceMonitors/PodMonitors from all namespaces (e.g.
-            # Envoy Gateway RED metrics, Kontract app monitors), not just those
+            # Envoy Gateway RED metrics, Theme app monitors), not just those
             # labelled by this Helm release.
             serviceMonitorSelectorNilUsesHelmValues: false
             podMonitorSelectorNilUsesHelmValues: false

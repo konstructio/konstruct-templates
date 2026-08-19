@@ -1,6 +1,6 @@
 {{- if ne (((.Values.buildPlane | default dict).kpack | default dict).enabled) false }}
-# kpack default ClusterBuilder for the Kontract build plane. The operator points
-# every KontractApp/theme kpack Image at ClusterBuilder "default". The builder
+# kpack default ClusterBuilder for the Theme build plane. The operator points
+# every ThemedApp/theme kpack Image at ClusterBuilder "default". The builder
 # image is pushed to this cluster's Harbor; the harbor-push secret (admin
 # dockerconfigjson) is provisioned alongside Harbor in the kpack namespace.
 apiVersion: v1
