@@ -5,6 +5,9 @@ clusterType: management
 # @input.required: false
 saas: true
 
+# @input.type: string
+# @input.description: test rules
+# @input.required: false
 workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/project-cluster?ref=main"
 
 workloadClusterBootstrapTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/project-cluster-bootstrap?ref=main"
