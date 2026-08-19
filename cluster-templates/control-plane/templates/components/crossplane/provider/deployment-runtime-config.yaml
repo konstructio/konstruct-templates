@@ -6,11 +6,12 @@ metadata:
   labels:
     app: crossplane-provider-terraform
   annotations:
-    # WaitForFirstConsumer storage: the PVC only binds once the provider
-    # pod mounts it, and that pod is created by the package manager after
-    # the Provider (wave 20) installs. Apply the PVC LAST so the wave gate
-    # never waits on a consumer that can't exist yet.
-    argocd.argoproj.io/sync-wave: '30'
+    # Apply BEFORE the Provider (wave 20): the provider pod cannot schedule
+    # until this PVC exists, and the Provider resource cannot report Healthy
+    # until that pod runs — at wave 30 the sync aborts on the unhealthy
+    # Provider and never reaches the PVC (deadlock). ignore-healthcheck keeps
+    # the unbound WaitForFirstConsumer PVC from stalling its own wave.
+    argocd.argoproj.io/sync-wave: '15'
     argocd.argoproj.io/ignore-healthcheck: 'true'
 spec:
   accessModes:
