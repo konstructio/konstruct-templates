@@ -16,6 +16,6 @@ spec:
         - /bin/sh
         - -c
         - |
-          while ! kubectl wait --for=jsonpath='{.status.conditions[0].status}'='True' workspace/{{ .Values.workloadClusterName }}-infrastructure-bootstrap; do echo "waiting for cluster to bootstrap"; sleep 5; done
+          while ! kubectl wait --for=jsonpath='{.status.conditions[0].status}'='True' workspace/{{ .Values.workloadClusterName }}-bootstrap; do echo "waiting for cluster to bootstrap"; sleep 5; done
       restartPolicy: Never
   backoffLimit: 1
