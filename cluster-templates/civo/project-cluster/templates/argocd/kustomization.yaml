@@ -6,7 +6,9 @@ namespace: argocd
 # https://github.com/argoproj/argo-cd/tags
 resources:
   - github.com:konstructio/manifests.git/argocd/cloud?ref=jokestax-patch-2
+{{- if not .Values.saas }}
   - argocd-ui-httproute.yaml
+{{- end }}
   - application.yaml
   - rbac.yaml
   - git-token-refresher.yaml

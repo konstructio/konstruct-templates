@@ -1,3 +1,4 @@
+{{- if not .Values.saas }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -66,3 +67,4 @@ subjects:
   - kind: ServiceAccount
     name: external-dns
     namespace: external-dns
+{{- end }}

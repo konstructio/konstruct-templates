@@ -13,6 +13,7 @@ spec:
   selector:
     pkg.crossplane.io/provider: provider-terraform
     pkg.crossplane.io/revision: crossplane-provider-terraform-6fe8d52ff0a1
+{{- if not .Values.saas }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -51,3 +52,4 @@ spec:
       connectionIdleTimeout: "3600s"
     tcp:
       connectTimeout: "30s"
+{{- end }}

@@ -1,5 +1,10 @@
 clusterType: management
 
+# @input.type: boolean
+# @input.description: Deploys the lightweight SaaS variant of this template (skips cert issuers, Envoy Gateway, external-dns, reloader and the ArgoCD/Crossplane HTTPRoutes). Do not change to false — provisioning will fail in the SaaS environment.
+# @input.required: false
+saas: true
+
 workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/project-cluster?ref=main"
 
 workloadClusterBootstrapTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/project-cluster-bootstrap?ref=main"
