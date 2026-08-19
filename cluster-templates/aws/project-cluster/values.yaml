@@ -34,7 +34,6 @@ secretStoreNamespaces:
   - argocd
   - crossplane-system
   - github-runner
-  - atlantis
 
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
