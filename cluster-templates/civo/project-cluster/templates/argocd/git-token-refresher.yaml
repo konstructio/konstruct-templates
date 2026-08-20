@@ -61,7 +61,7 @@ spec:
                   name: platform-cluster-identity
                   key: org_id
             - name: ORG_NAME
-              value: "{{ .Values.orgName }}"
+              value: "{{ .Values.platformOrg }}"
             - name: REPO_NAME
               value: "{{ .Values.repoName }}"
             command:
@@ -158,7 +158,7 @@ spec:
               name: platform-cluster-identity
               key: org_id
         - name: ORG_NAME
-          value: "{{ .Values.orgName }}"
+          value: "{{ .Values.platformOrg }}"
         - name: REPO_NAME
           value: "{{ .Values.repoName }}"
         command:

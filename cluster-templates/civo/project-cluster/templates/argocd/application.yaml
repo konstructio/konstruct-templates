@@ -44,7 +44,7 @@ spec:
         image: {{ .Values.waitJobImage }}
         env:
         - name: ORG_NAME
-          value: "{{ .Values.orgName }}"
+          value: "{{ .Values.platformOrg }}"
         - name: REPO_NAME
           value: "{{ .Values.repoName }}"
         - name: CLUSTER_NAME
