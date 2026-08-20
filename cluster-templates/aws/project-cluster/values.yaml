@@ -43,3 +43,44 @@ certManagerIssuerAnnotation1: ""
 certManagerIssuerAnnotation2: ""
 certManagerIssuerAnnotation3: ""
 certManagerIssuerAnnotation4: ""
+
+# ---------------------------------------------------------------------------
+# Platform-supplied values
+#
+# The values below are injected by the operator at hydration time and are
+# deliberately NOT declared here, so they never appear as form fields. They
+# are documented for template authors; the operator's defaults can be
+# overridden per hydration.
+#
+# From the cluster request:
+#   workloadClusterName             name of the project cluster
+#   workloadClusterRegion           region of the project cluster
+#   workloadNodeCount               number of nodes in the project cluster
+#   workloadNodeType                node (instance) type of the project cluster
+#   workloadAmiType                 AMI type of the project cluster
+#
+# Git / gitops repository:
+#   gitopsRepoUrl                   URL of the main/root gitops repository
+#   repoName                        name of the gitops repo for the project/org
+#   workloadClusterProjectName      name of the project/org
+#   projectOrg                      org name associated with the project's git connection
+#   platformOrg                     org of the platform team
+#
+# AWS accounts and cross-account provisioning:
+#   workloadClusterAccountId        AWS account id where the project cluster is provisioned
+#   workloadAssumeRole              role ARN assumed by Crossplane on the main
+#                                   management cluster to provision resources in
+#                                   the project cluster account
+#
+# Main management cluster:
+#   kubefirstMgmtClusterName        name of the main management cluster
+#   kubefirstMgmtAccountId          AWS account id of the main management cluster
+#   mainMgmtcloudRegion             region of the main management cluster
+#   kubefirstStateStoreBucket       S3 state-store bucket of the main management cluster
+#
+# Project cluster resources:
+#   workloadS3BucketName            new S3 bucket for the project cluster, storing
+#                                   workload cluster Terraform state
+#   workloadExternalDnsDomainName   domain filter for the external-dns application
+#                                   on the project cluster
+# ---------------------------------------------------------------------------
