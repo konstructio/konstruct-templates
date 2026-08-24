@@ -23,3 +23,52 @@ externalDnsProviderName: aws
 
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
+
+
+# ---------------------------------------------------------------------------
+# Platform-supplied values
+#
+# The values below are injected by the operator at hydration time and are
+# deliberately NOT declared here, so they never appear as form fields. They
+# are documented for template authors; the operator's defaults can be
+# overridden per hydration.
+#
+# From the cluster request:
+#   workloadClusterName             name of the workload cluster
+#   workloadClusterRegion           region of the workload cluster
+#   workloadNodeCount               number of nodes in the workload cluster
+#   workloadNodeType                node (instance) type of the workload cluster
+#   workloadAmiType                 AMI type of the workload cluster
+#
+# Git / gitops repositories:
+#   gitopsRepoUrl                   gitops repo this cluster's registry is synced
+#                                   from (org platform repo when self-hosted,
+#                                   downstream repo on SaaS)
+#   teamGitopsRepoUrl               the team/app gitops repo (downstream repo);
+#                                   allowlisted in the AppProjects and used by the
+#                                   environment Applications
+#
+# Environment:
+#   envName                         environment name for the 45-environment
+#                                   placeholder; the operator removes that file
+#                                   and generates one per Spec.Env entry from
+#                                   shared/45-environment.yaml
+#   workloadExternalDnsDomainName   domain filter for the external-dns
+#                                   application on this cluster
+#
+# Parent project cluster:
+#   projectClusterName              name of the parent project cluster
+#   projectRegion                   region of the parent project cluster
+#   projectAwsAccountId             AWS account id of the parent project cluster
+#   projectAssumeRole               role ARN assumed (via IRSA) by Crossplane on
+#                                   the project cluster to provision this cluster
+#   projectStateStoreBucket         S3 bucket on the project account storing this
+#                                   cluster's Terraform state
+#
+# Cross-account / management cluster:
+#   workloadClusterAccountId        AWS account id where this cluster is provisioned
+#   workloadAssumeRole              role ARN assumed to provision resources in the
+#                                   workload cluster account
+#   kubefirstMgmtAccountId          AWS account id of the main management cluster
+#   mainMgmtcloudRegion             region of the main management cluster
+# ---------------------------------------------------------------------------
