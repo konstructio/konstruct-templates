@@ -12,6 +12,9 @@ resources:
   - application.yaml
   - rbac.yaml
   - git-token-refresher.yaml
+{{- if and (eq .Values.gitProvider "gitlab") (not .Values.saas) }}
+  - git-token-app.yaml
+{{- end }}
   
 patchesStrategicMerge:
   - argocd-cm.yaml
