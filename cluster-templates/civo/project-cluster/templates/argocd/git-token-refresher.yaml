@@ -97,9 +97,9 @@ spec:
               fi
 
               echo "=== PATCHING SECRET ==="
-              # Group-prefix creds: workload registries live in the PLATFORM repo while
-              # the org repo holds env content — a repo-scoped secret only matched one.
-              GITHUB_REPO_URL="https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}"
+              # Repository secret for the registry Application repo (same URL as
+              # application.yaml) so ArgoCD tests the connection and reports its status.
+              GITHUB_REPO_URL="https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}/${REPO_NAME}"
               ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
 
               if kubectl get secret github-repo-creds -n argocd &>/dev/null; then
@@ -109,7 +109,7 @@ spec:
                   --type='json' \
                   -p="[{\"op\": \"replace\", \"path\": \"/data/password\", \"value\": \"${ENCODED}\"},{\"op\": \"replace\", \"path\": \"/data/url\", \"value\": \"${URLENC}\"}]"
                 kubectl label secret github-repo-creds -n argocd \
-                  argocd.argoproj.io/secret-type=repo-creds --overwrite
+                  argocd.argoproj.io/secret-type=repository --overwrite
                 echo "Secret patched successfully."
               else
                 echo "Secret not found, creating..."
@@ -119,7 +119,7 @@ spec:
                   --from-literal=username=x-access-token \
                   --from-literal=password="${RESPONSE}"
                 kubectl label secret github-repo-creds -n argocd \
-                  argocd.argoproj.io/secret-type=repo-creds
+                  argocd.argoproj.io/secret-type=repository
                 echo "Secret created successfully."
               fi
 
@@ -194,9 +194,9 @@ spec:
           fi
 
           echo "=== PATCHING SECRET ==="
-          # Group-prefix creds: workload registries live in the PLATFORM repo while
-              # the org repo holds env content — a repo-scoped secret only matched one.
-              GITHUB_REPO_URL="https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}"
+          # Repository secret for the registry Application repo (same URL as
+          # application.yaml) so ArgoCD tests the connection and reports its status.
+              GITHUB_REPO_URL="https://{{ (urlParse .Values.gitopsRepoUrl).host }}/${ORG_NAME}/${REPO_NAME}"
           ENCODED=$(echo -n "$RESPONSE" | base64 | tr -d '\n')
 
           if kubectl get secret github-repo-creds -n argocd &>/dev/null; then
@@ -206,7 +206,7 @@ spec:
               --type='json' \
               -p="[{\"op\": \"replace\", \"path\": \"/data/password\", \"value\": \"${ENCODED}\"},{\"op\": \"replace\", \"path\": \"/data/url\", \"value\": \"${URLENC}\"}]"
             kubectl label secret github-repo-creds -n argocd \
-              argocd.argoproj.io/secret-type=repo-creds --overwrite
+              argocd.argoproj.io/secret-type=repository --overwrite
             echo "Secret patched successfully."
           else
             echo "Secret not found, creating..."
@@ -216,7 +216,7 @@ spec:
               --from-literal=username=x-access-token \
               --from-literal=password="${RESPONSE}"
             kubectl label secret github-repo-creds -n argocd \
-              argocd.argoproj.io/secret-type=repo-creds
+              argocd.argoproj.io/secret-type=repository
             echo "Secret created successfully."
           fi
 
