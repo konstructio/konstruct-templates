@@ -16,12 +16,6 @@ spec:
   destination:
     name: {{ .Values.clusterDestination }}
     namespace: crossplane-system
-  # The workdir PVC's storageClassName is defaulted by the cluster and
-  # immutable; inherit the live value so Replace passes immutability.
-  ignoreDifferences:
-    - kind: PersistentVolumeClaim
-      jsonPointers:
-        - /spec/storageClassName
   syncPolicy:
     automated:
       prune: true
