@@ -14,13 +14,13 @@ workloadClusterBootstrapTerraformModuleUrl: "git::https://github.com/konstructio
 # @input.required: false
 email: 123@gmail.com
 
-domainName: konstruct.io
+domainName: saas.konstruct.io
 
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
 
 
-domain: saas.konstruct.io
+domain: konstruct.io
 
 externalDnsProviderName: cloudflare
 
