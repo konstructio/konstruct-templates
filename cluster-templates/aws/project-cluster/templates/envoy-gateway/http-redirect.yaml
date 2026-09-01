@@ -1,0 +1,21 @@
+# Catch-all HTTP->HTTPS redirect. cert-manager's ACME http01 challenge
+# routes attach to the same listener with a more specific path match, so
+# certificate issuance still works.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-to-https-redirect
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "35"
+spec:
+  parentRefs:
+    - name: eg
+      namespace: default
+      sectionName: http
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301

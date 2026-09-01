@@ -17,7 +17,7 @@ workloadClusterBootstrapTerraformModuleUrl: "git::https://github.com/konstructio
 email: alerts@konstruct.io
 
 # @input.type: string
-# @input.description: Domain name used for cluster ingress hostnames
+# @input.description: Domain name used for cluster gateway hostnames
 # @input.required: true
 domainName: konstruct.io
 
@@ -38,7 +38,7 @@ secretStoreNamespaces:
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
 
-# cert-manager issuer annotations injected into ingress resources (full "key: value" lines)
+# cert-manager issuer annotations injected into the shared Gateway (full "key: value" lines)
 certManagerIssuerAnnotation1: ""
 certManagerIssuerAnnotation2: ""
 certManagerIssuerAnnotation3: ""

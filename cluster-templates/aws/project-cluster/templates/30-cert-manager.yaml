@@ -11,7 +11,7 @@ spec:
   project: {{ .Values.workloadClusterName }}
   source:
     repoURL: https://charts.jetstack.io
-    targetRevision: v1.14.4
+    targetRevision: v1.16.5
     helm:
       values: |-
         serviceAccount:
@@ -20,6 +20,10 @@ spec:
           annotations:
             eks.amazonaws.com/role-arn: 'arn:aws:iam::126827061464:role/cert-manager-{{ .Values.workloadClusterName }}'
         installCRDs: true
+        startupapicheck:
+          enabled: false
+        extraArgs:
+          - --enable-gateway-api
     chart: cert-manager
   destination:
     name: {{ .Values.workloadClusterName }}

@@ -1,0 +1,17 @@
+# mergeGateways lets per-app HTTPS Gateways share this vcluster's single
+# Envoy data plane and LoadBalancer instead of provisioning one each.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: proxy-config
+  namespace: envoy-gateway-system
+spec:
+  mergeGateways: true
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyService:
+        annotations:
+          # NLB passes TCP straight through so Envoy terminates TLS itself
+          # (required for the Gateway's HTTPS listener certs).
+          service.beta.kubernetes.io/aws-load-balancer-type: "nlb"

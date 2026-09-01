@@ -11,21 +11,24 @@ spec:
   project: {{ .Values.workloadClusterName }}-platform
   source:
     repoURL: https://kubernetes-sigs.github.io/external-dns
-    targetRevision: 1.14.4
+    targetRevision: 1.20.0
     helm:
       releaseName: external-dns
       values: |
-        image:
-          repository: registry.k8s.io/external-dns/external-dns
-          tag: "v0.13.2"
         serviceAccount:
           create: true
           name: external-dns
           annotations:
             eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.kubefirstMgmtAccountId }}:role/external-dns-{{ .Values.workloadClusterName }}'
         provider: {{ .Values.externalDnsProviderName }}
+        # service publishes the wildcard record from the Envoy proxy
+        # Service's hostname annotation (see networking/envoyproxy.yaml);
+        # the gateway route sources publish per-hostname records for
+        # HTTPRoutes/GRPCRoutes, replacing the previous ingress source.
         sources:
-        - ingress
+        - service
+        - gateway-httproute
+        - gateway-grpcroute
         domainFilters:
         - {{ .Values.workloadExternalDnsDomainName }}
     chart: external-dns
