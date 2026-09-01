@@ -3,3 +3,4 @@
 *.tfstate
 *.tfstate.backup
 .helm/
+.DS_Store
