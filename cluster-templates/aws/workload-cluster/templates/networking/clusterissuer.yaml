@@ -1,3 +1,4 @@
+{{- if .Values.theme }}
 # DNS-01 issuer (Route53) — wildcard certs can't be issued via HTTP-01.
 # cert-manager's service account assumes its IRSA role (annotated in
 # 30-cert-manager.yaml), so no explicit credentials are needed here.
@@ -15,3 +16,4 @@ spec:
       - dns01:
           route53:
             region: {{ .Values.workloadClusterRegion }}
+{{- end }}

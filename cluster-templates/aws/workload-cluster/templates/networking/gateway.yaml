@@ -13,13 +13,14 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+{{- if .Values.theme }}
 
-    # Wildcard listener for apps deployed to this cluster. Any
-    # <app>.{{ include "aws-workload-cluster.appsDomain" . }} HTTPRoute attaches here; TLS is
+    # Wildcard listener for Theme apps deployed to this cluster. Any
+    # <app>.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }} HTTPRoute attaches here; TLS is
     # served by the pre-issued per-cluster wildcard cert, so new app domains
     # are instant.
     - name: https-apps
-      hostname: "*.{{ include "aws-workload-cluster.appsDomain" . }}"
+      hostname: "*.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }}"
       protocol: HTTPS
       port: 443
       tls:
@@ -30,3 +31,10 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+{{- else }}
+    # No wildcard HTTPS here: apps needing HTTPS declare their own Gateway
+    # (gatewayClassName: eg) with their hostname listener + a
+    # cert-manager.io/cluster-issuer annotation (letsencrypt-prod solves
+    # http01 through this Gateway's :80 listener); with mergeGateways
+    # enabled those share this cluster's Envoy and LoadBalancer.
+{{- end }}

@@ -1,7 +1,7 @@
-# mergeGateways lets per-app custom-domain Gateways share this cluster's
-# single Envoy data plane and LoadBalancer instead of provisioning one each.
+# mergeGateways lets per-app Gateways share this cluster's single Envoy
+# data plane and LoadBalancer instead of provisioning one each.
 # NOTE: flipping this on an existing cluster recreates the proxy Service (new
-# LB; external-dns re-points the wildcard from this Service's annotation).
+# LB; external-dns re-points records from this Service's annotation).
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
@@ -17,7 +17,10 @@ spec:
           # NLB passes TCP straight through so Envoy terminates TLS itself
           # (required for the Gateway's HTTPS listener certs).
           service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+{{- if .Values.theme }}
           # THE app-domain DNS record: one wildcard pointed at the shared LB,
           # published by external-dns' service source. New apps resolve
-          # instantly, no per-app records needed.
-          external-dns.alpha.kubernetes.io/hostname: "*.{{ include "aws-workload-cluster.appsDomain" . }}"
+          # instantly, no per-app records, tenant app names stay out of the
+          # public zone. TLS is already wildcard via the Gateway listener cert.
+          external-dns.alpha.kubernetes.io/hostname: "*.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }}"
+{{- end }}
