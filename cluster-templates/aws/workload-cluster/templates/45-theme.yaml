@@ -1,29 +1,28 @@
+{{- if .Values.theme }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: {{ .Values.workloadClusterName }}-bootstrap
+  name: {{ .Values.workloadClusterName }}-theme
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: '15'
+    argocd.argoproj.io/sync-wave: '45'
 spec:
   project: default
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
-    path: registry/clusters/{{ .Values.workloadClusterName }}/infrastructure-bootstrap
+    path: registry/clusters/{{ .Values.workloadClusterName }}/theme
     targetRevision: HEAD
+    directory:
+      recurse: true
   destination:
     name: in-cluster
-    namespace: {{ .Values.workloadClusterName }}
+    namespace: theme
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-    retry:
-      limit: 30
-      backoff:
-        duration: 1m
-        factor: 1
+{{- end }}

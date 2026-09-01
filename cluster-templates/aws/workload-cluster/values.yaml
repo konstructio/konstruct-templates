@@ -1,5 +1,10 @@
 clusterType: physical
 
+# @input.type: boolean
+# @input.description: Provision this cluster as a Theme cluster — hosts Foreman single-click apps at <app>.<cluster>.apps.<domainName>, ships metrics to the control plane via kube-prometheus-stack, and adds the Theme app registry. Requires domainName.
+# @input.required: false
+theme: false
+
 # Terraform Module Configuration
 # @input.type: string
 # @input.description: the complete URL for the Terraform module for infrastructure provisioning
@@ -20,6 +25,16 @@ email: alerts@konstruct.io
 # @input.description: external-dns provider name (e.g. aws, cloudflare)
 # @input.required: false
 externalDnsProviderName: aws
+
+# @input.type: string
+# @input.description: Theme clusters only — DNS zone Theme apps are served under; apps resolve at <app>.<cluster>.apps.<domainName>
+# @input.required: false
+domainName: konstruct.io
+
+# @input.type: string
+# @input.description: Theme clusters only — Prometheus remote_write endpoint that cluster metrics are shipped to
+# @input.required: false
+prometheusRemoteWriteUrl: "https://prometheus-remote-write.saas.konstruct.io/api/v1/write"
 
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"

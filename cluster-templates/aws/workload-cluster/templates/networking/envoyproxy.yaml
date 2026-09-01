@@ -17,7 +17,7 @@ spec:
           # NLB passes TCP straight through so Envoy terminates TLS itself
           # (required for the Gateway's HTTPS listener certs).
           service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-          # ONE wildcard record pointed at the shared LB, published by
-          # external-dns' service source. New app hostnames resolve instantly
-          # without waiting for a per-route record.
-          external-dns.alpha.kubernetes.io/hostname: "*.{{ .Values.workloadExternalDnsDomainName }}"
+          # THE app-domain DNS record: one wildcard pointed at the shared LB,
+          # published by external-dns' service source. New apps resolve
+          # instantly, no per-app records needed.
+          external-dns.alpha.kubernetes.io/hostname: "*.{{ include "aws-workload-cluster.appsDomain" . }}"

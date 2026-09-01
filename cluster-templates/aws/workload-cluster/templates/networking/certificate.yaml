@@ -1,5 +1,5 @@
 # Per-cluster wildcard cert. Issued once via DNS-01; every
-# <app>.{{ .Values.workloadExternalDnsDomainName }} is then HTTPS instantly (no per-app ACME).
+# <app>.{{ include "aws-workload-cluster.appsDomain" . }} is then HTTPS instantly (no per-app ACME).
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -10,6 +10,6 @@ spec:
   issuerRef:
     name: letsencrypt-prod-dns
     kind: ClusterIssuer
-  commonName: "*.{{ .Values.workloadExternalDnsDomainName }}"
+  commonName: "*.{{ include "aws-workload-cluster.appsDomain" . }}"
   dnsNames:
-    - "*.{{ .Values.workloadExternalDnsDomainName }}"
+    - "*.{{ include "aws-workload-cluster.appsDomain" . }}"

@@ -6,8 +6,7 @@ metadata:
 spec:
   gatewayClassName: eg
   listeners:
-    # Plain HTTP, also carries cert-manager's http01 ACME challenge routes
-    # for the letsencrypt-staging/letsencrypt-prod issuers.
+    # Plain HTTP, also carries cert-manager's http01 ACME challenge routes.
     - name: http
       protocol: HTTP
       port: 80
@@ -16,11 +15,11 @@ spec:
           from: All
 
     # Wildcard listener for apps deployed to this cluster. Any
-    # <app>.{{ .Values.workloadExternalDnsDomainName }} HTTPRoute attaches
-    # here; TLS is served by the pre-issued per-cluster wildcard cert, so new
-    # app domains are instant.
+    # <app>.{{ include "aws-workload-cluster.appsDomain" . }} HTTPRoute attaches here; TLS is
+    # served by the pre-issued per-cluster wildcard cert, so new app domains
+    # are instant.
     - name: https-apps
-      hostname: "*.{{ .Values.workloadExternalDnsDomainName }}"
+      hostname: "*.{{ include "aws-workload-cluster.appsDomain" . }}"
       protocol: HTTPS
       port: 443
       tls:

@@ -22,18 +22,29 @@ spec:
           annotations:
             eks.amazonaws.com/role-arn: 'arn:aws:iam::{{ .Values.kubefirstMgmtAccountId }}:role/external-dns-{{ .Values.workloadClusterName }}'
         provider: {{ .Values.externalDnsProviderName }}
+{{- if .Values.theme }}
         # service only: app URLs resolve via ONE wildcard record published
         # from the Envoy proxy Service's hostname annotation (see
         # networking/envoyproxy.yaml) — instant for new apps, no per-app
         # records, tenant app names stay out of the public zone.
         sources:
           - service
+{{- else }}
+        # service publishes the wildcard record from the Envoy proxy
+        # Service's hostname annotation (see networking/envoyproxy.yaml);
+        # the gateway route sources add per-hostname records for
+        # HTTPRoutes/GRPCRoutes.
+        sources:
+          - service
+          - gateway-httproute
+          - gateway-grpcroute
+{{- end }}
         # sync (not the chart-default upsert-only) so records this instance
         # owns (txtOwnerId registry) are pruned when their source goes away.
         # Records it doesn't own are never touched.
         policy: sync
         domainFilters:
-          - {{ .Values.domainName }}
+          - {{ if .Values.theme }}{{ .Values.domainName }}{{ else }}{{ .Values.workloadExternalDnsDomainName }}{{ end }}
         # Distinct owner-id per cluster so multiple external-dns instances
         # sharing the zone never delete each other's records.
         txtOwnerId: {{ .Values.workloadClusterName }}

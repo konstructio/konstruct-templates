@@ -1,3 +1,4 @@
+{{- if not .Values.theme }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -13,3 +14,4 @@ roleRef:
   kind: ClusterRole
   name: viewer
   apiGroup: rbac.authorization.k8s.io
+{{- end }}
