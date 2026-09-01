@@ -1,3 +1,4 @@
+{{- if not .Values.theme }}
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -10,8 +11,11 @@ spec:
       name: letsencrypt-staging
     solvers:
       - http01:
-          ingress:
-            class: nginx
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: eg
+                namespace: default
+                kind: Gateway
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -25,5 +29,9 @@ spec:
       name: letsencrypt-prod
     solvers:
       - http01:
-          ingress:
-            class: nginx
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: eg
+                namespace: default
+                kind: Gateway
+{{- end }}

@@ -1,0 +1,40 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: eg
+  namespace: default
+spec:
+  gatewayClassName: eg
+  listeners:
+    # Plain HTTP, also carries cert-manager's http01 ACME challenge routes.
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+{{- if .Values.theme }}
+
+    # Wildcard listener for Theme apps deployed to this cluster. Any
+    # <app>.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }} HTTPRoute attaches here; TLS is
+    # served by the pre-issued per-cluster wildcard cert, so new app domains
+    # are instant.
+    - name: https-apps
+      hostname: "*.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }}"
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: apps-wildcard-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+{{- else }}
+    # No wildcard HTTPS here: apps needing HTTPS declare their own Gateway
+    # (gatewayClassName: eg) with their hostname listener + a
+    # cert-manager.io/cluster-issuer annotation (letsencrypt-prod solves
+    # http01 through this Gateway's :80 listener); with mergeGateways
+    # enabled those share this cluster's Envoy and LoadBalancer.
+{{- end }}

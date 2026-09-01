@@ -1,0 +1,37 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: argocd-server-http
+  namespace: argocd
+spec:
+  parentRefs:
+    - name: eg
+      namespace: default
+      sectionName: https-argocd
+  hostnames:
+    - argocd-{{ .Values.workloadClusterName }}.{{ .Values.domainName }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: argocd-server
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: argocd-server-grpc
+  namespace: argocd
+spec:
+  parentRefs:
+    - name: eg
+      namespace: default
+      sectionName: https-grpc-argocd
+  hostnames:
+    - grpc-{{ .Values.workloadClusterName }}.argocd.{{ .Values.domainName }}
+  rules:
+    - backendRefs:
+        - name: argocd-server
+          port: 80

@@ -12,7 +12,7 @@ workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruc
 email: alerts@konstruct.io
 
 # @input.type: string
-# @input.description: Domain name used for vcluster ingress hostnames
+# @input.description: Domain name used for vcluster gateway hostnames
 # @input.required: true
 domainName: konstruct.io
 

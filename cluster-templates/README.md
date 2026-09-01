@@ -9,14 +9,12 @@ manifests are what that cluster's ArgoCD syncs.
 ```
 cluster-templates/
 ├── aws/                        # v2 Helm charts, AWS
-│   ├── theme-cluster/
 │   ├── project-cluster/
-│   ├── workload-cluster/
+│   ├── workload-cluster/       #   theme: true provisions it as a Theme cluster
 │   └── workload-vcluster/
 ├── civo/                       # v2 Helm charts, Civo
-│   ├── theme-cluster/
 │   ├── project-cluster/
-│   └── workload-cluster/
+│   └── workload-cluster/       #   theme: true provisions it as a Theme cluster
 ├── control-plane/              # v2 Helm chart — seed for the Konstruct control plane
 ├── google/                     # v2 Helm charts, Google Cloud
 │   └── workload-cluster/
@@ -37,7 +35,7 @@ reads that key to decide how to treat the template:
 |---|---|---|
 | `control-plane` | `control-plane` | Seed template for the Konstruct control plane itself. **No infrastructure layer** — the cluster already exists when this is hydrated during bootstrap, so the chart ships no Crossplane `Workspace`. Only the bootstrap flow consumes it. |
 | `aws/project-cluster`, `civo/project-cluster` | `management` | A management cluster: runs the org's ArgoCD root and provisions workload clusters below it. |
-| `aws/workload-cluster`, `civo/workload-cluster`, `google/workload-cluster`, `*/theme-cluster` | `physical` | A workload cluster with dedicated infrastructure. |
+| `aws/workload-cluster`, `civo/workload-cluster`, `google/workload-cluster` | `physical` | A workload cluster with dedicated infrastructure. The AWS and Civo charts double as Theme clusters via their `theme: true` value. |
 | `aws/workload-vcluster` | `virtual` | A virtual cluster (vcluster) running inside a host cluster. |
 
 ## Declaring inputs

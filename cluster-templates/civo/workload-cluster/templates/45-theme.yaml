@@ -1,22 +1,24 @@
-{{- if not .Values.theme }}
+{{- if .Values.theme }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: {{ .Values.workloadClusterName }}-rbac
+  name: {{ .Values.workloadClusterName }}-theme
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: '40'
+    argocd.argoproj.io/sync-wave: '45'
 spec:
-  project: {{ .Values.workloadClusterName }}-platform
+  project: default
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
-    path: registry/clusters/{{ .Values.workloadClusterName }}/rbac
+    path: registry/clusters/{{ .Values.workloadClusterName }}/theme
     targetRevision: HEAD
+    directory:
+      recurse: true
   destination:
-    name: {{ .Values.workloadClusterName }}
-    namespace: rbac
+    name: in-cluster
+    namespace: theme
   syncPolicy:
     automated:
       prune: true

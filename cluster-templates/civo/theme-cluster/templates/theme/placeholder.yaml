@@ -1,4 +1,0 @@
-# Keeps the theme directory present in the gitops repo so the
-# <cluster>-theme Application has a valid path before the first Theme
-# app is deployed. Theme app Applications are written into
-# theme/<org-id>/<app-name>/application.yaml at deploy time.
