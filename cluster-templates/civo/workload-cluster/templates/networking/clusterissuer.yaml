@@ -1,3 +1,4 @@
+{{- if .Values.theme }}
 # DNS-01 issuer (Cloudflare) — wildcard certs can't be issued via HTTP-01.
 # Uses the cloudflare-api-token secret provisioned into the cert-manager
 # namespace by the infrastructure Terraform.
@@ -17,3 +18,4 @@ spec:
             apiTokenSecretRef:
               name: cloudflare-api-token
               key: api-token
+{{- end }}

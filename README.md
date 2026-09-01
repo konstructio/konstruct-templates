@@ -15,7 +15,7 @@ The root is organised by template kind:
 konstruct-templates/
 ├── cluster-templates/          # templates that provision a cluster, grouped by cloud
 │   ├── aws/                    #   project-cluster, workload-cluster (theme: true = Theme cluster), workload-vcluster
-│   ├── civo/                   #   theme-cluster, project-cluster, workload-cluster
+│   ├── civo/                   #   project-cluster, workload-cluster (theme: true = Theme cluster)
 │   ├── control-plane/          #   seed template for the Konstruct control plane itself
 │   ├── google/                 #   workload-cluster
 │   ├── mgmt/                   #   management-cluster gitops scaffolding

@@ -1,3 +1,4 @@
+{{- if .Values.theme }}
 # mergeGateways lets per-app custom-domain Gateways share this cluster's
 # single Envoy data plane and LoadBalancer instead of provisioning one each.
 # NOTE: flipping this on an existing cluster recreates the proxy Service (new
@@ -19,3 +20,4 @@ spec:
           # instantly, no per-app records, tenant app names stay out of the
           # public zone. TLS is already wildcard via the Gateway listener cert.
           external-dns.alpha.kubernetes.io/hostname: "*.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }}"
+{{- end }}

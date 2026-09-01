@@ -1,30 +1,28 @@
+{{- if .Values.theme }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: registry-{{ .Values.workloadClusterName }}
+  name: {{ .Values.workloadClusterName }}-theme
   namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: '100'
   finalizers:
     - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: '45'
 spec:
   project: default
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
-    path: registry/clusters/{{ .Values.workloadClusterName }}
+    path: registry/clusters/{{ .Values.workloadClusterName }}/theme
     targetRevision: HEAD
+    directory:
+      recurse: true
   destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
+    name: in-cluster
+    namespace: theme
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 1m
-        maxDuration: 15m0s
-        factor: 2
+{{- end }}

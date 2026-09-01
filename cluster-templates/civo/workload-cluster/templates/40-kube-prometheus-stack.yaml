@@ -1,3 +1,4 @@
+{{- if .Values.theme }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -97,3 +98,4 @@ spec:
       # client-side last-applied annotation size limit.
       - CreateNamespace=true
       - ServerSideApply=true
+{{- end }}

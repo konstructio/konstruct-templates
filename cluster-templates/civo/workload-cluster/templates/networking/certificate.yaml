@@ -1,3 +1,4 @@
+{{- if .Values.theme }}
 # Per-cluster wildcard cert. Issued once via DNS-01; every
 # <app>.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }} is then HTTPS instantly (no per-app ACME).
 apiVersion: cert-manager.io/v1
@@ -13,3 +14,4 @@ spec:
   commonName: "*.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }}"
   dnsNames:
     - "*.{{ .Values.workloadClusterName }}.apps.{{ .Values.domainName }}"
+{{- end }}
