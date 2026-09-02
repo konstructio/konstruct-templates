@@ -25,3 +25,25 @@ variable "ami_type" {
   default = "AL2_x86_64"
   type = string
 }
+
+variable "project_aws_account_id" {
+  description = "AWS account id of the parent project (management) cluster; its argocd role is granted admin access on this cluster"
+  type        = string
+}
+
+variable "project_cluster_name" {
+  description = "Name of the parent project (management) cluster whose ArgoCD deploys to this cluster"
+  type        = string
+}
+
+variable "dex_provider_name" {
+  description = "Name of the EKS OIDC identity provider config backed by the platform's Dex"
+  default     = "dex"
+  type        = string
+}
+
+variable "dex_issuer_url" {
+  description = "Issuer URL of the platform's Dex used for cluster SSO (e.g. https://dex.example.com). Empty skips the OIDC identity provider config entirely."
+  default     = ""
+  type        = string
+}
