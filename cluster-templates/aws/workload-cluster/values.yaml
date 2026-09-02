@@ -26,6 +26,11 @@ email: alerts@konstruct.io
 # @input.required: false
 externalDnsProviderName: aws
 
+# @input.type: boolean
+# @input.description: Enforce Kubernetes NetworkPolicies via the VPC CNI network policy agent. Always on for theme clusters (per-app tenant-isolation policies).
+# @input.required: false
+enableNetworkPolicy: false
+
 # @input.type: string
 # @input.description: Issuer URL of the platform's Dex used for cluster SSO (e.g. https://dex.example.com). Leave empty to skip the EKS OIDC identity provider config.
 # @input.required: false

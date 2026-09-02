@@ -47,3 +47,9 @@ variable "dex_issuer_url" {
   default     = ""
   type        = string
 }
+
+variable "enable_network_policy" {
+  description = "Enforce Kubernetes NetworkPolicies via the VPC CNI network policy agent. Required on theme clusters for the per-app tenant-isolation policies."
+  type        = bool
+  default     = false
+}

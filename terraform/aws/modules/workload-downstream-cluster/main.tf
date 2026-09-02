@@ -56,6 +56,10 @@ module "eks" {
       before_compute           = true
       service_account_role_arn = module.vpc_cni_irsa.iam_role_arn
       configuration_values = jsonencode({
+        # NetworkPolicy enforcement by the VPC CNI's network policy agent.
+        # Required on theme clusters: konstruct-web-service ships per-app
+        # tenant-isolation NetworkPolicies that are inert without it.
+        enableNetworkPolicy = var.enable_network_policy ? "true" : "false"
         env = {
           # Reference docs https://docs.aws.amazon.com/eks/latest/userguide/cni-increase-ip-addresses.html
           ENABLE_PREFIX_DELEGATION = "true"

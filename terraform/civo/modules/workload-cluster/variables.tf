@@ -19,3 +19,9 @@ variable "environment" {
   type        = string
   default     = ""
 }
+
+variable "cni" {
+  description = "CNI for the cluster: cilium or flannel. Theme clusters require cilium so the per-app tenant-isolation NetworkPolicies are enforced. Empty leaves the provider default (also avoids a replacement diff on clusters created before this variable existed)."
+  type        = string
+  default     = ""
+}
