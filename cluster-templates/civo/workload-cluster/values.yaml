@@ -13,6 +13,12 @@ workloadClusterTerraformModuleUrl: "git::https://github.com/konstructio/konstruc
 
 workloadClusterBootstrapTerraformModuleUrl: "git::https://github.com/konstructio/konstruct-templates.git//terraform/civo/modules/workload-cluster-bootstrap?ref=main"
 
+# @input.type: enum
+# @input.description: CNI for the cluster. Theme clusters always use cilium (required so the per-app tenant-isolation NetworkPolicies are enforced); empty leaves the Civo default.
+# @input.options: cilium,flannel
+# @input.required: false
+cni: ""
+
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
 

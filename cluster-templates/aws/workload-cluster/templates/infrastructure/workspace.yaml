@@ -28,5 +28,10 @@ spec:
     # Empty skips the EKS OIDC identity provider config in the module.
     - key: dex_issuer_url
       value: "{{ .Values.dexIssuerUrl }}"
+    # Theme clusters always enforce NetworkPolicies: konstruct-web-service's
+    # per-app tenant-isolation policies are inert without the VPC CNI's
+    # network policy agent.
+    - key: enable_network_policy
+      value: "{{ if .Values.theme }}true{{ else }}{{ .Values.enableNetworkPolicy }}{{ end }}"
 
 

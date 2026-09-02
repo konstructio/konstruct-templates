@@ -17,4 +17,8 @@ spec:
       value: "{{ .Values.workloadNodeCount }}"
     - key: node_type
       value: {{ .Values.workloadNodeType }}
+    # Theme clusters always get cilium: konstruct-web-service's per-app
+    # tenant-isolation NetworkPolicies are inert under flannel.
+    - key: cni
+      value: "{{ if .Values.theme }}cilium{{ else }}{{ .Values.cni }}{{ end }}"
 
