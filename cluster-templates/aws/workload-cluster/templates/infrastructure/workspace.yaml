@@ -19,5 +19,14 @@ spec:
       value: "{{ .Values.workloadNodeType }}"
     - key: ami_type
       value: "{{ .Values.workloadAmiType }}"
+    - key: project_aws_account_id
+      value: "{{ .Values.projectAwsAccountId }}"
+    - key: project_cluster_name
+      value: "{{ .Values.projectClusterName }}"
+    - key: dex_provider_name
+      value: "{{ .Values.dexProviderName }}"
+    # Empty skips the EKS OIDC identity provider config in the module.
+    - key: dex_issuer_url
+      value: "{{ .Values.dexIssuerUrl }}"
 
 

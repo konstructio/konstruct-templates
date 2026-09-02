@@ -27,6 +27,16 @@ email: alerts@konstruct.io
 externalDnsProviderName: aws
 
 # @input.type: string
+# @input.description: Issuer URL of the platform's Dex used for cluster SSO (e.g. https://dex.example.com). Leave empty to skip the EKS OIDC identity provider config.
+# @input.required: false
+dexIssuerUrl: ""
+
+# @input.type: string
+# @input.description: Name of the EKS OIDC identity provider config backed by the platform's Dex
+# @input.required: false
+dexProviderName: dex
+
+# @input.type: string
 # @input.description: Theme clusters only — DNS zone Theme apps are served under; apps resolve at <app>.<cluster>.apps.<domainName>
 # @input.required: false
 domainName: konstruct.io

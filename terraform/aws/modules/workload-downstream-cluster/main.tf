@@ -23,9 +23,9 @@ module "eks" {
   cluster_encryption_config      = {}
 
   access_entries = {
-    "argocd_<PROJECT_AWS_ACCOUNT_ID>" = {
+    "argocd_${var.project_aws_account_id}" = {
       cluster_name  = "${var.cluster_name}"
-      principal_arn = "arn:aws:iam::<PROJECT_AWS_ACCOUNT_ID>:role/argocd-<PROJECT_CLUSTER_NAME>"
+      principal_arn = "arn:aws:iam::${var.project_aws_account_id}:role/argocd-${var.project_cluster_name}"
       policy_associations = {
         argocdAdminAccess = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
@@ -484,7 +484,7 @@ resource "aws_ssm_parameter" "clusters" {
     host                   = module.eks.cluster_endpoint
     cluster_name           = var.cluster_name
     environment            = var.cluster_name
-    argocd_role_arn        = "arn:aws:iam::<PROJECT_AWS_ACCOUNT_ID>:role/argocd-<PROJECT_CLUSTER_NAME>"
+    argocd_role_arn        = "arn:aws:iam::${var.project_aws_account_id}:role/argocd-${var.project_cluster_name}"
   })
 }
 
@@ -655,13 +655,18 @@ resource "aws_iam_policy" "external_secrets_operator_one" {
   })
 }
 
+# Dex SSO on the cluster's API server. Optional: installs without a Dex
+# issuer (dex_issuer_url empty) skip the identity provider config — an empty
+# issuer_url fails plan outright ("expected issuer_url to have a host").
 resource "aws_eks_identity_provider_config" "dex" {
+    count = var.dex_issuer_url == "" ? 0 : 1
+
     cluster_name = module.eks.cluster_name
 
     oidc {
       client_id                     = "kubernetes"
-      identity_provider_config_name = "<DEX_PROIVDER_NAME>"
-      issuer_url                    = "<DEX_DOMAIN_NAME>"
+      identity_provider_config_name = var.dex_provider_name
+      issuer_url                    = var.dex_issuer_url
       username_claim                = "email"
       username_prefix               = "oidc:"
       groups_claim                  = "groups"
