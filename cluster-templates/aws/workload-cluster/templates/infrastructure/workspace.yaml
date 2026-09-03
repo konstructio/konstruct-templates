@@ -33,5 +33,12 @@ spec:
     # network policy agent.
     - key: enable_network_policy
       value: "{{ if .Values.theme }}true{{ else }}{{ .Values.enableNetworkPolicy }}{{ end }}"
+    # Theme clusters: the control plane's konstruct operators reach the
+    # cluster directly (vm-remote-write token sync) as the WORKLOAD account's
+    # konstruct role — the in-account role their pods assume via the mirrored
+    # OIDC trust, which can also DescribeCluster for endpoint discovery. This
+    # entry authorizes it on the cluster. Empty (non-theme) adds no entry.
+    - key: konstruct_operator_role_arn
+      value: "{{ if .Values.theme }}arn:aws:iam::{{ .Values.workloadClusterAccountId }}:role/konstruct-{{ .Values.kubefirstMgmtClusterName }}{{ end }}"
 
 

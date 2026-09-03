@@ -53,3 +53,9 @@ variable "enable_network_policy" {
   type        = bool
   default     = false
 }
+
+variable "konstruct_operator_role_arn" {
+  description = "IAM role the konstruct operators run as on the control plane; when set (theme clusters) it is granted cluster-admin via an EKS access entry so the operators can reach this cluster directly. Empty adds no entry."
+  default     = ""
+  type        = string
+}

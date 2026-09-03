@@ -22,21 +22,42 @@ module "eks" {
   create_kms_key                 = false
   cluster_encryption_config      = {}
 
-  access_entries = {
-    "argocd_${var.project_aws_account_id}" = {
-      cluster_name  = "${var.cluster_name}"
-      principal_arn = "arn:aws:iam::${var.project_aws_account_id}:role/argocd-${var.project_cluster_name}"
-      policy_associations = {
-        argocdAdminAccess = {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-          access_scope = {
-            namespaces = []
-            type       = "cluster"
+  access_entries = merge(
+    {
+      "argocd_${var.project_aws_account_id}" = {
+        cluster_name  = "${var.cluster_name}"
+        principal_arn = "arn:aws:iam::${var.project_aws_account_id}:role/argocd-${var.project_cluster_name}"
+        policy_associations = {
+          argocdAdminAccess = {
+            policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+            access_scope = {
+              namespaces = []
+              type       = "cluster"
+            }
+          }
+        }
+      }
+    },
+    # Theme clusters: the konstruct operators on the control plane reach the
+    # cluster directly (e.g. the vm-remote-write token sync). Access entries
+    # are the CLUSTER's authorization mapping, not IAM — the principal may
+    # live in another account, and no trust policy in this account is needed.
+    var.konstruct_operator_role_arn == "" ? {} : {
+      konstruct_operator = {
+        cluster_name  = "${var.cluster_name}"
+        principal_arn = var.konstruct_operator_role_arn
+        policy_associations = {
+          konstructOperatorAdminAccess = {
+            policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+            access_scope = {
+              namespaces = []
+              type       = "cluster"
+            }
           }
         }
       }
     }
-  }
+  )
 
   cluster_addons = {
     aws-ebs-csi-driver = {
