@@ -33,5 +33,10 @@ spec:
     # network policy agent.
     - key: enable_network_policy
       value: "{{ if .Values.theme }}true{{ else }}{{ .Values.enableNetworkPolicy }}{{ end }}"
+    # Theme clusters: the control plane's konstruct operators reach the
+    # cluster directly (vm-remote-write token sync), so their role gets a
+    # cluster-admin access entry. Empty (non-theme) adds no entry.
+    - key: konstruct_operator_role_arn
+      value: "{{ if .Values.theme }}arn:aws:iam::{{ .Values.kubefirstMgmtAccountId }}:role/konstruct-{{ .Values.kubefirstMgmtClusterName }}{{ end }}"
 
 

@@ -100,5 +100,8 @@ waitJobImage: "dtzar/helm-kubectl:3.19.0"
 #   workloadAssumeRole              role ARN assumed to provision resources in the
 #                                   workload cluster account
 #   kubefirstMgmtAccountId          AWS account id of the main management cluster
+#   kubefirstMgmtClusterName        name of the main management (control plane)
+#                                   cluster; composes the konstruct operator
+#                                   role granted access on theme clusters
 #   mainMgmtcloudRegion             region of the main management cluster
 # ---------------------------------------------------------------------------
