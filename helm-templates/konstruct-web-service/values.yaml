@@ -48,6 +48,28 @@ gateway:
   sectionName: https-apps
   host: ""
 
+  # auth renders an OIDC SecurityPolicy attached to this app's HTTPRoute, so
+  # anonymous requests are redirected to the IdP before they ever reach the
+  # app (epic &231). Off here: the theme-operator supplies the whole block
+  # when the ThemedApp is gated (spec.auth "platform", its default) AND the
+  # instance carries THEMED_AUTH_* config. Apps that opted out (spec.auth
+  # "none") — and any instance without that config — render the open route
+  # exactly as before.
+  #
+  # Every gated app shares ONE IdP client, callback and cookie domain, so a
+  # single login covers all of them. secretName must exist in the app's
+  # namespace with key "client-secret" (Envoy Gateway's required name); the
+  # operator distributes it.
+  auth:
+    enabled: false
+    issuer: ""
+    clientID: "themed-apps"
+    secretName: "themed-apps-oidc"
+    redirectURL: ""
+    # cookieDomain is optional — set it to share the session cookie across
+    # every gated app's subdomain; omitted, the cookie is host-scoped.
+    cookieDomain: ""
+
 # networkPolicy renders per-app tenant-isolation policies into the shared
 # per-environment namespace: default-deny on this app's pods, ingress only from
 # sibling pods in the same environment + the gateway's Envoy proxies (on the
