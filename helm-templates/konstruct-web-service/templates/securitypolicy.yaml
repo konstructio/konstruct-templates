@@ -1,45 +1,34 @@
 {{- /*
-Platform auth gate (epic &231): OIDC SecurityPolicy on the app's HTTPRoute.
-Rendered only when the theme-operator passes gateway.auth (spec.auth
-"platform", the default) — apps that opted out (spec.auth "none") get the
-open route exactly as before. Every app shares ONE IdP client, callback and
-cookie domain, so a single login covers all gated apps; the client secret is
-distributed to the app namespace by the operator (key "client-secret" is
-Envoy Gateway's required name). SameSite=None keeps the session when the
-console embeds the app in a cross-origin iframe.
+Platform auth gate opt-out (epic &231). The default gate is a single
+listener-scoped OIDC SecurityPolicy on the shared Envoy Gateway (delivered
+per cluster via gitops), which authenticates EVERY themed-app host — so the
+gated case renders nothing here. The only per-app action is the opt-out:
+when the operator sets gateway.authExempt (spec.auth "none"), render an
+empty, route-scoped SecurityPolicy. In Envoy Gateway a policy targeting an
+HTTPRoute overrides one targeting the Gateway (no merge), and a policy with
+no security features leaves the route anonymous — so this deliberately makes
+the app fully public. The public warning UX lives in the console.
 
-targetRefs MUST resolve to the HTTPRoute this chart renders. Both use the
-fullname helper: a SecurityPolicy pointing at a name no route carries is
-simply not accepted by Envoy Gateway, and the app is then served WITHOUT
-auth — a silent fail-open on a security control rather than a loud error.
+targetRefs MUST name the HTTPRoute this chart actually renders, which here
+comes from the fullname helper — NOT .Release.Name as in the konstruct-gitops
+copy of this chart, which has no helpers and names its route after the
+release. Under theme-operator the two differ: fullnameOverride is
+spec.app_name ("zippy") while releaseName is the CR name ("zippy-dev"). A
+policy pointing at a route that does not exist is simply not accepted, and
+the app then stays GATED — the opt-out silently does nothing.
 */ -}}
-{{- if and .Values.gateway.enabled .Values.gateway.auth .Values.gateway.auth.enabled }}
+{{- if and .Values.gateway.enabled .Values.gateway.authExempt }}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: {{ include "konstruct-web-service.fullname" . }}
+  name: {{ include "konstruct-web-service.fullname" . }}-public
   labels:
     {{- include "konstruct-web-service.labels" . | nindent 4 }}
 spec:
+  # Empty spec (targetRef only): overrides the listener gate for this route,
+  # exempting it from authentication.
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: {{ include "konstruct-web-service.fullname" . }}
-  oidc:
-    provider:
-      issuer: {{ .Values.gateway.auth.issuer | quote }}
-    clientID: {{ .Values.gateway.auth.clientID | default "themed-apps" | quote }}
-    clientSecret:
-      name: {{ .Values.gateway.auth.secretName | default "themed-apps-oidc" | quote }}
-    redirectURL: {{ .Values.gateway.auth.redirectURL | quote }}
-    logoutPath: /oauth2/logout
-    {{- with .Values.gateway.auth.cookieDomain }}
-    cookieDomain: {{ . | quote }}
-    {{- end }}
-    cookieConfig:
-      sameSite: None
-    scopes: ["openid", "profile", "email"]
-    # Forward the session's access token so the app can attribute actions to
-    # the signed-in user (theme-foxglider#1). Gateway-derived, so trustable.
-    forwardAccessToken: true
 {{- end }}
