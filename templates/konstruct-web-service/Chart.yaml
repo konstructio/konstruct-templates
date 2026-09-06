@@ -1,0 +1,10 @@
+apiVersion: v2
+name: konstruct-web-service
+description: |
+  Generic web-service chart for Konstruct Foreman single-click deploys. Runs a
+  single built container image as a Deployment + Service, with an optional
+  Ingress for the "public URL" feature. Image, port, env, replicas and ingress
+  are supplied by the foreman-operator via Helm valuesObject.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

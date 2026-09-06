@@ -1,0 +1,13 @@
+# Root pipeline definition. Pulls in the publish + deploy job specs from
+# the gitlab/ subdirectory so each can be edited / disabled in isolation.
+# application-operator copies this whole directory (deploy.yml, publish.yml,
+# and this file) into the customer app repo at provisioning time.
+
+stages:
+  - publish
+  - trigger
+  - notify
+
+include:
+  - local: gitlab/publish.yml
+  - local: gitlab/deploy.yml

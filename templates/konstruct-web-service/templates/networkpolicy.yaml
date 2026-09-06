@@ -1,0 +1,85 @@
+{{- if .Values.networkPolicy.enabled }}
+{{/*
+Tenant isolation for the shared per-environment namespace (foreman-<org>-<env>).
+
+Every policy selects ONLY this app's pods (selectorLabels), never the whole
+namespace: apps in the same environment each render their own copies, so the
+ArgoCD Applications never fight over shared namespace-wide objects, and the
+rules compose additively into full environment isolation. Requires a CNI that
+enforces NetworkPolicy (Cilium/Calico); under flannel these are silent no-ops.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "konstruct-web-service.fullname" . }}-default-deny
+  labels:
+    {{- include "konstruct-web-service.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "konstruct-web-service.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Ingress: only sibling services in this environment's namespace and the
+# gateway's Envoy proxies may reach the app, and only on its serving port.
+# Cross-environment and cross-tenant traffic has no allow rule -> denied.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "konstruct-web-service.fullname" . }}-ingress
+  labels:
+    {{- include "konstruct-web-service.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "konstruct-web-service.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.gatewayNamespace }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.containerPort }}
+---
+# Egress: DNS, sibling services in this environment, and the public internet.
+# Private ranges are excluded so a tenant cannot reach other tenants, cluster
+# internals, or the cloud metadata endpoint (169.254.169.254 credential theft).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "konstruct-web-service.fullname" . }}-egress
+  labels:
+    {{- include "konstruct-web-service.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "konstruct-web-service.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector: {}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+{{- end }}
