@@ -48,6 +48,14 @@ gateway:
   sectionName: https-apps
   host: ""
 
+  # Platform auth gate opt-out (epic &231). The default gate is a single
+  # listener-scoped OIDC SecurityPolicy on the shared gateway, so gated apps
+  # render nothing extra here — they are gated simply by attaching to that
+  # listener. When the theme-operator sets authExempt=true (ThemedApp
+  # spec.auth "none"), an empty route-scoped SecurityPolicy is rendered to
+  # override the listener gate and make the app deliberately public.
+  authExempt: false
+
 # networkPolicy renders per-app tenant-isolation policies into the shared
 # per-environment namespace: default-deny on this app's pods, ingress only from
 # sibling pods in the same environment + the gateway's Envoy proxies (on the
