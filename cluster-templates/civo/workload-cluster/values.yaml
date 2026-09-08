@@ -23,7 +23,7 @@ cni: ""
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
 
 # @input.type: string
-# @input.description: Theme clusters only — alert email address for Let's Encrypt certificate notifications
+# @input.description: Alert email address for Let's Encrypt certificate notifications
 # @input.required: false
 email: alerts@konstruct.io
 

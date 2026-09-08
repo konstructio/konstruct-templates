@@ -1,0 +1,42 @@
+{{- if not .Values.theme }}
+# Platform issuers for a plain workload cluster. No DNS credentials are
+# needed: the ACME challenge is served through the shared gateway's :80
+# listener, so an app gets TLS by declaring its own Gateway (class eg) with a
+# cert-manager.io/cluster-issuer annotation. Theme clusters use the DNS-01
+# wildcard issuer next door instead.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: {{ .Values.email }}
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    solvers:
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: eg
+                namespace: default
+                kind: Gateway
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: {{ .Values.email }}
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: eg
+                namespace: default
+                kind: Gateway
+{{- end }}
