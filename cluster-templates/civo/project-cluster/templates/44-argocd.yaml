@@ -6,7 +6,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: '40'
+    argocd.argoproj.io/sync-wave: '44'
     # The argocd namespace is terraform-owned, so ServerSideDiff errors
     # ("no managed fields found for manager: argocd-controller"). Client-side diff.
     argocd.argoproj.io/compare-options: ServerSideDiff=false

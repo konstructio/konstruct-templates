@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.workloadClusterName }}-crossplane
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "35"
+    argocd.argoproj.io/sync-wave: '35'
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
