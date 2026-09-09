@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: {{ .Values.workloadClusterName }}-envoy-gateway-components
+  name: {{ .Values.workloadClusterName }}-cert-issuers
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -11,11 +11,11 @@ spec:
   project: {{ .Values.workloadClusterName }}
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
-    path: registry/konstruct-clusters/{{ .Values.workloadClusterName }}/envoy-gateway
+    path: registry/konstruct-clusters/{{ .Values.workloadClusterName }}/cert-issuers
     targetRevision: HEAD
   destination:
     name: {{ .Values.workloadClusterName }}
-    namespace: envoy-gateway-system
+    namespace: cert-manager
   syncPolicy:
     automated:
       prune: true
