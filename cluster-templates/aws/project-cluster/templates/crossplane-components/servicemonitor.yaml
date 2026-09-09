@@ -3,6 +3,9 @@ kind: ServiceMonitor
 metadata:
   name: crossplane-provider-terraform
   namespace: crossplane-system
+  annotations:
+    # Wave 40: scrapes the Service from wave 30.
+    argocd.argoproj.io/sync-wave: '40'
   labels:
     app: crossplane-provider-terraform
 spec:

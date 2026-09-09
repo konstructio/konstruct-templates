@@ -2,6 +2,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: log-streamer-service
+  annotations:
+    # Wave 30: the Service selects the crossplane provider pod, which the
+    # Provider (20) creates from the DeploymentRuntimeConfig (10). Unwaved it
+    # defaulted to 0 and landed before both, with no endpoints to back it.
+    argocd.argoproj.io/sync-wave: '30'
   labels:
     app: log-streamer
 spec:
@@ -20,6 +25,8 @@ kind: HTTPRoute
 metadata:
   name: log-streamer
   namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: '30'
 spec:
   parentRefs:
     - name: eg
@@ -41,6 +48,8 @@ kind: BackendTrafficPolicy
 metadata:
   name: log-streamer-timeout
   namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: '30'
 spec:
   targetRefs:
     - group: gateway.networking.k8s.io
