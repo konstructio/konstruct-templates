@@ -33,6 +33,13 @@ kind: Job
 metadata:
   name: apply-argocd-clusters-app
   namespace: argocd
+  annotations:
+    # Run as an ArgoCD sync hook so its ttl-based self-deletion isn't seen as
+    # perpetual drift (which kept re-triggering syncs and the post-upgrade
+    # git-token-refresher hook, wedging the app in Missing). BeforeHookCreation
+    # (not hook-succeeded) so the Job isn't deleted before PostSync sees success.
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   ttlSecondsAfterFinished: 100
   template:

@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.workloadClusterName }}-crossplane-components
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '40'
+    argocd.argoproj.io/sync-wave: '44'
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -20,6 +20,20 @@ spec:
     automated:
       prune: true
       selfHeal: true
+      allowEmpty: false
     syncOptions:
       - CreateNamespace=true
-      - Replace=true
+      - ServerSideApply=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 20s
+        factor: 2
+        maxDuration: 5m
+  # The DeploymentRuntimeConfig CRD server-prunes an empty deploymentTemplate.metadata
+  # back to {}, which ArgoCD reads as perpetual drift. Ignore that field.
+  ignoreDifferences:
+    - group: pkg.crossplane.io
+      kind: DeploymentRuntimeConfig
+      name: terraform-config
+      jsonPointers: ["/spec/deploymentTemplate/metadata"]

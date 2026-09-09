@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.workloadClusterName }}-argocd
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: '44'
+    # The argocd namespace is terraform-owned, so ServerSideDiff errors
+    # ("no managed fields found for manager: argocd-controller"). Client-side diff.
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
+spec:
+  project: {{ .Values.workloadClusterName }}
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl }}
+    path: registry/konstruct-clusters/{{ .Values.workloadClusterName }}/argocd
+    targetRevision: HEAD
+  destination:
+    name: {{ .Values.workloadClusterName }}
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 20s
+        factor: 2
+        maxDuration: 5m
+  # The argocd namespace is also created by the infrastructure terraform Workspace,
+  # so it lacks this app's ownership label and shows perpetual drift. The argocd UI
+  # routes get server-defaulted (parentRefs, backendRefs weight, matches) which, with
+  # ServerSideDiff off, reads as drift. Ignore both so the app settles.
+  ignoreDifferences:
+    - group: ""
+      kind: Namespace
+      name: argocd
+      jsonPointers:
+        - /metadata/labels
+        - /metadata/annotations
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: argocd-server-http
+      jsonPointers:
+        - /spec
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute
+      name: argocd-server-grpc
+      jsonPointers:
+        - /spec

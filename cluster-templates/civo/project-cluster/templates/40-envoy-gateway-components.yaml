@@ -1,7 +1,8 @@
+{{- if not .Values.saas }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: {{ .Values.workloadClusterName }}-argocd
+  name: {{ .Values.workloadClusterName }}-envoy-gateway-components
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -11,14 +12,23 @@ spec:
   project: {{ .Values.workloadClusterName }}
   source:
     repoURL: {{ .Values.gitopsRepoUrl }}
-    path: registry/konstruct-clusters/{{ .Values.workloadClusterName }}/argocd
+    path: registry/konstruct-clusters/{{ .Values.workloadClusterName }}/envoy-gateway
     targetRevision: HEAD
   destination:
     name: {{ .Values.workloadClusterName }}
-    namespace: argocd
+    namespace: envoy-gateway-system
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+      allowEmpty: false
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 20s
+        factor: 2
+        maxDuration: 5m
+{{- end }}
