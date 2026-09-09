@@ -1,3 +1,4 @@
+{{- $extraAnnotations := list .Values.certManagerIssuerAnnotation1 .Values.certManagerIssuerAnnotation2 .Values.certManagerIssuerAnnotation3 .Values.certManagerIssuerAnnotation4 }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -5,13 +6,20 @@ metadata:
   namespace: default
   annotations:
     argocd.argoproj.io/sync-wave: "35"
-    # cert-manager issuer annotation(s) injected at hydration time (full
-    # "key: value" lines, e.g. cert-manager.io/cluster-issuer: letsencrypt-prod);
-    # cert-manager's gateway-shim then issues the listener certs below.
-    {{ .Values.certManagerIssuerAnnotation1 }}
-    {{ .Values.certManagerIssuerAnnotation2 }}
-    {{ .Values.certManagerIssuerAnnotation3 }}
-    {{ .Values.certManagerIssuerAnnotation4 }}
+{{- if and .Values.certManagerClusterIssuer (not (contains "cert-manager.io/cluster-issuer" (join " " $extraAnnotations))) }}
+    # cert-manager's gateway-shim watches this annotation and issues a
+    # Certificate into the Secret each HTTPS listener names below. Without it
+    # the listeners never get a certificate, stay unprogrammed, and every route
+    # bound to them reports NoReadyListeners.
+    cert-manager.io/cluster-issuer: {{ .Values.certManagerClusterIssuer }}
+{{- end }}
+{{- /* Escape hatch for extra raw "key: value" annotation lines. Empty slots
+       are skipped rather than rendered as blank lines. */}}
+{{- range $extraAnnotations }}
+{{- if . }}
+    {{ . }}
+{{- end }}
+{{- end }}
 spec:
   gatewayClassName: eg
   listeners:

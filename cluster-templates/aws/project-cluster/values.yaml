@@ -38,7 +38,13 @@ secretStoreNamespaces:
 # Wait Job Configuration
 waitJobImage: "dtzar/helm-kubectl:3.19.0"
 
-# cert-manager issuer annotations injected into the shared Gateway (full "key: value" lines)
+# @input.type: string
+# @input.description: cert-manager ClusterIssuer the shared Gateway's HTTPS listeners take their certificates from. Must exist on the cluster - this template ships letsencrypt-staging and letsencrypt-prod. Empty disables automatic issuance, leaving the listeners without certs.
+# @input.required: false
+certManagerClusterIssuer: letsencrypt-prod
+
+# Escape hatch for extra raw "key: value" annotation lines on the shared
+# Gateway. A cluster-issuer line here overrides certManagerClusterIssuer above.
 certManagerIssuerAnnotation1: ""
 certManagerIssuerAnnotation2: ""
 certManagerIssuerAnnotation3: ""
