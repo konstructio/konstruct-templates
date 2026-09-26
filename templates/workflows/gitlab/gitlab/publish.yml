@@ -1,0 +1,73 @@
+# Build & publish pipeline — GitLab CI equivalent of workflows/publish.yaml.
+#
+# Unlike the GitHub version (which pushes to AWS ECR via OIDC), this writes
+# to GitLab's own container registry and OCI helm registry. Auth uses the
+# built-in $CI_JOB_TOKEN (CI_REGISTRY_USER + CI_REGISTRY_PASSWORD env vars
+# that GitLab injects automatically) so no AWS / IAM / OIDC plumbing is
+# required — keeps GitLab platforms self-contained.
+
+publish:
+  stage: publish
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+    HELM_VERSION: "v3.16.2"
+    # Ensure full history so `git rev-parse` works (parity with actions/checkout fetch-depth: 0).
+    GIT_DEPTH: "0"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'             # manual run (= workflow_dispatch)
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'  # push to main
+  before_script:
+    - apk add --no-cache bash curl git tar gzip
+    # Install helm (same version as the GitHub workflow).
+    - curl -sSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" -o /tmp/helm.tgz
+    - tar -xzf /tmp/helm.tgz -C /tmp
+    - mv /tmp/linux-amd64/helm /usr/local/bin/helm
+    - helm version
+    # Log in to GitLab's container + OCI helm registries with $CI_JOB_TOKEN.
+    - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - helm registry login --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    # GitLab provides the namespaced image path as $CI_REGISTRY_IMAGE
+    # (registry.<gitlab-host>/<group>/<project>). Use that for both the
+    # container image and the helm OCI repo so nested groups Just Work.
+    - SHORT_SHA="$(git rev-parse --short=7 HEAD)"
+    - IMAGE="$CI_REGISTRY_IMAGE:$SHORT_SHA"
+    # Build + push image.
+    - docker build -t "$IMAGE" .
+    - docker push "$IMAGE"
+    - echo "Pushed image:$IMAGE"
+    # Update Chart.yaml. Charts live in charts/<project-name>/ inside the
+    # repo (mirrors the github layout's charts/<org>/<repo>/ with the org
+    # slot collapsed — nested groups would otherwise make the path unwieldy).
+    - cd "charts/$CI_PROJECT_NAME"
+    - CURRENT_VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
+    - BASE_VERSION=${CURRENT_VERSION%-rc.*}
+    - NEW_VERSION="${BASE_VERSION}-rc.${SHORT_SHA}"
+    - 'sed -i "s/^version: .*$/version: ${NEW_VERSION}/" Chart.yaml'
+    - 'sed -i "s/^appVersion: .*$/appVersion: \"${SHORT_SHA}\"/" Chart.yaml'
+    - grep -E '^(version|appVersion):' Chart.yaml
+    # Package + push chart (OCI).
+    - helm package .
+    - CHART_NAME=$(grep '^name:' Chart.yaml | awk '{print $2}')
+    - CHART_VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
+    - CHART_ARCHIVE_FILE="${CHART_NAME}-${CHART_VERSION}.tgz"
+    - helm push "$CHART_ARCHIVE_FILE" "oci://$CI_REGISTRY_IMAGE/charts"
+    - echo "Pushed chart $CHART_ARCHIVE_FILE to oci://$CI_REGISTRY_IMAGE/charts"
+    # Step-summary equivalent: emit a job artifact + a CI report line.
+    - mkdir -p .ci-summary
+    - |
+      {
+        echo "### Deployment Summary"
+        echo ""
+        echo "**Image**: \`$IMAGE\`"
+        echo ""
+        echo "**Chart**: \`$CHART_NAME:$CHART_VERSION\`"
+      } | tee .ci-summary/summary.md
+  artifacts:
+    name: "publish-summary-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - .ci-summary/summary.md
+    expire_in: 30 days

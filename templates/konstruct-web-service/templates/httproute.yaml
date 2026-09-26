@@ -1,0 +1,29 @@
+{{- if .Values.gateway.enabled }}
+# Public exposure via Gateway API — attaches to the cluster's shared Envoy
+# Gateway wildcard listener (*.<region>.apps.<domain>). external-dns publishes
+# the DNS record from this route's hostname; TLS is served by the gateway's
+# pre-issued wildcard cert (no per-app cert).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "konstruct-web-service.fullname" . }}
+  labels:
+    {{- include "konstruct-web-service.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+      namespace: {{ .Values.gateway.namespace }}
+      {{- if .Values.gateway.sectionName }}
+      sectionName: {{ .Values.gateway.sectionName }}
+      {{- end }}
+  hostnames:
+    - {{ .Values.gateway.host | quote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ include "konstruct-web-service.fullname" . }}
+          port: {{ .Values.service.port }}
+{{- end }}
