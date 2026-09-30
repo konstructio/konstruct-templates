@@ -156,7 +156,8 @@ logs:
   # secret/clusters/<cluster>, from the workload-project-cluster module).
   # Set: every shard shares one ReadWriteMany volume, so any log-streamer can
   # stream any Workspace at /logs/<name>, and logs survive restarts and shard
-  # migrations. Empty: per-pod emptyDir, reachable only via /shard-N/logs/<name>.
+  # migrations. Empty: per-pod emptyDir, so a log streams only when the request
+  # happens to land on the shard that wrote it. Set this whenever shardCount > 1.
   efsFileSystemId: ""   # set in step 6
 
 githubApp:
@@ -611,25 +612,22 @@ spec:
 
 ### `templates/logs.yaml`
 
-One `log-streamer` Service selects every shard pod. The ServiceMonitor scrapes
-each pod behind it individually, so every shard's metrics are collected. With
-`logs.efsFileSystemId` set, that Service and a single `/` route serve any
-Workspace at `/logs/<name>`. Without it, logs are local to each pod, so the
-chart adds per-shard Services and `/shard-N/logs/<name>` routes instead.
+One `log-streamer` Service selects every shard pod, with a single `/` route.
+The ServiceMonitor scrapes each pod behind it individually, so every shard's
+metrics are collected. Streaming `/logs/<name>` from any pod relies on the
+shared EFS volume from step 6; without it, a request finds a Workspace's log
+only when it lands on the shard that wrote it.
 
 ```yaml
-{{- $root := . -}}
-# Log routing and metrics.
+# Log routing and metrics: one Service across every shard pod.
 #
-# One Service selects every shard pod. The ServiceMonitor scrapes each endpoint
-# behind it individually, so every shard's metrics are still collected, and
-# provider metrics carry a shard label to tell them apart.
+# The ServiceMonitor scrapes each endpoint behind it individually, so every
+# shard's metrics are collected, and provider metrics carry a shard label to
+# tell them apart.
 #
-# With logs.efsFileSystemId set, every shard shares one /logs volume, so that
-# Service also streams any Workspace at /logs/<name> from whichever pod answers.
-# Without it each pod's logs are local, so per-shard Services and /shard-N
-# routes reach the pod that wrote them.
----
+# Streaming /logs/<name> from whichever pod answers relies on the shared EFS
+# volume (logs.efsFileSystemId). Without it each pod only has its own logs, so
+# a request finds a given Workspace's log only when it lands on that shard.
 apiVersion: v1
 kind: Service
 metadata:
@@ -654,31 +652,6 @@ spec:
       port: 8080
       targetPort: 8080
       protocol: TCP
-{{- if not .Values.logs.efsFileSystemId }}
-{{- range $i := until (int .Values.shardCount) }}
-{{- $shard := printf "shard-%d" $i }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: log-streamer-{{ $shard }}
-  namespace: {{ $root.Values.namespace }}
-  annotations:
-    argocd.argoproj.io/sync-wave: '35'
-  labels:
-    # No app: log-streamer label: the Service above already covers metrics.
-    terraform.crossplane.io/shard: {{ $shard }}
-spec:
-  selector:
-    app: provider-terraform
-    terraform.crossplane.io/shard: {{ $shard }}
-  ports:
-    - name: http
-      port: 9090
-      targetPort: 9090
-      protocol: TCP
-{{- end }}
-{{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -695,8 +668,6 @@ spec:
   hostnames:
     - {{ .Values.logs.hostname }}
   rules:
-{{- if .Values.logs.efsFileSystemId }}
-    # Shared volume: any pod can serve any Workspace's log.
     - matches:
         - path:
             type: PathPrefix
@@ -707,29 +678,6 @@ spec:
       # long-lived log streams
       timeouts:
         request: {{ .Values.logs.requestTimeout }}
-{{- else }}
-{{- range $i := until (int .Values.shardCount) }}
-{{- $shard := printf "shard-%d" $i }}
-    # Find a workspace's shard with:
-    #   kubectl get workspace <name> -L terraform.crossplane.io/shard
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /{{ $shard }}
-      filters:
-        - type: URLRewrite
-          urlRewrite:
-            path:
-              type: ReplacePrefixMatch
-              replacePrefixMatch: /
-      backendRefs:
-        - name: log-streamer-{{ $shard }}
-          port: 9090
-      # long-lived log streams
-      timeouts:
-        request: {{ $root.Values.logs.requestTimeout }}
-{{- end }}
-{{- end }}
 ```
 
 ### `templates/storage.yaml`
@@ -912,7 +860,7 @@ spec:
 | `secretStore` | `<cluster-name>-vault-kv-secret` | The `ClusterSecretStore` your other ExternalSecrets use. |
 | `logs.hostname` | `logs-<cluster-name>.<domain>` | Must match a hostname the gateway's `https-logs` listener serves. |
 | `logs.gatewaySectionName` | `https-logs` | Listener name on the `eg` Gateway in `default`. |
-| `logs.efsFileSystemId` | `""` now, `<efs-file-system-id>` in step 6 | Empty keeps per-pod logs. |
+| `logs.efsFileSystemId` | `""` now, `<efs-file-system-id>` in step 6 | Required for reliable log streaming once `shardCount` is above 1. |
 | `githubApp.installations[].vaultKey` | `<github-app-vault-key>` | Add one entry per GitHub org, with `labelled: true` for every entry after the first. |
 | `controller.terminationGracePeriodSeconds` | Above your slowest `terraform apply` | Default `900`. A pod killed mid-apply leaves a stale state lock needing `terraform force-unlock`. |
 
@@ -1003,9 +951,9 @@ Once one shard is healthy, raise `shardCount` to the target.
 
 ## 6. Shared logs on EFS
 
-Each shard writes `/logs/<workspace>` on its own pod. Without shared storage a
-log is only reachable through its shard (`/shard-N/logs/<name>`) and is lost
-on restart or migration. EBS (`ebs-csi-default-sc`) is ReadWriteOnce and cannot
+Each shard writes `/logs/<workspace>` on its own pod. Without shared storage
+the single `log-streamer` Service finds a Workspace's log only when it routes
+to the shard that wrote it, and the log is lost on restart or migration. EBS (`ebs-csi-default-sc`) is ReadWriteOnce and cannot
 be shared between nodes, so this uses EFS.
 
 ### 6a. Allow the cluster's Terraform role to manage EFS
@@ -1121,10 +1069,10 @@ logs:
 ```
 
 This renders the `efs-sc` StorageClass and the `provider-terraform-logs`
-ReadWriteMany claim, mounts it at `/logs` on every shard, and replaces the
-per-shard Services and `/shard-N` routes with a single `/` route to the
-`log-streamer` Service. Shard pods restart onto the new volume; logs written
-before the switch are not carried over.
+ReadWriteMany claim and mounts it at `/logs` on every shard, so the
+`log-streamer` Service can stream any Workspace from any pod. Shard pods
+restart onto the new volume; logs written before the switch are not carried
+over.
 
 ```sh
 kubectl get pvc -n crossplane-system provider-terraform-logs     # Bound
