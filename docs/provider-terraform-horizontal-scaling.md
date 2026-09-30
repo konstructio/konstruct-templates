@@ -611,22 +611,24 @@ spec:
 
 ### `templates/logs.yaml`
 
-Per-shard Services carry each shard's metrics and the `/shard-N/logs/<name>`
-routes. With `logs.efsFileSystemId` set, a single `log-streamer` Service and a
-catch-all `/` route let any pod serve any Workspace at `/logs/<name>`.
+One `log-streamer` Service selects every shard pod. The ServiceMonitor scrapes
+each pod behind it individually, so every shard's metrics are collected. With
+`logs.efsFileSystemId` set, that Service and a single `/` route serve any
+Workspace at `/logs/<name>`. Without it, logs are local to each pod, so the
+chart adds per-shard Services and `/shard-N/logs/<name>` routes instead.
 
 ```yaml
 {{- $root := . -}}
 # Log routing and metrics.
 #
-# Per-shard Services always exist: they carry each shard's metrics (the
-# ServiceMonitor selects app: log-streamer) and the /shard-N log prefixes.
+# One Service selects every shard pod. The ServiceMonitor scrapes each endpoint
+# behind it individually, so every shard's metrics are still collected, and
+# provider metrics carry a shard label to tell them apart.
 #
-# With logs.efsFileSystemId set, every shard shares one /logs volume, so a
-# single Service across all shards can stream any Workspace: /logs/<name> goes
-# to whichever pod answers. It has no app: log-streamer label, or Prometheus
-# would scrape a random shard through it.
-{{- if .Values.logs.efsFileSystemId }}
+# With logs.efsFileSystemId set, every shard shares one /logs volume, so that
+# Service also streams any Workspace at /logs/<name> from whichever pod answers.
+# Without it each pod's logs are local, so per-shard Services and /shard-N
+# routes reach the pod that wrote them.
 ---
 apiVersion: v1
 kind: Service
@@ -635,7 +637,12 @@ metadata:
   namespace: {{ .Values.namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: '35'
+  labels:
+    app: log-streamer
 spec:
+  # Selects by app, not by package revision. The previous Service pinned
+  # pkg.crossplane.io/revision to a specific hash, so it silently selected
+  # nothing after any provider upgrade.
   selector:
     app: provider-terraform
   ports:
@@ -643,7 +650,11 @@ spec:
       port: 9090
       targetPort: 9090
       protocol: TCP
-{{- end }}
+    - name: metrics
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+{{- if not .Values.logs.efsFileSystemId }}
 {{- range $i := until (int .Values.shardCount) }}
 {{- $shard := printf "shard-%d" $i }}
 ---
@@ -655,12 +666,9 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '35'
   labels:
-    app: log-streamer
+    # No app: log-streamer label: the Service above already covers metrics.
     terraform.crossplane.io/shard: {{ $shard }}
 spec:
-  # Selects by shard, not by package revision. The previous Service pinned
-  # pkg.crossplane.io/revision to a specific hash, so it silently selected
-  # nothing after any provider upgrade.
   selector:
     app: provider-terraform
     terraform.crossplane.io/shard: {{ $shard }}
@@ -669,10 +677,7 @@ spec:
       port: 9090
       targetPort: 9090
       protocol: TCP
-    - name: metrics
-      port: 8080
-      targetPort: 8080
-      protocol: TCP
+{{- end }}
 {{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -690,6 +695,19 @@ spec:
   hostnames:
     - {{ .Values.logs.hostname }}
   rules:
+{{- if .Values.logs.efsFileSystemId }}
+    # Shared volume: any pod can serve any Workspace's log.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: log-streamer
+          port: 9090
+      # long-lived log streams
+      timeouts:
+        request: {{ .Values.logs.requestTimeout }}
+{{- else }}
 {{- range $i := until (int .Values.shardCount) }}
 {{- $shard := printf "shard-%d" $i }}
     # Find a workspace's shard with:
@@ -711,18 +729,6 @@ spec:
       timeouts:
         request: {{ $root.Values.logs.requestTimeout }}
 {{- end }}
-{{- if .Values.logs.efsFileSystemId }}
-    # Any shard can serve any log; the /shard-N prefixes above still win as
-    # longer matches.
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: log-streamer
-          port: 9090
-      timeouts:
-        request: {{ .Values.logs.requestTimeout }}
 {{- end }}
 ```
 
@@ -773,8 +779,8 @@ spec:
 ### `templates/servicemonitor.yaml`
 
 ```yaml
-# Unchanged in behaviour: selects app: log-streamer, which every per-shard
-# Service carries, so all shards are scraped without listing them here.
+# Selects the log-streamer Service. Prometheus scrapes every endpoint behind
+# it, so each shard pod is scraped on its own without listing them here.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -1115,9 +1121,10 @@ logs:
 ```
 
 This renders the `efs-sc` StorageClass and the `provider-terraform-logs`
-ReadWriteMany claim, mounts it at `/logs` on every shard, and adds the shared
-`log-streamer` Service and `/` route. Shard pods restart onto the new volume;
-logs written before the switch are not carried over.
+ReadWriteMany claim, mounts it at `/logs` on every shard, and replaces the
+per-shard Services and `/shard-N` routes with a single `/` route to the
+`log-streamer` Service. Shard pods restart onto the new volume; logs written
+before the switch are not carried over.
 
 ```sh
 kubectl get pvc -n crossplane-system provider-terraform-logs     # Bound
