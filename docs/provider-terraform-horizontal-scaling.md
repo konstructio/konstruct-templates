@@ -220,11 +220,14 @@ draining: []
 namespace: crossplane-system
 
 image:
-  # Images with sharding support. They carry --shard-name, the shard-aware garbage collector, and the process
-  # group fix. The previous v0.0.1-rc.3 has none of them and would crash-loop
-  # on the unknown flag.
-  controller: ghcr.io/konstructio/provider-terraform:branch-46db7d0d
-  assigner: ghcr.io/konstructio/provider-terraform-shard-assigner:branch-46db7d0d
+  # Images with sharding support: --shard-name, the shard-aware garbage
+  # collector, tini as PID 1, graceful (SIGINT) cancellation of terraform, and
+  # migrations completed by the new shard's receipt. Older images crash-loop on
+  # the unknown --shard-name flag. The controller and assigner must come from
+  # the same build: the migration-received annotation is written by one and
+  # read by the other.
+  controller: ghcr.io/konstructio/provider-terraform:branch-259049f7
+  assigner: ghcr.io/konstructio/provider-terraform-shard-assigner:branch-259049f7
   logStreamer: ghcr.io/konstructio/logs-streamer:v0.0.10
 
 # The Crossplane package. Its Deployment stays at replicas: 0 - it exists to
@@ -953,9 +956,9 @@ spec:
           annotations:
             summary: A Workspace migration has not completed
             description: >-
-              A Workspace has been migrating for over 30 minutes without
-              reaching Synced=True on its new shard. Past the cutoff it stops
-              holding a batch slot, so check why it is not syncing.
+              A Workspace has been migrating for over 30 minutes without its
+              new shard picking it up. Past the cutoff it stops holding a batch
+              slot, so check whether that shard is running and reconciling.
 ```
 
 ## 4. Fields to change in `values.yaml`
