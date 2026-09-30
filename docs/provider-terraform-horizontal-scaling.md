@@ -17,7 +17,7 @@ below. Replace the placeholders, commit, and let Argo CD sync.
 | `<domain>` | Base domain the cluster's gateway serves | `example.com` |
 | `<github-app-vault-key>` | Vault path of the GitHub App credentials Crossplane already uses | `argocd/repo-credentials-template/acme-platform` |
 | `<gitops-repo-url>` | Your gitops repository | `https://github.com/acme/gitops.git` |
-| `<efs-file-system-id>` | Created in step 6 | `fs-0123456789abcdef0` |
+| `<efs-file-system-id>` | Created in step 2 | `fs-0123456789abcdef0` |
 
 ## 1. Prerequisites
 
@@ -28,7 +28,119 @@ below. Replace the placeholders, commit, and let Argo CD sync.
 | Terraform backends lock state (S3 + DynamoDB table or `use_lockfile = true`) — *recommended* | The assigner already refuses to move a Workspace off a shard whose pod is still running; backend locking covers the remaining edge cases. |
 | Prometheus Operator CRDs are installed | The chart ships a `PrometheusRule` and two `ServiceMonitor`s. |
 
-## 2. Replace `crossplane-components` with the sharded chart
+## 2. Create EFS for shared logs
+
+Each shard writes `/logs/<workspace>` on its own pod. Without shared storage
+the single `log-streamer` Service finds a Workspace's log only when it routes
+to the shard that wrote it, and the log is lost on restart or migration. EBS (`ebs-csi-default-sc`) is ReadWriteOnce and cannot
+be shared between nodes, so this uses EFS.
+
+Do this first: the chart in step 3 mounts the filesystem, so its ID has to exist before you write `values.yaml`.
+
+### 2a. Allow the cluster's Terraform role to manage EFS
+
+The role that applies your cluster's Terraform in `<aws-account-id>` (the
+`role_arn` in `provider-config/providerconfig.yaml`) needs EFS permissions.
+Without them, the apply fails with
+`not authorized to perform: elasticfilesystem:TagResource`. Add
+`elasticfilesystem:*` to its policy:
+
+```json
+{
+  "Sid": "AdminAccess",
+  "Effect": "Allow",
+  "Action": ["s3:*", "eks:*", "ecr:*", "ec2:*", "elasticfilesystem:*"],
+  "Resource": "*"
+}
+```
+
+### 2b. Add EFS and the EFS CSI driver to the cluster Terraform
+
+In the Terraform module that creates the cluster's EKS cluster and VPC, add the
+driver to the EKS module's `cluster_addons`:
+
+```hcl
+  cluster_addons = {
+    # ...existing addons...
+    aws-efs-csi-driver = {
+      most_recent              = true
+      service_account_role_arn = module.aws_efs_csi_driver.iam_role_arn
+    }
+  }
+```
+
+and add these resources alongside it:
+
+```hcl
+module "aws_efs_csi_driver" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.42.0"
+
+  role_name             = upper("EFS-CSI-DRIVER-${var.cluster_name}")
+  attach_efs_csi_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:efs-csi-controller-sa", "kube-system:efs-csi-node-sa"]
+    }
+  }
+
+  tags = local.tags
+}
+
+resource "aws_efs_file_system" "shared" {
+  creation_token = "efs-${var.cluster_name}"
+  encrypted      = true
+
+  tags = merge(local.tags, { Name = "efs-${var.cluster_name}" })
+}
+
+# Managed node groups here use the default launch template, so nodes carry the
+# cluster primary security group rather than the module's node group; allow NFS
+# from the VPC instead of from a specific group.
+resource "aws_security_group" "efs" {
+  name        = "efs-${var.cluster_name}"
+  description = "NFS from the ${var.cluster_name} VPC to EFS"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description = "NFS"
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "tcp"
+    cidr_blocks = [local.vpc_cidr]
+  }
+
+  tags = local.tags
+}
+
+resource "aws_efs_mount_target" "shared" {
+  count = length(local.azs)
+
+  file_system_id  = aws_efs_file_system.shared.id
+  subnet_id       = module.vpc.private_subnets[count.index]
+  security_groups = [aws_security_group.efs.id]
+}
+```
+
+The references `module.eks`, `module.vpc`, `local.azs`, `local.vpc_cidr` and
+`local.tags` are the names the standard Konstruct project-cluster module uses;
+adjust them if yours differ. The security group allows NFS from the VPC CIDR
+because managed node groups on the default launch template carry the cluster
+primary security group, not the module's node group.
+
+Apply it, then confirm:
+
+```sh
+aws efs describe-file-systems --region <region> \
+  --query "FileSystems[?Name=='efs-<cluster-name>'].[FileSystemId,NumberOfMountTargets]" --output text
+kubectl get csidriver efs.csi.aws.com
+```
+
+Expect a filesystem ID with one mount target per private subnet. That ID is `<efs-file-system-id>` in the next steps.
+
+## 3. Replace `crossplane-components` with the sharded chart
 
 Folder: `registry/konstruct-clusters/<cluster-name>/crossplane-components/`
 
@@ -80,7 +192,7 @@ version: 0.1.0
 
 ### `values.yaml`
 
-Replace every placeholder. The fields you must change are listed in step 3.
+Replace every placeholder. The fields you must change are listed in step 4.
 
 ```yaml
 # ---------------------------------------------------------------------------
@@ -96,7 +208,7 @@ Replace every placeholder. The fields you must change are listed in step 3.
 #
 # Start at 1. That gives the new topology with a single controller - the same
 # behaviour as today - so the assigner can be proven before any shard split.
-shardCount: 5
+shardCount: 1
 
 # Shards to drain without removing them, by name. They render with
 # replicas: 0, which the assigner treats the same as "removed". Use this to
@@ -152,13 +264,12 @@ logs:
   hostname: logs-<cluster-name>.<domain>
   gatewaySectionName: https-logs
   requestTimeout: 3600s
-  # EFS filesystem for /logs (efs_file_system_id in vault
-  # secret/clusters/<cluster>, from the workload-project-cluster module).
+  # EFS filesystem for /logs, created in step 2 of the runbook.
   # Set: every shard shares one ReadWriteMany volume, so any log-streamer can
   # stream any Workspace at /logs/<name>, and logs survive restarts and shard
   # migrations. Empty: per-pod emptyDir, so a log streams only when the request
   # happens to land on the shard that wrote it. Set this whenever shardCount > 1.
-  efsFileSystemId: ""   # set in step 6
+  efsFileSystemId: "<efs-file-system-id>"
 
 githubApp:
   # One entry per org. Labelled secrets are authoritative for the provider's
@@ -615,7 +726,7 @@ spec:
 One `log-streamer` Service selects every shard pod, with a single `/` route.
 The ServiceMonitor scrapes each pod behind it individually, so every shard's
 metrics are collected. Streaming `/logs/<name>` from any pod relies on the
-shared EFS volume from step 6; without it, a request finds a Workspace's log
+shared EFS volume from step 2; without it, a request finds a Workspace's log
 only when it lands on the shard that wrote it.
 
 ```yaml
@@ -682,7 +793,7 @@ spec:
 
 ### `templates/storage.yaml`
 
-Rendered only when `logs.efsFileSystemId` is set (step 6).
+Creates the `efs-sc` StorageClass and the `provider-terraform-logs` ReadWriteMany claim for the filesystem from step 2. Rendered only when `logs.efsFileSystemId` is set.
 
 ```yaml
 {{- if .Values.logs.efsFileSystemId }}
@@ -847,7 +958,7 @@ spec:
               holding a batch slot, so check why it is not syncing.
 ```
 
-## 3. Fields to change in `values.yaml`
+## 4. Fields to change in `values.yaml`
 
 | Field | Set to | Notes |
 | --- | --- | --- |
@@ -860,7 +971,7 @@ spec:
 | `secretStore` | `<cluster-name>-vault-kv-secret` | The `ClusterSecretStore` your other ExternalSecrets use. |
 | `logs.hostname` | `logs-<cluster-name>.<domain>` | Must match a hostname the gateway's `https-logs` listener serves. |
 | `logs.gatewaySectionName` | `https-logs` | Listener name on the `eg` Gateway in `default`. |
-| `logs.efsFileSystemId` | `""` now, `<efs-file-system-id>` in step 6 | Required for reliable log streaming once `shardCount` is above 1. |
+| `logs.efsFileSystemId` | `<efs-file-system-id>` from step 2 | Required for log streaming once `shardCount` is above 1. |
 | `githubApp.installations[].vaultKey` | `<github-app-vault-key>` | Add one entry per GitHub org, with `labelled: true` for every entry after the first. |
 | `controller.terminationGracePeriodSeconds` | Above your slowest `terraform apply` | Default `900`. A pod killed mid-apply leaves a stale state lock needing `terraform force-unlock`. |
 
@@ -870,7 +981,7 @@ Check each name against the cluster's other components before committing. A
 typo in the ServiceAccount, role, secret store or hostname each fails in a
 different place.
 
-## 4. Update the Argo CD Application
+## 5. Update the Argo CD Application
 
 File: `registry/konstruct-clusters/<cluster-name>/40-crossplane-components.yaml`
 
@@ -928,7 +1039,7 @@ Keep `terraform.crossplane.io/shard` **out of git** on Workspace manifests. The
 assigner owns that label; Argo CD leaves it alone only as long as git never
 declares it.
 
-## 5. Verify sharding
+## 6. Verify
 
 ```sh
 # the shards and the assigner are running; the Crossplane Deployment sits at 0/0
@@ -942,142 +1053,16 @@ kubectl get workspace.tf.upbound.io -A -L terraform.crossplane.io/shard
 
 # assigner activity
 kubectl logs -n crossplane-system deploy/provider-terraform-shard-assigner | tail -20
+
+# shared logs volume bound, and streaming from any pod
+kubectl get pvc -n crossplane-system provider-terraform-logs
+curl -N https://logs-<cluster-name>.<domain>/logs/<workspace-name>
 ```
 
 A Workspace with no shard label is reconciled by nothing. The
 `TerraformWorkspaceUnsharded` alert fires if any stay unlabelled for 5 minutes.
 
 Once one shard is healthy, raise `shardCount` to the target.
-
-## 6. Shared logs on EFS
-
-Each shard writes `/logs/<workspace>` on its own pod. Without shared storage
-the single `log-streamer` Service finds a Workspace's log only when it routes
-to the shard that wrote it, and the log is lost on restart or migration. EBS (`ebs-csi-default-sc`) is ReadWriteOnce and cannot
-be shared between nodes, so this uses EFS.
-
-### 6a. Allow the cluster's Terraform role to manage EFS
-
-The role that applies your cluster's Terraform in `<aws-account-id>` (the
-`role_arn` in `provider-config/providerconfig.yaml`) needs EFS permissions.
-Without them, the apply fails with
-`not authorized to perform: elasticfilesystem:TagResource`. Add
-`elasticfilesystem:*` to its policy:
-
-```json
-{
-  "Sid": "AdminAccess",
-  "Effect": "Allow",
-  "Action": ["s3:*", "eks:*", "ecr:*", "ec2:*", "elasticfilesystem:*"],
-  "Resource": "*"
-}
-```
-
-### 6b. Add EFS and the EFS CSI driver to the cluster Terraform
-
-In the Terraform module that creates the cluster's EKS cluster and VPC, add the
-driver to the EKS module's `cluster_addons`:
-
-```hcl
-  cluster_addons = {
-    # ...existing addons...
-    aws-efs-csi-driver = {
-      most_recent              = true
-      service_account_role_arn = module.aws_efs_csi_driver.iam_role_arn
-    }
-  }
-```
-
-and add these resources alongside it:
-
-```hcl
-module "aws_efs_csi_driver" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.42.0"
-
-  role_name             = upper("EFS-CSI-DRIVER-${var.cluster_name}")
-  attach_efs_csi_policy = true
-
-  oidc_providers = {
-    main = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:efs-csi-controller-sa", "kube-system:efs-csi-node-sa"]
-    }
-  }
-
-  tags = local.tags
-}
-
-resource "aws_efs_file_system" "shared" {
-  creation_token = "efs-${var.cluster_name}"
-  encrypted      = true
-
-  tags = merge(local.tags, { Name = "efs-${var.cluster_name}" })
-}
-
-# Managed node groups here use the default launch template, so nodes carry the
-# cluster primary security group rather than the module's node group; allow NFS
-# from the VPC instead of from a specific group.
-resource "aws_security_group" "efs" {
-  name        = "efs-${var.cluster_name}"
-  description = "NFS from the ${var.cluster_name} VPC to EFS"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    description = "NFS"
-    from_port   = 2049
-    to_port     = 2049
-    protocol    = "tcp"
-    cidr_blocks = [local.vpc_cidr]
-  }
-
-  tags = local.tags
-}
-
-resource "aws_efs_mount_target" "shared" {
-  count = length(local.azs)
-
-  file_system_id  = aws_efs_file_system.shared.id
-  subnet_id       = module.vpc.private_subnets[count.index]
-  security_groups = [aws_security_group.efs.id]
-}
-```
-
-The references `module.eks`, `module.vpc`, `local.azs`, `local.vpc_cidr` and
-`local.tags` are the names the standard Konstruct project-cluster module uses;
-adjust them if yours differ. The security group allows NFS from the VPC CIDR
-because managed node groups on the default launch template carry the cluster
-primary security group, not the module's node group.
-
-Apply it, then confirm:
-
-```sh
-aws efs describe-file-systems --region <region> \
-  --query "FileSystems[?Name=='efs-<cluster-name>'].[FileSystemId,NumberOfMountTargets]" --output text
-kubectl get csidriver efs.csi.aws.com
-```
-
-Expect a filesystem ID with one mount target per private subnet.
-
-### 6c. Point the chart at the filesystem
-
-In `crossplane-components/values.yaml`:
-
-```yaml
-logs:
-  efsFileSystemId: "<efs-file-system-id>"
-```
-
-This renders the `efs-sc` StorageClass and the `provider-terraform-logs`
-ReadWriteMany claim and mounts it at `/logs` on every shard, so the
-`log-streamer` Service can stream any Workspace from any pod. Shard pods
-restart onto the new volume; logs written before the switch are not carried
-over.
-
-```sh
-kubectl get pvc -n crossplane-system provider-terraform-logs     # Bound
-curl -N https://logs-<cluster-name>.<domain>/logs/<workspace-name>
-```
 
 ## Operating it
 
