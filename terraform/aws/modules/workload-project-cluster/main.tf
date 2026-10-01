@@ -76,6 +76,10 @@ module "eks" {
         }
       })
     }
+    aws-efs-csi-driver = {
+      most_recent              = true
+      service_account_role_arn = module.aws_efs_csi_driver.iam_role_arn
+    }
     kube-proxy = {
       most_recent = true
     }
@@ -348,6 +352,61 @@ resource "aws_iam_policy" "aws_ebs_csi_driver" {
 EOT
 }
 
+################################################################################
+# EFS (ReadWriteMany storage, e.g. shared provider-terraform logs)
+################################################################################
+
+module "aws_efs_csi_driver" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.42.0"
+
+  role_name             = upper("EFS-CSI-DRIVER-${var.cluster_name}")
+  attach_efs_csi_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:efs-csi-controller-sa", "kube-system:efs-csi-node-sa"]
+    }
+  }
+
+  tags = local.tags
+}
+
+resource "aws_efs_file_system" "shared" {
+  creation_token = "efs-${var.cluster_name}"
+  encrypted      = true
+
+  tags = merge(local.tags, { Name = "efs-${var.cluster_name}" })
+}
+
+# Managed node groups here use the default launch template, so nodes carry the
+# cluster primary security group rather than the module's node group; allow NFS
+# from the VPC instead of from a specific group.
+resource "aws_security_group" "efs" {
+  name        = "efs-${var.cluster_name}"
+  description = "NFS from the ${var.cluster_name} VPC to EFS"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description = "NFS"
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "tcp"
+    cidr_blocks = [local.vpc_cidr]
+  }
+
+  tags = local.tags
+}
+
+resource "aws_efs_mount_target" "shared" {
+  count = length(local.azs)
+
+  file_system_id  = aws_efs_file_system.shared.id
+  subnet_id       = module.vpc.private_subnets[count.index]
+  security_groups = [aws_security_group.efs.id]
+}
+
 resource "aws_iam_openid_connect_provider" "eks" {
   count = local.is_same_account ? 0 : 1
   provider = aws.kubefirst_mgmt_s3_bucket_region
@@ -564,6 +623,7 @@ resource "vault_generic_secret" "clusters" {
       cluster_name           = var.cluster_name
       environment            = var.cluster_name
       argocd_role_arn        = "arn:aws:iam::${data.aws_caller_identity.kubefirst_mgmt.account_id}:role/argocd-${var.kubefirst_mgmt_cluster_name}"
+      efs_file_system_id     = aws_efs_file_system.shared.id
     }
   )
 }
