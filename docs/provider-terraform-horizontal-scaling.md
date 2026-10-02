@@ -25,8 +25,19 @@ below. Replace the placeholders, commit, and let Argo CD sync.
 | --- | --- |
 | The Crossplane Provider package is **`xpkg.upbound.io/upbound/provider-terraform:v1.2.0`** | The controller image expects the `tf.m.upbound.io` CRDs. On `v0.20.0` it exits with `no matches for kind "Workspace" in version "tf.m.upbound.io/v1beta1"`. The chart below sets this. |
 | IAM role `crossplane-<cluster-name>` trusts `system:serviceaccount:crossplane-system:crossplane-provider-terraform-<cluster-name>` | Every shard runs under the Provider's ServiceAccount. A name mismatch fails `terraform init` with `403 Not authorized to perform sts:AssumeRoleWithWebIdentity`. |
-| Terraform backends lock state (S3 + DynamoDB table or `use_lockfile = true`) — *recommended* | The assigner already refuses to move a Workspace off a shard whose pod is still running; backend locking covers the remaining edge cases. |
+| Every ProviderConfig's `backend "s3"` block sets **`use_lockfile = true`** — *required for rebalancing, strongly recommended regardless* | Two shards can briefly overlap on a Workspace during a move. With the lock, the second apply waits; without it, both write the same state. Check with the command below. |
 | Prometheus Operator CRDs are installed | The chart ships a `PrometheusRule` and two `ServiceMonitor`s. |
+
+Every ProviderConfig should print nothing here:
+
+```sh
+kubectl get providerconfig.tf.upbound.io -o json | jq -r '.items[]
+  | select((.spec.configuration // "") | test("use_lockfile\\s*=\\s*true") | not) | .metadata.name'
+```
+
+The provider runs each Workspace in its own terraform workspace, so its state
+and lock live under `env:/<workspace-name>/` in the bucket:
+`s3://<bucket>/env:/<workspace-name>/<key>` and `…/<key>.tflock`.
 
 ## 2. Create EFS for shared logs
 
@@ -221,13 +232,14 @@ namespace: crossplane-system
 
 image:
   # Images with sharding support: --shard-name, the shard-aware garbage
-  # collector, tini as PID 1, graceful (SIGINT) cancellation of terraform, and
-  # migrations completed by the new shard's receipt. Older images crash-loop on
-  # the unknown --shard-name flag. The controller and assigner must come from
-  # the same build: the migration-received annotation is written by one and
-  # read by the other.
-  controller: ghcr.io/konstructio/provider-terraform:branch-259049f7
-  assigner: ghcr.io/konstructio/provider-terraform-shard-assigner:branch-259049f7
+  # collector, tini as PID 1, graceful (SIGINT) cancellation of terraform,
+  # migrations completed by the new shard's receipt, optional rebalancing, and
+  # retrying creates whose result was lost. Older images crash-loop on the
+  # unknown --shard-name flag. The controller and assigner must come from the
+  # same build: the migration-received annotation is written by one and read
+  # by the other.
+  controller: ghcr.io/konstructio/provider-terraform:branch-6f10cdf9
+  assigner: ghcr.io/konstructio/provider-terraform-shard-assigner:branch-6f10cdf9
   logStreamer: ghcr.io/konstructio/logs-streamer:v0.0.10
 
 # The Crossplane package. Its Deployment stays at replicas: 0 - it exists to
@@ -242,7 +254,7 @@ serviceAccount:
 
 controller:
   pollInterval: 4m
-  maxReconcileRate: 10
+  maxReconcileRate: 3
   fsGroup: 65532
   # Must exceed the p99 terraform apply. A terraform killed mid-apply leaves a
   # stale backend lock needing a manual force-unlock - and a shard torn down
@@ -260,6 +272,13 @@ assigner:
   # whole shard's worth of terraform init at once.
   migrationBatch: 5
   staleMigration: 30m
+  # Spread existing Workspaces onto new shards after a scale-up, moving them
+  # off any shard carrying more than rebalanceTolerance more Workspaces than
+  # the emptiest one. It moves them off shards that are still running, so the
+  # assigner refuses to start with it unless requireShardOffline is false -
+  # only do that once every backend sets use_lockfile = true.
+  rebalance: false
+  rebalanceTolerance: 1
 
 secretStore: <cluster-name>-vault-kv-secret
 
@@ -623,6 +642,10 @@ spec:
             {{- else }}
             - --no-require-shard-offline
             {{- end }}
+            {{- if .Values.assigner.rebalance }}
+            - --rebalance
+            - --rebalance-tolerance={{ .Values.assigner.rebalanceTolerance }}
+            {{- end }}
           ports:
             - name: metrics
               containerPort: 8080
@@ -976,7 +999,10 @@ spec:
 | `logs.gatewaySectionName` | `https-logs` | Listener name on the `eg` Gateway in `default`. |
 | `logs.efsFileSystemId` | `<efs-file-system-id>` from step 2 | Required for log streaming once `shardCount` is above 1. |
 | `githubApp.installations[].vaultKey` | `<github-app-vault-key>` | Add one entry per GitHub org, with `labelled: true` for every entry after the first. |
-| `controller.terminationGracePeriodSeconds` | Above your slowest `terraform apply` | Default `900`. A pod killed mid-apply leaves a stale state lock needing `terraform force-unlock`. |
+| `controller.maxReconcileRate` | `3` | Workspaces one shard reconciles at once. Each runs terraform plus an AWS provider plugin; on 2-vCPU nodes, higher values make plugins time out (`timeout while waiting for plugin to start`) and reconciles exceed the 20m timeout. See *Sizing the cluster*. |
+| `controller.terminationGracePeriodSeconds` | Above your slowest `terraform apply` | Default `900`. A pod killed mid-apply leaves a stale state lock needing manual removal. |
+| `assigner.requireShardOffline` | `true` until every backend locks | `true`: a Workspace moves only once its old shard's pod is gone. `false`: moves are immediate and the state lock arbitrates; required for rebalancing. |
+| `assigner.rebalance` / `rebalanceTolerance` | `false` / `1` | See *Rebalancing*. |
 
 Everything else can stay as shown.
 
@@ -1071,11 +1097,88 @@ Once one shard is healthy, raise `shardCount` to the target.
 
 | Action | How | What happens |
 | --- | --- | --- |
-| **Scale up** | Raise `shardCount` | New shard Deployments appear. Existing Workspaces do not move; new ones land on the emptiest shards. |
-| **Scale down** | Lower `shardCount` | Argo CD prunes the top shard. The assigner waits for its pod to fully exit, then relabels its Workspaces onto the remaining shards, `migrationBatch` at a time, least-loaded. |
+| **Scale up** | Raise `shardCount` | New shard Deployments appear. Without rebalancing, existing Workspaces stay put and only new ones land on the emptiest shards. With rebalancing, existing ones spread onto the new shards too. |
+| **Scale down** | Lower `shardCount` | Argo CD prunes the top shards and the assigner relabels their Workspaces onto the remaining ones, `migrationBatch` at a time, least-loaded. With `requireShardOffline: true` it first waits for each old pod to exit. |
 | **Drain one in the middle** | Add it to `draining`, e.g. `[shard-2]` | Renders it at `replicas: 0`; same flow as scale down. |
 
-During a drain `terraform_shard_drain_blocked{shard="shard-N"}` is `1` until
-the old pod is gone, and `TerraformShardDrainBlocked` fires if that lasts
-15 minutes. Pod restarts, OOM kills and node drains never trigger migrations;
-only the Deployments in git do.
+During a drain with `requireShardOffline: true`,
+`terraform_shard_drain_blocked{shard="shard-N"}` is `1` until the old pod is
+gone, and `TerraformShardDrainBlocked` fires if that lasts 15 minutes. Pod
+restarts, OOM kills, evictions and node failures never trigger migrations; only
+the Deployments in git do. A shard whose pod cannot come back fires
+`TerraformShardWithoutPods`; add it to `draining` to move its Workspaces.
+
+### How a move works
+
+1. The assigner relabels the Workspace and stamps
+   `terraform.crossplane.io/migrating-at`. At most `migrationBatch` (5) moves
+   are in flight; the rest wait.
+2. The new shard picks it up: once its first `Connect` — module download and
+   `terraform init`, successful or not — has finished, it stamps
+   `terraform.crossplane.io/migration-received`.
+3. The assigner sees the receipt, removes both annotations and frees the slot.
+   A move the new shard never picks up stops holding a slot after
+   `staleMigration` (30m).
+
+"Migration complete" means the handover is done, not that the Workspace is
+healthy; its `Synced`/`Ready` conditions say that. Every move costs a fresh
+`terraform init` on the new shard.
+
+```sh
+kubectl get workspace.tf.upbound.io -A -L terraform.crossplane.io/shard      # placement
+kubectl logs -n crossplane-system deploy/provider-terraform-shard-assigner \
+  | grep -E "Migrated workspace|migration complete|stale"                   # moves
+```
+
+### Rebalancing
+
+By default a scale-up only sends **new** Workspaces to the new shards. To
+spread existing ones too:
+
+1. Confirm every ProviderConfig sets `use_lockfile = true` (see
+   prerequisites). Rebalancing moves Workspaces off shards that are still
+   running; the lock is what stops two shards applying the same state.
+2. Set:
+   ```yaml
+   assigner:
+     requireShardOffline: false
+     rebalance: true
+     rebalanceTolerance: 1
+   ```
+   The assigner refuses to start with `rebalance: true` while
+   `requireShardOffline` is `true`, and with a tolerance below 1.
+
+A Workspace then moves off any shard carrying more than `rebalanceTolerance`
+more Workspaces than the emptiest one, until the spread is within it. It
+settles: each move narrows the gap by 2, so nothing bounces back. Expect one
+fresh `terraform init` per moved Workspace — rebalancing 60 Workspaces costs
+about what creating 60 does. Balance is by Workspace count, not by how heavy
+each one is.
+
+### Sizing the cluster
+
+Shards add concurrency, not capacity. On a small cluster (3 × m5.large,
+2 vCPU, 50 GiB disk) these were the limits:
+
+| Resource | Why it runs out | What to do |
+| --- | --- | --- |
+| **CPU** | Every reconcile starts terraform and an AWS provider plugin. `shardCount × maxReconcileRate` of them can run at once. | Keep `maxReconcileRate` at 3; add nodes before adding shards. |
+| **Disk** (ephemeral storage) | With `pluginCache: false`, each Workspace's working directory holds its own copy of the AWS provider, ~700 MB, so a shard needs ~0.7 GB per Workspace. Past the kubelet threshold the pod is **evicted**, interrupting its applies. | `pluginCache: true` in ProviderConfigs (one copy per shard, at the cost of serialising inits behind a lock), larger node disks, or fewer Workspaces per node. |
+| **Memory** | Provider binaries and their page cache. ~1.5–2.5 GiB per busy shard. | Set requests and limits on the shard container so the scheduler and autoscaler see real usage. |
+
+The shard container ships without resource requests; add them in
+`templates/shards.yaml` for production, e.g. `requests: {cpu: 250m, memory: 1Gi}`
+and `limits: {memory: 3Gi}`. Without requests a shard is a BestEffort pod —
+first to be evicted — and the cluster autoscaler never adds nodes for it.
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `Summary: .` with an empty error on a failed apply | Apply and destroy output goes to the log file, not the status | Read `/logs/<workspace>` (stream it, or `kubectl exec` into any shard's `log-streamer` container). |
+| `timeout while waiting for plugin to start`, `Failed to load plugin schemas` | Nodes out of CPU | Lower `maxReconcileRate`, add nodes. Retries on its own. |
+| `context deadline exceeded` on `state list`, `workspace select`, `output` | The whole reconcile used up `--timeout` (20m) | Same as above; also check for disk pressure. |
+| `Error acquiring the state lock` that never clears | A run was killed (eviction, OOM, node loss) before releasing the lock | Confirm no `terraform apply` for that Workspace is running on its shard, then `aws s3 rm s3://<bucket>/env:/<workspace>/<key>.tflock`. |
+| Pod evicted: `low on resource: ephemeral-storage` | See *Sizing the cluster* | `pluginCache: true`, bigger disks. |
+| Shard pod stuck `Terminating` after its containers exited (`KillPodSandbox … DeadlineExceeded`) | Container runtime on the node | Wait — the kubelet retries. With `requireShardOffline: true` the drain waits for it; `kubectl delete pod --grace-period=0 --force` once you have confirmed nothing is running in it. |
+| `cannot determine creation result` and the Workspace never reconciles again | A create was interrupted before Crossplane recorded its result (older images) | Images in this runbook retry automatically. On older ones, remove the `crossplane.io/external-create-pending` annotation. |
