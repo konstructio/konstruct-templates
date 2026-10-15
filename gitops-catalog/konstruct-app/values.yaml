@@ -17,6 +17,12 @@
 # charts generated from helm-templates/charts do.
 
 # @input.type: string
+# @input.description: Workload cluster the application runs on; used as the Argo CD project and destination cluster
+# @input.required: true
+# @input.default: my-cluster
+clusterName: my-cluster
+
+# @input.type: string
 # @input.description: Namespace the application runs in; every resource is created there
 # @input.required: true
 # @input.default: my-app
