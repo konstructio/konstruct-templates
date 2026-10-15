@@ -1,0 +1,6 @@
+apiVersion: v2
+name: konstruct-app
+description: Deploy a Konstruct-built application together with its AWS SSM Parameter Store secrets, synced through a namespaced External Secrets SecretStore
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

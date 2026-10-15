@@ -1,0 +1,47 @@
+# The application itself, from the OCI chart its publish workflow pushes. It
+# loads the Secret the ExternalSecret maintains (envFrom) and is annotated for
+# Reloader, so a changed parameter restarts its pods.
+#
+# The operator renames this Application and pins its project and destination
+# cluster to the target workload cluster; the destination namespace is kept.
+#
+# Do not deploy the same application through Konstruct into the same namespace
+# as well: two Applications would fight over one Deployment.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.name }}
+  namespace: argocd
+  annotations:
+    kubefirst.konstruct.io/application-name: konstruct-app
+    kubefirst.konstruct.io/source: catalog-templates
+    # After the <env>-konstruct-app-resources Application (wave 0), which
+    # creates the ServiceAccount, SecretStore and ExternalSecret.
+    argocd.argoproj.io/sync-wave: '10'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    name: in-cluster
+    namespace: {{ .Values.namespace }}
+  source:
+    repoURL: {{ .Values.chartRepoUrl }}
+    chart: {{ .Values.chartName }}
+    targetRevision: {{ .Values.chartVersion | quote }}
+    helm:
+      valuesObject:
+        fullnameOverride: {{ .Values.name | quote }}
+        image:
+          repository: {{ .Values.imageRepository | quote }}
+        envFrom:
+          - secretRef:
+              name: {{ .Values.targetSecretName | quote }}
+        deploymentAnnotations:
+          reloader.stakater.com/auto: "true"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

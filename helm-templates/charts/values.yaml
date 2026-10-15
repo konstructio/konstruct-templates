@@ -15,6 +15,10 @@ serviceAccount:
   annotations: {}
   name: ""
 
+# Annotations on the Deployment itself, e.g. reloader.stakater.com/auto: "true"
+# to restart pods when a Secret or ConfigMap they load changes.
+deploymentAnnotations: {}
+
 podAnnotations: {}
 podLabels: {}
 
@@ -58,6 +62,12 @@ autoscaling:
 volumes: []
 
 volumeMounts: []
+
+# Load every key of a Secret or ConfigMap as environment variables, e.g.
+# envFrom:
+#   - secretRef:
+#       name: my-app-secrets
+envFrom: []
 
 nodeSelector: {}
 

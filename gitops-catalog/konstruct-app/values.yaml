@@ -1,0 +1,89 @@
+# Konstruct app: a Konstruct-built application plus its AWS Parameter Store
+# secrets
+#
+# Creates, in the application's own namespace:
+#   - a ServiceAccount the External Secrets Operator authenticates as (IRSA)
+#   - a namespaced SecretStore on AWS SSM Parameter Store
+#   - an ExternalSecret syncing every parameter under parameterPath into one
+#     Kubernetes Secret, keyed by parameter name
+#   - an Argo CD Application deploying the app's OCI chart, loading that
+#     Secret with envFrom and annotated for Reloader
+#
+# Prerequisite: the IAM role in roleArn, which the aws-parameter-store-role
+# catalog application creates. Its trust policy must name this namespace and
+# serviceAccountName, and its policy should grant only parameterPath.
+#
+# The app's chart must accept `envFrom` and `deploymentAnnotations` values;
+# charts generated from helm-templates/charts do.
+
+# @input.type: string
+# @input.description: Namespace the application runs in; every resource is created there
+# @input.required: true
+# @input.default: my-app
+namespace: my-app
+
+# @input.type: string
+# @input.description: Name for the ServiceAccount, SecretStore and ExternalSecret (usually the application name)
+# @input.required: true
+# @input.default: my-app
+name: my-app
+
+# @input.type: string
+# @input.description: OCI repository of the application's Helm chart, e.g. oci://<account>.dkr.ecr.<region>.amazonaws.com/<org>/charts/<repo>
+# @input.required: true
+# @input.default: oci://123456789012.dkr.ecr.us-west-2.amazonaws.com/my-org/charts/my-app
+chartRepoUrl: oci://123456789012.dkr.ecr.us-west-2.amazonaws.com/my-org/charts/my-app
+
+# @input.type: string
+# @input.description: Name of the application's Helm chart (the repository name)
+# @input.required: true
+# @input.default: my-app
+chartName: my-app
+
+# @input.type: string
+# @input.description: Chart version to deploy, as published by the app's workflow (e.g. 0.1.0-rc.abc1234)
+# @input.required: true
+# @input.default: 0.1.0
+chartVersion: 0.1.0
+
+# @input.type: string
+# @input.description: Container image repository for the application, without a tag
+# @input.required: true
+# @input.default: 123456789012.dkr.ecr.us-west-2.amazonaws.com/my-org/my-app
+imageRepository: 123456789012.dkr.ecr.us-west-2.amazonaws.com/my-org/my-app
+
+# @input.type: string
+# @input.description: ServiceAccount the External Secrets Operator authenticates as; must match the IAM role's trust policy
+# @input.required: true
+# @input.default: my-app-eso
+serviceAccountName: my-app-eso
+
+# @input.type: string
+# @input.description: ARN of the IAM role allowed to read the parameters (output role_arn of aws-parameter-store-role)
+# @input.required: true
+# @input.default: arn:aws:iam::123456789012:role/my-app-parameter-store
+roleArn: arn:aws:iam::123456789012:role/my-app-parameter-store
+
+# @input.type: string
+# @input.description: AWS region of the Parameter Store holding the parameters
+# @input.required: true
+# @input.default: us-west-2
+region: us-west-2
+
+# @input.type: string
+# @input.description: Parameter path prefix to sync, without a trailing slash; each parameter below it becomes one key of the Secret
+# @input.required: true
+# @input.default: /apps/my-app
+parameterPath: /apps/my-app
+
+# @input.type: string
+# @input.description: Name of the Kubernetes Secret to create, for the app to reference with envFrom
+# @input.required: true
+# @input.default: my-app-secrets
+targetSecretName: my-app-secrets
+
+# @input.type: string
+# @input.description: How often to re-read the parameters (Go duration, e.g. 1h, 15m)
+# @input.required: true
+# @input.default: 1h
+refreshInterval: 1h
