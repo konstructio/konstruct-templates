@@ -4,9 +4,10 @@ metadata:
   name: {{ include "<REPO_NAME>.fullname" . }}
   labels:
     {{- include "<REPO_NAME>.labels" . | nindent 4 }}
-  {{- with .Values.deploymentAnnotations }}
+  {{- if and .Values.externalSecrets.enabled .Values.externalSecrets.data }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    # Restart the pods when the synced Secret changes.
+    reloader.stakater.com/auto: "true"
   {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
@@ -49,9 +50,10 @@ spec:
               value: {{ .Chart.Version | quote }}
             - name: IMAGE
               value: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- with .Values.envFrom }}
+          {{- if and .Values.externalSecrets.enabled .Values.externalSecrets.data }}
           envFrom:
-            {{- toYaml . | nindent 12 }}
+            - secretRef:
+                name: {{ include "<REPO_NAME>.fullname" . }}-secrets
           {{- end }}
           ports:
             - name: http

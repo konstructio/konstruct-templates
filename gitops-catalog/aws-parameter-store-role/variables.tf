@@ -14,7 +14,7 @@ variable "namespace" {
 }
 
 variable "service_account_name" {
-  description = "Kubernetes ServiceAccount allowed to assume the role (serviceAccountName of konstruct-app)"
+  description = "Kubernetes ServiceAccount allowed to assume the role; for konstruct-app it is <name>-eso"
   type        = string
 }
 

@@ -1,6 +1,10 @@
-# The application itself, from the OCI chart its publish workflow pushes. It
-# loads the Secret the ExternalSecret maintains (envFrom) and is annotated for
-# Reloader, so a changed parameter restarts its pods.
+{{- $path := trimSuffix "/" .Values.parameterPath }}
+# The application, from the OCI chart its publish workflow pushes, with the
+# chart's own externalSecrets block switched on. The chart then creates, in the
+# app's namespace, the <name>-eso ServiceAccount (IRSA to roleArn), the
+# <name>-parameter-store SecretStore and the <name> ExternalSecret, and loads
+# the resulting <name>-secrets Secret into the Deployment with envFrom and a
+# Reloader annotation.
 #
 # Project and destination cluster are the workload cluster, and the
 # Application lives in its <cluster>-environment namespace - the same values
@@ -17,9 +21,6 @@ metadata:
   annotations:
     kubefirst.konstruct.io/application-name: konstruct-app
     kubefirst.konstruct.io/source: catalog-templates
-    # After the <env>-konstruct-app-resources Application (wave 0), which
-    # creates the ServiceAccount, SecretStore and ExternalSecret.
-    argocd.argoproj.io/sync-wave: '10'
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -36,11 +37,20 @@ spec:
         fullnameOverride: {{ .Values.name | quote }}
         image:
           repository: {{ .Values.imageRepository | quote }}
-        envFrom:
-          - secretRef:
-              name: {{ .Values.targetSecretName | quote }}
-        deploymentAnnotations:
-          reloader.stakater.com/auto: "true"
+        externalSecrets:
+          enabled: true
+          region: {{ .Values.region | quote }}
+          roleArn: {{ .Values.roleArn | quote }}
+          refreshInterval: {{ .Values.refreshInterval | quote }}
+          # One entry per key in secretKeys, read from <parameterPath>/<key>.
+          data:
+            {{- range splitList "," .Values.secretKeys }}
+            {{- $key := trim . }}
+            {{- if $key }}
+            - secretKey: {{ $key | quote }}
+              remoteKey: {{ printf "%s/%s" $path $key | quote }}
+            {{- end }}
+            {{- end }}
   syncPolicy:
     automated:
       prune: true
