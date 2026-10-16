@@ -1,0 +1,59 @@
+{{- $path := trimSuffix "/" .Values.parameterPath }}
+# The application, from the OCI chart its publish workflow pushes, with the
+# chart's own externalSecrets block switched on. The chart then creates, in the
+# app's namespace, the <name>-eso ServiceAccount (IRSA to roleArn), the
+# <name>-parameter-store SecretStore and the <name> ExternalSecret, and loads
+# the resulting <name>-secrets Secret into the Deployment with envFrom and a
+# Reloader annotation.
+#
+# Project and destination cluster are the workload cluster, and the
+# Application lives in its <cluster>-environment namespace - the same values
+# the operator pins when it renders a catalog app, so what is written here is
+# what lands in git. The operator also prefixes the name with <env>-<cluster>.
+#
+# Do not deploy the same application through Konstruct into the same namespace
+# as well: two Applications would fight over one Deployment.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.clusterName }}-environment
+  annotations:
+    kubefirst.konstruct.io/application-name: konstruct-app
+    kubefirst.konstruct.io/source: catalog-templates
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: {{ .Values.clusterName }}
+  destination:
+    name: {{ .Values.clusterName }}
+    namespace: {{ .Values.namespace }}
+  source:
+    repoURL: {{ .Values.chartRepoUrl }}
+    chart: {{ .Values.chartName }}
+    targetRevision: {{ .Values.chartVersion | quote }}
+    helm:
+      valuesObject:
+        fullnameOverride: {{ .Values.name | quote }}
+        image:
+          repository: {{ .Values.imageRepository | quote }}
+        externalSecrets:
+          enabled: true
+          region: {{ .Values.region | quote }}
+          roleArn: {{ .Values.roleArn | quote }}
+          refreshInterval: {{ .Values.refreshInterval | quote }}
+          # One entry per key in secretKeys, read from <parameterPath>/<key>.
+          data:
+            {{- range splitList "," .Values.secretKeys }}
+            {{- $key := trim . }}
+            {{- if $key }}
+            - secretKey: {{ $key | quote }}
+              remoteKey: {{ printf "%s/%s" $path $key | quote }}
+            {{- end }}
+            {{- end }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -4,6 +4,11 @@ metadata:
   name: {{ include "<REPO_NAME>.fullname" . }}
   labels:
     {{- include "<REPO_NAME>.labels" . | nindent 4 }}
+  {{- if and .Values.externalSecrets.enabled .Values.externalSecrets.data }}
+  annotations:
+    # Restart the pods when the synced Secret changes.
+    reloader.stakater.com/auto: "true"
+  {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -45,6 +50,11 @@ spec:
               value: {{ .Chart.Version | quote }}
             - name: IMAGE
               value: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- if and .Values.externalSecrets.enabled .Values.externalSecrets.data }}
+          envFrom:
+            - secretRef:
+                name: {{ include "<REPO_NAME>.fullname" . }}-secrets
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

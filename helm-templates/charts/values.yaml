@@ -64,3 +64,20 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# Secrets from AWS SSM Parameter Store, through a namespaced SecretStore owned
+# by this release. Off until the IAM role below exists.
+externalSecrets:
+  enabled: false
+  # AWS region of the Parameter Store holding the parameters.
+  region: us-west-2
+  # IAM role the SecretStore authenticates as (IRSA). Its trust policy must
+  # allow system:serviceaccount:<namespace>:<fullname>-eso, and its policy
+  # should only grant the parameters listed in `data`.
+  roleArn: ""
+  refreshInterval: 1h
+  # Each entry becomes one key of the <fullname>-secrets Secret, which the
+  # Deployment loads as environment variables.
+  #   - secretKey: DB_PASSWORD
+  #     remoteKey: /apps/<namespace>/<app>/DB_PASSWORD
+  data: []
