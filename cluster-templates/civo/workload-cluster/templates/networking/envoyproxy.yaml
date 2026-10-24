@@ -1,8 +1,7 @@
-{{- if .Values.theme }}
-# mergeGateways lets per-app custom-domain Gateways share this cluster's
-# single Envoy data plane and LoadBalancer instead of provisioning one each.
+# mergeGateways lets per-app Gateways share this cluster's single Envoy
+# data plane and LoadBalancer instead of provisioning one each.
 # NOTE: flipping this on an existing cluster recreates the proxy Service (new
-# LB IP; external-dns re-points the wildcard from this Service's annotation).
+# LB IP; external-dns re-points records from this Service's annotation).
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
@@ -10,6 +9,7 @@ metadata:
   namespace: envoy-gateway-system
 spec:
   mergeGateways: true
+{{- if .Values.theme }}
   provider:
     type: Kubernetes
     kubernetes:
