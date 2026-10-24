@@ -1,0 +1,78 @@
+{{- if .Values.customDomain.enabled }}
+# Custom domain: a per-app Gateway carrying the domain's TLS listener, merged
+# onto the cluster's shared Envoy data plane (the GatewayClass's EnvoyProxy
+# sets mergeGateways, so this adds a listener to the existing LB rather than
+# provisioning one). cert-manager's gateway-shim reads the annotation and
+# issues the certificate via HTTP-01 — the ACME challenge arrives through the
+# user's CNAME at the shared :80 listener, so no DNS control is needed.
+# Rendered ONLY after the operator verified domain ownership via TXT.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ include "konstruct-web-service.fullname" . }}-domain
+  labels:
+    {{- include "konstruct-web-service.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.customDomain.clusterIssuer }}
+spec:
+  gatewayClassName: {{ .Values.customDomain.gatewayClassName }}
+  listeners:
+    - name: https
+      hostname: {{ .Values.customDomain.host | quote }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: {{ include "konstruct-web-service.fullname" . }}-domain-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+# Route the domain's HTTPS traffic to the app.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "konstruct-web-service.fullname" . }}-domain
+  labels:
+    {{- include "konstruct-web-service.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ include "konstruct-web-service.fullname" . }}-domain
+      sectionName: https
+  hostnames:
+    - {{ .Values.customDomain.host | quote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ include "konstruct-web-service.fullname" . }}
+          port: {{ .Values.service.port }}
+---
+# http -> https redirect on the SHARED gateway's :80 listener (same merged
+# data plane, same IP the user's CNAME resolves to). cert-manager's ACME
+# solver routes are path-specific (/.well-known/acme-challenge/...), which
+# outranks this catch-all under Gateway API precedence, so challenges pass.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "konstruct-web-service.fullname" . }}-domain-redirect
+  labels:
+    {{- include "konstruct-web-service.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+      namespace: {{ .Values.gateway.namespace }}
+      sectionName: http
+  hostnames:
+    - {{ .Values.customDomain.host | quote }}
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+{{- end }}

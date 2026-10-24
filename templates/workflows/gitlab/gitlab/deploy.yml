@@ -1,0 +1,77 @@
+# Application deploy pipeline — GitLab CI equivalent of workflows/deploy.yaml.
+#
+# Run via UI: CI/CD → Pipelines → "Run pipeline" and fill in the ENVIRONMENT,
+# APP_VERSION (required), and APP_NAME variables. Mirrors the GitHub workflow's
+# workflow_dispatch UX, with the cross-repo workflow_dispatch replaced by a
+# call to POST /projects/:id/pipeline against the GitOps repo, authenticated
+# with the same group access token application-operator already manages.
+#
+# Required CI variables (provisioned by application-operator):
+#   GITLAB_ACCESS_TOKEN  — group access token with Developer+ role on the
+#                          GitOps project. Same token gitaccount-operator
+#                          uses for the GitAccount's API operations.
+#                          Masked + protected.
+
+stages:
+  - trigger
+  - notify
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_PIPELINE_SOURCE == "api"'
+
+variables:
+  ENVIRONMENT:
+    value: "<ENVIRONMENT>"
+    description: "Target environment (matches GH workflow_dispatch choice)."
+  APP_VERSION:
+    value: ""
+    description: "Application version to deploy (required)."
+  APP_NAME:
+    value: "<APP_NAME>"
+    description: "Application name (defaults to <APP_NAME>)."
+  GITOPS_PROJECT: "<ORG_NAME>/<GITOPS_REPO_NAME>"
+  GITOPS_REF: "main"
+  UPDATE_PIPELINE_FILE: "update-environment.yaml"
+
+trigger-update:
+  stage: trigger
+  image: alpine:3.20
+  before_script:
+    - apk add --no-cache curl jq
+    - 'test -n "$APP_VERSION" || { echo "APP_VERSION is required"; exit 1; }'
+  script:
+    # Trigger the downstream "update-environment" pipeline in the GitOps repo.
+    # POST /projects/:id/pipeline (not /trigger/pipeline) so we can authenticate
+    # with the group access token via PRIVATE-TOKEN header instead of a
+    # project-scoped pipeline trigger token. Replaces the GitHub-App-minted
+    # token + Octokit createWorkflowDispatch from the GH workflow.
+    - |
+      GITOPS_PROJECT_ENC=$(printf '%s' "$GITOPS_PROJECT" | sed 's|/|%2F|g')
+      RESP=$(curl --silent --show-error --fail \
+        -X POST \
+        -H "PRIVATE-TOKEN: ${GITLAB_ACCESS_TOKEN}" \
+        -F "ref=${GITOPS_REF}" \
+        -F "variables[ENVIRONMENT]=${ENVIRONMENT}" \
+        -F "variables[APP_VERSION]=${APP_VERSION}" \
+        -F "variables[APP_NAME]=${APP_NAME}" \
+        -F "variables[TRIGGERED_BY]=${GITLAB_USER_LOGIN}" \
+        -F "variables[SOURCE_PIPELINE_ID]=${CI_PIPELINE_ID}" \
+        -F "variables[SOURCE_PIPELINE_URL]=${CI_PIPELINE_URL}" \
+        -F "variables[UPDATE_PIPELINE_FILE]=${UPDATE_PIPELINE_FILE}" \
+        "${CI_API_V4_URL}/projects/${GITOPS_PROJECT_ENC}/pipeline")
+      echo "$RESP" | jq -r '"Triggered downstream pipeline: \(.web_url) (id=\(.id))"'
+  environment:
+    name: <ENVIRONMENT>
+
+notify:
+  stage: notify
+  image: alpine:3.20
+  needs: ["trigger-update"]
+  script:
+    - echo "Deployment triggered successfully!"
+    - echo "Environment:$ENVIRONMENT"
+    - echo "Version:$APP_VERSION"
+    - echo "App:$APP_NAME"
+    # Add Slack/Teams/Email notification here if needed
