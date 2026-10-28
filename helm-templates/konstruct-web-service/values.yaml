@@ -96,6 +96,13 @@ probes:
 # if a container is compromised. Apps that need the API set this true.
 automountServiceAccountToken: false
 
+# hostUsers defaults OFF: each pod runs in its own user namespace, so container
+# UIDs map to a per-pod range of unprivileged host UIDs. Tenants built from the
+# same buildpack (all uid 1002) no longer share a host UID, and root inside the
+# container is never root on the node. Needs node kernel >= 6.3 and containerd
+# 2.x for idmapped mounts; incompatible with hostNetwork/hostPID/hostIPC.
+hostUsers: false
+
 # Hardened pod/container security context — the Pod Security "restricted"
 # contract, rendered by default so a workload namespace enforcing `restricted`
 # admits these pods, and so a container escape has the smallest possible
