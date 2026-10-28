@@ -28,6 +28,9 @@ spec:
       # ServiceAccount token into them — a stolen token is lateral movement.
       # Apps that genuinely need the API can re-enable it via values.
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      # A per-pod user namespace keeps a container escape from landing as a
+      # host UID shared with other tenants (or as host root).
+      hostUsers: {{ .Values.hostUsers }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
         {{- if .Values.persistence.enabled }}
